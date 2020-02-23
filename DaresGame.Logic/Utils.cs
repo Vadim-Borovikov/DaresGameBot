@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DaresGame
+namespace DaresGame.Logic
 {
     internal static class Utils
     {

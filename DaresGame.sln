@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.329
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaresGame", "DaresGame\DaresGame.csproj", "{F9D017CA-F4A0-4794-A4E2-A716DB221882}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaresGame.Logic", "DaresGame.Logic\DaresGame.Logic.csproj", "{03D5ECAC-F3D5-4237-8F1F-9C0FE3B883A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaresGameBot.Console", "DaresGameBot.Console\DaresGameBot.Console.csproj", "{2A9884FE-1292-4265-ABAB-46F4968516C6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaresGame.Bot.Web", "DaresGame.Bot.Web\DaresGame.Bot.Web.csproj", "{88614F5E-CE3F-4BA9-9B67-760C3B747346}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{F9D017CA-F4A0-4794-A4E2-A716DB221882}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F9D017CA-F4A0-4794-A4E2-A716DB221882}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F9D017CA-F4A0-4794-A4E2-A716DB221882}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F9D017CA-F4A0-4794-A4E2-A716DB221882}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2A9884FE-1292-4265-ABAB-46F4968516C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2A9884FE-1292-4265-ABAB-46F4968516C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2A9884FE-1292-4265-ABAB-46F4968516C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2A9884FE-1292-4265-ABAB-46F4968516C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03D5ECAC-F3D5-4237-8F1F-9C0FE3B883A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03D5ECAC-F3D5-4237-8F1F-9C0FE3B883A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03D5ECAC-F3D5-4237-8F1F-9C0FE3B883A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03D5ECAC-F3D5-4237-8F1F-9C0FE3B883A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88614F5E-CE3F-4BA9-9B67-760C3B747346}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88614F5E-CE3F-4BA9-9B67-760C3B747346}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88614F5E-CE3F-4BA9-9B67-760C3B747346}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88614F5E-CE3F-4BA9-9B67-760C3B747346}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

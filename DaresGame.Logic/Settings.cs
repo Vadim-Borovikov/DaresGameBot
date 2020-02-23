@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DaresGame
+namespace DaresGame.Logic
 {
     public class Settings
     {

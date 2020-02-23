@@ -4,17 +4,17 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DaresGame;
+using DaresGame.Logic;
 using Telegram.Bot;
-using Telegram.Bot.Args;
-using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using Game = DaresGame.Logic.Game;
 
-namespace DaresGameBot.Console
+namespace DaresGame.Bot.Web.Models
 {
-    internal class BotLogc
+    internal class BotLogic
     {
-        public readonly TelegramBotClient Bot;
+        private readonly TelegramBotClient _client;
 
         private Game _game;
         private bool IsGameValid => (_game != null) && !_game.Empty;
@@ -33,7 +33,7 @@ namespace DaresGameBot.Console
             $"целое число — изменить число игроков{Environment.NewLine}" +
             "дробное число от 0.0 до 1.0 — изменить шанс на 🤩";
 
-        public BotLogc(string token, int playersNumber, double choiceChance, IEnumerable<Deck> decks)
+        public BotLogic(TelegramBotClient client, int playersNumber, double choiceChance, IEnumerable<Deck> decks)
         {
             _settings = new Settings
             {
@@ -42,42 +42,36 @@ namespace DaresGameBot.Console
                 Decks = decks
             };
 
-            Bot = new TelegramBotClient(token);
-            Bot.OnMessage += OnMessageReceived;
+            _client = client;
         }
 
-        private async void OnMessageReceived(object sender, MessageEventArgs e)
+        public Task OnMessageReceivedAsync(Message message)
         {
-            if (e.Message.Type != MessageType.Text)
-            {
-                return;
-            }
+            Console.WriteLine(message.Text);
 
-            System.Console.WriteLine(e.Message.Text);
-
-            switch (e.Message.Text)
+            switch (message.Text)
             {
                 case StartCommand:
-                    await OnStartCommand(e.Message.Chat.Id);
-                    break;
+                    return OnStartCommand(message.Chat.Id);
                 case DrawCommand:
-                    await OnDrawCommand(e.Message.Chat.Id);
-                    break;
+                    return OnDrawCommand(message.Chat.Id);
                 case NewGameCommand:
                 case ResetComand:
-                    await StartNewGame(e.Message.Chat.Id);
-                    break;
+                    return StartNewGame(message.Chat.Id);
             }
 
-            if (int.TryParse(e.Message.Text, out int playersNumber))
+            if (int.TryParse(message.Text, out int playersNumber))
             {
-                await OnNewPlayerNumberCommand(e.Message.Chat.Id, playersNumber);
+                return OnNewPlayerNumberCommand(message.Chat.Id, playersNumber);
             }
-            else if (double.TryParse(e.Message.Text, NumberStyles.Any, CultureInfo.InvariantCulture,
+
+            if (double.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture,
                 out double choiceChance))
             {
-                await OnNewChoiceChanceCommand(e.Message.Chat.Id, choiceChance);
+                return OnNewChoiceChanceCommand(message.Chat.Id, choiceChance);
             }
+
+            return Task.CompletedTask;
         }
 
         private async Task OnStartCommand(long chatId)
@@ -174,7 +168,7 @@ namespace DaresGameBot.Console
         {
             string command = (_game != null) && !_game.Empty ? DrawCommand : NewGameCommand;
             var replyKeyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton(command) }, true);
-            await Bot.SendTextMessageAsync(chatId, message, replyMarkup: replyKeyboard);
+            await _client.SendTextMessageAsync(chatId, message, replyMarkup: replyKeyboard);
         }
     }
 }

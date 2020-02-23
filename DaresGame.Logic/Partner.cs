@@ -1,6 +1,6 @@
 using System;
 
-namespace DaresGame
+namespace DaresGame.Logic
 {
     public class Partner : IComparable<Partner>
     {

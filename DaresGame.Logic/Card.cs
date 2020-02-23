@@ -1,4 +1,4 @@
-namespace DaresGame
+namespace DaresGame.Logic
 {
     public class Card
     {
