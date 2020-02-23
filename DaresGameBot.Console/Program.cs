@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using DaresGame;
 using Telegram.Bot.Types;
 using File = System.IO.File;
@@ -37,6 +38,8 @@ namespace DaresGameBot.Console
             IEnumerable<Deck> decks = InitializeDecks(decksPath);
 
             var botLogic = new BotLogc(token, initialPlayersNumber, choiceChance, decks);
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
             User me = botLogic.Bot.GetMeAsync().Result;
             System.Console.Title = me.Username;
