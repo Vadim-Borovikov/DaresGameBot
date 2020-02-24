@@ -36,7 +36,7 @@ namespace DaresGame.Logic
             Deck current = _decks.Peek();
             var turn = new Turn();
             Card card = current.Draw();
-            turn.Text = $"{current.Tag}{card.Description}";
+            turn.Text = $"{current.Tag} {card.Description}";
             if (current.Empty)
             {
                 _decks.Dequeue();

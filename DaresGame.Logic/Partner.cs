@@ -1,24 +1,26 @@
-using System;
+﻿using System;
 
 namespace DaresGame.Logic
 {
     public class Partner : IComparable<Partner>
     {
-        public readonly bool ByChoice;
-        public readonly int PartnerNumber;
+        private readonly bool _byChoice;
+        private readonly int _partnerNumber;
 
         internal Partner(int partnerNumber)
         {
-            ByChoice = false;
-            PartnerNumber = partnerNumber;
+            _byChoice = false;
+            _partnerNumber = partnerNumber;
         }
 
         internal Partner(bool byChoice)
         {
-            ByChoice = byChoice;
-            PartnerNumber = int.MaxValue;
+            _byChoice = byChoice;
+            _partnerNumber = int.MaxValue;
         }
 
-        public int CompareTo(Partner other) => PartnerNumber.CompareTo(other.PartnerNumber);
+        public int CompareTo(Partner other) => _partnerNumber.CompareTo(other._partnerNumber);
+
+        public override string ToString() => _byChoice ? "🤩" : $"{_partnerNumber}";
     }
 }

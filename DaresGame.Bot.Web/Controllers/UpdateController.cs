@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
+using DaresGame.Bot.Web.Models.Commands;
 using DaresGame.Bot.Web.Models.Services;
 using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
@@ -18,7 +21,25 @@ namespace DaresGame.Bot.Web.Controllers
             if (update?.Type == UpdateType.Message)
             {
                 Message message = update.Message;
-                await _botService.OnMessageReceivedAsync(message);
+
+                Command command = _botService.Commands.FirstOrDefault(c => c.Contains(message));
+                if (command != null)
+                {
+                    await command.ExecuteAsync(message, _botService.Client);
+                }
+                else
+                {
+                    if (int.TryParse(message.Text, out int playersNumber))
+                    {
+                        await _botService.GameLogic.ChangePlayersNumberAsync(message.Chat, playersNumber);
+                    }
+
+                    if (double.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture,
+                        out double choiceChance))
+                    {
+                        await _botService.GameLogic.ChangeChoiceChanceAsync(message.Chat, choiceChance);
+                    }
+                }
             }
 
             return Ok();

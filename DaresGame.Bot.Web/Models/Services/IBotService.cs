@@ -1,13 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using DaresGame.Bot.Web.Models.Commands;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 
 namespace DaresGame.Bot.Web.Models.Services
 {
     public interface IBotService
     {
         TelegramBotClient Client { get; }
-
-        Task OnMessageReceivedAsync(Message message);
+        IReadOnlyList<Command> Commands { get; }
+        GameLogic GameLogic { get; }
     }
 }

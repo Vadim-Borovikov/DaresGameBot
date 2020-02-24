@@ -4,32 +4,41 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DaresGame.Bot.Web.Models.Commands;
 using DaresGame.Logic;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
-using Telegram.Bot.Types;
-using File = System.IO.File;
 
 namespace DaresGame.Bot.Web.Models.Services
 {
     internal class BotService : IBotService, IHostedService
     {
         public TelegramBotClient Client { get; }
+        public IReadOnlyList<Command> Commands { get; }
+        public GameLogic GameLogic { get; }
 
         private readonly BotConfiguration _config;
-
-        private readonly BotLogic _botLogic;
 
         public BotService(IOptions<BotConfiguration> options)
         {
             _config = options.Value;
 
-            IEnumerable<Deck> decks = InitializeDecks(_config.DecksFolderPath);
-
             Client = new TelegramBotClient(_config.Token);
 
-            _botLogic = new BotLogic(Client, _config.InitialPlayersNumber, _config.ChoiceChance, decks);
+            IEnumerable<Deck> decks = InitializeDecks(_config.DecksFolderPath);
+            GameLogic = new GameLogic(Client, _config.InitialPlayersNumber, _config.ChoiceChance, decks);
+
+            var commands = new List<Command>
+            {
+                new NewCommand(GameLogic),
+                new DrawCommand(GameLogic)
+            };
+
+            Commands = commands.AsReadOnly();
+            var startCommand = new StartCommand(Commands, _config.Host, GameLogic);
+
+            commands.Insert(0, startCommand);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -38,8 +47,6 @@ namespace DaresGame.Bot.Web.Models.Services
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Client.DeleteWebhookAsync(cancellationToken);
-
-        public Task OnMessageReceivedAsync(Message message) => _botLogic.OnMessageReceivedAsync(message);
 
         private static IEnumerable<Deck> InitializeDecks(string path)
         {
