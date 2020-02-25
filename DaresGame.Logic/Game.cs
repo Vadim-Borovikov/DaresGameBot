@@ -31,22 +31,51 @@ namespace DaresGame.Logic
 
         private Card DrawCard(out string deckTag)
         {
-            if (Empty)
+            while (true)
             {
-                deckTag = null;
-                return null;
+                if (Empty)
+                {
+                    deckTag = null;
+                    return null;
+                }
+
+                Deck current = _decks.Peek();
+                deckTag = current.Tag;
+
+                var crowdCards = new Queue<Card>();
+                Card card = Draw(current, crowdCards);
+
+                if (current.Empty)
+                {
+                    _decks.Dequeue();
+                    if (card == null)
+                    {
+                        continue;
+                    }
+                }
+
+                current.Enqueue(crowdCards);
+                return card;
             }
+        }
 
-            Deck current = _decks.Peek();
-            deckTag = current.Tag;
-            Card card = current.Draw();
-
-            if (current.Empty)
+        private Card Draw(Deck deck, Queue<Card> crowdCards)
+        {
+            while (true)
             {
-                _decks.Dequeue();
-            }
+                if (deck.Empty)
+                {
+                    return null;
+                }
 
-            return card;
+                Card next = deck.Draw();
+                if (next.PartnersAmount < _settings.PlayersAmount)
+                {
+                    return next;
+                }
+
+                crowdCards.Enqueue(next);
+            }
         }
 
         private Turn CreateTurn(Card card, string deckTag)

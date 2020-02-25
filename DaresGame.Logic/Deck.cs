@@ -21,6 +21,14 @@ namespace DaresGame.Logic
 
         internal Card Draw() => _cards.Dequeue();
 
+        internal void Enqueue(IEnumerable<Card> cards)
+        {
+            foreach (Card card in cards)
+            {
+                _cards.Enqueue(card);
+            }
+        }
+
         private Deck Copy() => new Deck(Tag, _cards);
     }
 }
