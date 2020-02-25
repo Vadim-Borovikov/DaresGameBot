@@ -18,14 +18,15 @@ namespace DaresGame.Bot.Web.Models
         internal bool IsGameValid => (_game != null) && !_game.Empty;
         private readonly Settings _settings;
 
-        private string Players => $"Игроков: {_settings.PlayersNumber}";
+        private string Players => $"Игроков: {_settings.PlayersAmount}";
         private string Chance => $"Шанс на 🤩: {_settings.ChoiceChance:P0}";
 
-        internal GameLogic(TelegramBotClient client, int playersNumber, double choiceChance, IEnumerable<Deck> decks)
+        internal GameLogic(TelegramBotClient client, int initialPlayersAmount, double choiceChance,
+            IEnumerable<Deck> decks)
         {
             _settings = new Settings
             {
-                PlayersNumber = playersNumber,
+                PlayersAmount = initialPlayersAmount,
                 ChoiceChance = choiceChance,
                 Decks = decks
             };
@@ -44,14 +45,14 @@ namespace DaresGame.Bot.Web.Models
             return _client.SendTextMessageAsync(chat, stringBuilder.ToString(), replyMarkup: GetKeyboard());
         }
 
-        internal Task ChangePlayersNumberAsync(Chat chat, int playersNumber)
+        internal Task ChangePlayersAmountAsync(Chat chat, int playersAmount)
         {
-            if (playersNumber <= 0)
+            if (playersAmount <= 0)
             {
                 return Task.CompletedTask;
             }
 
-            _settings.PlayersNumber = playersNumber;
+            _settings.PlayersAmount = playersAmount;
 
             if (!IsGameValid)
             {

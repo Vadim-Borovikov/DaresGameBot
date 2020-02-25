@@ -3,12 +3,12 @@ namespace DaresGame.Logic
     public class Card
     {
         internal readonly string Description;
-        internal readonly int PartnersNumber;
+        internal readonly int PartnersAmount;
 
-        public Card(string description, int partnersNumber)
+        public Card(string description, int partnersAmount)
         {
             Description = description;
-            PartnersNumber = partnersNumber;
+            PartnersAmount = partnersAmount;
         }
     }
 }

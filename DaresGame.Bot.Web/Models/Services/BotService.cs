@@ -27,7 +27,7 @@ namespace DaresGame.Bot.Web.Models.Services
             Client = new TelegramBotClient(_config.Token);
 
             IEnumerable<Deck> decks = InitializeDecks(_config.DecksFolderPath);
-            GameLogic = new GameLogic(Client, _config.InitialPlayersNumber, _config.ChoiceChance, decks);
+            GameLogic = new GameLogic(Client, _config.InitialPlayersAmount, _config.ChoiceChance, decks);
 
             var commands = new List<Command>
             {
@@ -78,14 +78,14 @@ namespace DaresGame.Bot.Web.Models.Services
         {
             int colonIndex = line.IndexOf(':');
             string parntersChunk = line.Substring(0, colonIndex);
-            if (!int.TryParse(parntersChunk, out int partnersNumber))
+            if (!int.TryParse(parntersChunk, out int partnersAmount))
             {
                 throw new Exception($"Incorrect card: {line}");
             }
 
             string description = line.Substring(colonIndex + 1);
 
-            return new Card(description, partnersNumber);
+            return new Card(description, partnersAmount);
         }
     }
 }

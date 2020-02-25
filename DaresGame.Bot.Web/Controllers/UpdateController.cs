@@ -29,9 +29,9 @@ namespace DaresGame.Bot.Web.Controllers
                 }
                 else
                 {
-                    if (int.TryParse(message.Text, out int playersNumber))
+                    if (int.TryParse(message.Text, out int playersAmount))
                     {
-                        await _botService.GameLogic.ChangePlayersNumberAsync(message.Chat, playersNumber);
+                        await _botService.GameLogic.ChangePlayersAmountAsync(message.Chat, playersAmount);
                     }
 
                     if (double.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture,

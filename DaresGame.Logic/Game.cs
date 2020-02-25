@@ -42,9 +42,9 @@ namespace DaresGame.Logic
                 _decks.Dequeue();
             }
 
-            turn.Partners = new List<Partner>(card.PartnersNumber);
-            Queue<int> partners = Enumerable.Range(1, _settings.PlayersNumber - 1).ToShuffeledQueue();
-            for (int i = 0; i < card.PartnersNumber; ++i)
+            turn.Partners = new List<Partner>(card.PartnersAmount);
+            Queue<int> partners = Enumerable.Range(1, _settings.PlayersAmount - 1).ToShuffeledQueue();
+            for (int i = 0; i < card.PartnersAmount; ++i)
             {
                 bool byChoice = Utils.Random.NextDouble() < _settings.ChoiceChance;
                 Partner partner = byChoice ? new Partner(true) : new Partner(partners.Dequeue());
