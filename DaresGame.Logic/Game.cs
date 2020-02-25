@@ -25,31 +25,44 @@ namespace DaresGame.Logic
 
         public Turn Draw()
         {
+            Card card = DrawCard(out string deckTag);
+            return CreateTurn(card, deckTag);
+        }
+
+        private Card DrawCard(out string deckTag)
+        {
             if (Empty)
             {
+                deckTag = null;
                 return null;
             }
 
             Deck current = _decks.Peek();
-            var turn = new Turn();
+            deckTag = current.Tag;
             Card card = current.Draw();
-            turn.Text = $"{current.Tag} {card.Description}";
+
             if (current.Empty)
             {
                 _decks.Dequeue();
             }
 
-            turn.Partners = new List<Partner>(card.PartnersAmount);
-            Queue<int> partners = Enumerable.Range(1, _settings.PlayersAmount - 1).ToShuffeledQueue();
+            return card;
+        }
+
+        private Turn CreateTurn(Card card, string deckTag)
+        {
+            Queue<int> partnersQueue = Enumerable.Range(1, _settings.PlayersAmount - 1).ToShuffeledQueue();
+
+            var partners = new List<Partner>(card.PartnersAmount);
             for (int i = 0; i < card.PartnersAmount; ++i)
             {
                 bool byChoice = Utils.Random.NextDouble() < _settings.ChoiceChance;
-                Partner partner = byChoice ? new Partner() : new Partner(partners.Dequeue());
-                turn.Partners.Add(partner);
+                Partner partner = byChoice ? new Partner() : new Partner(partnersQueue.Dequeue());
+                partners.Add(partner);
             }
-            turn.Partners.Sort();
+            partners.Sort();
 
-            return turn;
+            return new Turn($"{deckTag} {card.Description}", partners);
         }
     }
 }

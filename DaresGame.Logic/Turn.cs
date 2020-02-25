@@ -6,21 +6,25 @@ namespace DaresGame.Logic
 {
     public class Turn
     {
-        internal string Text;
-        internal List<Partner> Partners;
+        private readonly string _text;
+        private readonly List<Partner> _partners;
 
-        public string GetMassage()
+        internal Turn(string text, List<Partner> partners)
         {
-            var builder = new StringBuilder();
+            _text = text;
+            _partners = partners;
+        }
 
-            builder.Append(Text);
+        public override string ToString()
+        {
+            var builder = new StringBuilder(_text);
 
-            if (Partners.Count > 0)
+            if (_partners.Count > 0)
             {
                 builder.AppendLine();
                 builder.AppendLine();
-                builder.Append(Partners.Count > 1 ? "Партнёры: " : "Партнёр: ");
-                IEnumerable<string> parnters = Partners.Select(p => $"{p}");
+                builder.Append(_partners.Count > 1 ? "Партнёры: " : "Партнёр: ");
+                IEnumerable<string> parnters = _partners.Select(p => $"{p}");
                 builder.Append(string.Join(", ", parnters));
             }
 
