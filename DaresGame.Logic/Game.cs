@@ -14,17 +14,14 @@ namespace DaresGame.Logic
             _settings = settings;
 
             _decks = new Queue<Deck>();
-            foreach (Deck deck in _settings.Decks.Select(d => d.Copy()))
+            foreach (Deck deck in _settings.Decks.Select(Deck.Copy))
             {
                 deck.Shuffle();
                 _decks.Enqueue(deck);
             }
         }
 
-        public void UpdateSettings(Settings settings)
-        {
-            _settings = settings;
-        }
+        public void UpdateSettings(Settings settings) { _settings = settings; }
 
         public Turn Draw()
         {
@@ -47,7 +44,7 @@ namespace DaresGame.Logic
             for (int i = 0; i < card.PartnersAmount; ++i)
             {
                 bool byChoice = Utils.Random.NextDouble() < _settings.ChoiceChance;
-                Partner partner = byChoice ? new Partner(true) : new Partner(partners.Dequeue());
+                Partner partner = byChoice ? new Partner() : new Partner(partners.Dequeue());
                 turn.Partners.Add(partner);
             }
             turn.Partners.Sort();

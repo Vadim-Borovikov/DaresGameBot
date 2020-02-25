@@ -15,10 +15,12 @@ namespace DaresGame.Logic
             _cards = new Queue<Card>(cards);
         }
 
-        internal Deck Copy() => new Deck(Tag, _cards);
+        internal static Deck Copy(Deck deck) => deck.Copy();
 
         internal void Shuffle() => _cards = _cards.ToShuffeledQueue();
 
         internal Card Draw() => _cards.Dequeue();
+
+        private Deck Copy() => new Deck(Tag, _cards);
     }
 }
