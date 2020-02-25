@@ -76,16 +76,26 @@ namespace DaresGame.Bot.Web.Models.Services
 
         private static Card InitializeCard(string line)
         {
-            int colonIndex = line.IndexOf(':');
-            string parntersChunk = line.Substring(0, colonIndex);
-            if (!int.TryParse(parntersChunk, out int partnersAmount))
+            string[] chunks = line.Split(';');
+
+            if (chunks.Length != 3)
             {
                 throw new Exception($"Incorrect card: {line}");
             }
 
-            string description = line.Substring(colonIndex + 1);
+            if (!int.TryParse(chunks[0], out int players))
+            {
+                throw new Exception($"Incorrect card: {line}");
+            }
 
-            return new Card(description, partnersAmount);
+            if (!int.TryParse(chunks[1], out int partnersToAssign))
+            {
+                throw new Exception($"Incorrect card: {line}");
+            }
+
+            string description = chunks[2];
+
+            return new Card(description, players, partnersToAssign);
         }
     }
 }

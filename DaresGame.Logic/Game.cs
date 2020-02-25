@@ -69,7 +69,7 @@ namespace DaresGame.Logic
                 }
 
                 Card next = deck.Draw();
-                if (next.PartnersAmount < _settings.PlayersAmount)
+                if (next.Players <= _settings.PlayersAmount)
                 {
                     return next;
                 }
@@ -82,8 +82,8 @@ namespace DaresGame.Logic
         {
             Queue<int> partnersQueue = Enumerable.Range(1, _settings.PlayersAmount - 1).ToShuffeledQueue();
 
-            var partners = new List<Partner>(card.PartnersAmount);
-            for (int i = 0; i < card.PartnersAmount; ++i)
+            var partners = new List<Partner>(card.PartnersToAssign);
+            for (int i = 0; i < card.PartnersToAssign; ++i)
             {
                 bool byChoice = Utils.Random.NextDouble() < _settings.ChoiceChance;
                 Partner partner = byChoice ? new Partner() : new Partner(partnersQueue.Dequeue());
