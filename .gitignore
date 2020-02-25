@@ -328,3 +328,6 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+
+/DaresGame.Bot.Web/appsettings.Development.json
+/DaresGame.Bot.Web/log.txt
