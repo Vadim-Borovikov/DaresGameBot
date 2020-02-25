@@ -89,7 +89,7 @@ namespace DaresGame.Bot.Web.Models
             }
 
             Turn turn = _game?.Draw();
-            string text = turn?.ToString() ?? "Игра закончена";
+            string text = turn?.GetMessage(_settings.PlayersAmount) ?? "Игра закончена";
             return _client.SendTextMessageAsync(chat, text, replyMarkup: GetKeyboard());
         }
 

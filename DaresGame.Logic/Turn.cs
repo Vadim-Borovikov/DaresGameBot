@@ -15,18 +15,20 @@ namespace DaresGame.Logic
             _partners = partners;
         }
 
-        public override string ToString()
+        public string GetMessage(int playersAmount)
         {
+            if ((_partners.Count == 0) || (_partners.Count == (playersAmount - 1)))
+            {
+                return _text;
+            }
+
             var builder = new StringBuilder(_text);
 
-            if (_partners.Count > 0)
-            {
-                builder.AppendLine();
-                builder.AppendLine();
-                builder.Append(_partners.Count > 1 ? "Партнёры: " : "Партнёр: ");
-                IEnumerable<string> parnters = _partners.Select(p => $"{p}");
-                builder.Append(string.Join(", ", parnters));
-            }
+            builder.AppendLine();
+            builder.AppendLine();
+            builder.Append(_partners.Count > 1 ? "Партнёры: " : "Партнёр: ");
+            IEnumerable<string> parnters = _partners.Select(p => $"{p}");
+            builder.Append(string.Join(", ", parnters));
 
             return builder.ToString();
         }
