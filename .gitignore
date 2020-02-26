@@ -330,4 +330,4 @@ ASALocalRun/
 .mfractor/
 
 /DaresGame.Bot.Web/appsettings.Development.json
-/DaresGame.Bot.Web/log.txt
+/DaresGame.Bot.Web/errors.txt
