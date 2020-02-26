@@ -1,6 +1,8 @@
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable MemberCanBePrivate.Global
 namespace DaresGame.Bot.Web.Models
 {
-    public class BotConfiguration
+    internal class BotConfiguration
     {
         public string Token { get; set; }
 

@@ -1,3 +1,4 @@
+// ReSharper disable MemberCanBeInternal
 namespace DaresGame.Bot.Web.Models
 {
     public class ErrorViewModel
