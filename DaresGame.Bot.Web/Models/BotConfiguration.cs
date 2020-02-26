@@ -1,5 +1,9 @@
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 // ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable CollectionNeverUpdated.Global
+using System.Collections.Generic;
+using DaresGame.Logic;
+
 namespace DaresGame.Bot.Web.Models
 {
     internal class BotConfiguration
@@ -14,7 +18,7 @@ namespace DaresGame.Bot.Web.Models
 
         public float ChoiceChance { get; set; }
 
-        public string DecksFolderPath { get; set; }
+        public List<Deck> Decks { get; set; }
 
         public string Url => $"{Host}:{Port}/{Token}";
     }

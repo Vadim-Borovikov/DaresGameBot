@@ -6,7 +6,7 @@ namespace DaresGame.Logic
 {
     internal static class Utils
     {
-        internal static readonly Random Random = new Random();
+        public static readonly Random Random = new Random();
 
         private static IList<T> Shuffle<T>(this IList<T> list)
         {
@@ -24,7 +24,7 @@ namespace DaresGame.Logic
             return list;
         }
 
-        private static Queue<T> ToQueue<T>(this IEnumerable<T> items) => new Queue<T>(items);
+        public static Queue<T> ToQueue<T>(this IEnumerable<T> items) => new Queue<T>(items);
 
         public static Queue<T> ToShuffeledQueue<T>(this IEnumerable<T> items) => items.ToList().Shuffle().ToQueue();
     }
