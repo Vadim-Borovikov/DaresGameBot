@@ -1,11 +1,10 @@
-﻿using DaresGame.Bot.Web.Models;
-using DaresGame.Bot.Web.Models.Data;
+﻿// ReSharper disable UnusedMember.Global
+using DaresGame.Bot.Web.Models;
 using DaresGame.Bot.Web.Models.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
