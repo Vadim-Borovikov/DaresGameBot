@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DaresGame.Bot.Web.Models.Commands;
 using DaresGame.Logic;
+using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -21,9 +22,10 @@ namespace DaresGame.Bot.Web.Models
         private string Players => $"Игроков: {_settings.PlayersAmount}";
         private string Chance => $"Шанс на 🤩: {_settings.ChoiceChance:P0}";
 
-        internal GameLogic(TelegramBotClient client, int initialPlayersAmount, float choiceChance,
-            IEnumerable<Deck> decks)
+        internal GameLogic(TelegramBotClient client, int initialPlayersAmount, float choiceChance, string decksJson)
         {
+            var decks = JsonConvert.DeserializeObject<List<Deck>>(decksJson);
+
             _settings = new Settings
             {
                 PlayersAmount = initialPlayersAmount,

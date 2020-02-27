@@ -22,7 +22,7 @@ namespace DaresGame.Bot.Web.Models.Services
 
             Client = new TelegramBotClient(_config.Token);
 
-            GameLogic = new GameLogic(Client, _config.InitialPlayersAmount, _config.ChoiceChance, _config.Decks);
+            GameLogic = new GameLogic(Client, _config.InitialPlayersAmount, _config.ChoiceChance, _config.DecksJson);
 
             var commands = new List<Command>
             {

@@ -54,7 +54,7 @@ namespace DaresGame.Logic
                     }
                 }
 
-                current.Enqueue(crowdCards);
+                current.Add(crowdCards);
                 return card;
             }
         }

@@ -8,7 +8,7 @@ namespace DaresGame.Logic
     {
         public static readonly Random Random = new Random();
 
-        private static IList<T> Shuffle<T>(this IList<T> list)
+        public static IList<T> Shuffle<T>(this IList<T> list)
         {
             int n = list.Count;
 
@@ -24,8 +24,8 @@ namespace DaresGame.Logic
             return list;
         }
 
-        public static Queue<T> ToQueue<T>(this IEnumerable<T> items) => new Queue<T>(items);
-
         public static Queue<T> ToShuffeledQueue<T>(this IEnumerable<T> items) => items.ToList().Shuffle().ToQueue();
+
+        private static Queue<T> ToQueue<T>(this IEnumerable<T> items) => new Queue<T>(items);
     }
 }

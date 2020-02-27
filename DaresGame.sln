@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.329
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaresGame.Logic", "DaresGame.Logic\DaresGame.Logic.csproj", "{03D5ECAC-F3D5-4237-8F1F-9C0FE3B883A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaresGame.Logic", "DaresGame.Logic\DaresGame.Logic.csproj", "{03D5ECAC-F3D5-4237-8F1F-9C0FE3B883A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaresGame.Bot.Web", "DaresGame.Bot.Web\DaresGame.Bot.Web.csproj", "{88614F5E-CE3F-4BA9-9B67-760C3B747346}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaresGame.Bot.Web", "DaresGame.Bot.Web\DaresGame.Bot.Web.csproj", "{88614F5E-CE3F-4BA9-9B67-760C3B747346}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardsExporter", "CardsExporter\CardsExporter.csproj", "{B0767C95-907C-4E17-A73C-D8D893068475}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{88614F5E-CE3F-4BA9-9B67-760C3B747346}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88614F5E-CE3F-4BA9-9B67-760C3B747346}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{88614F5E-CE3F-4BA9-9B67-760C3B747346}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B0767C95-907C-4E17-A73C-D8D893068475}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0767C95-907C-4E17-A73C-D8D893068475}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0767C95-907C-4E17-A73C-D8D893068475}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0767C95-907C-4E17-A73C-D8D893068475}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

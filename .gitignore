@@ -331,3 +331,4 @@ ASALocalRun/
 
 /DaresGame.Bot.Web/appsettings.Development.json
 /DaresGame.Bot.Web/errors.txt
+/CardsExporter/project.json
