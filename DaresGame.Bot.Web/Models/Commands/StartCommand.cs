@@ -13,13 +13,13 @@ namespace DaresGame.Bot.Web.Models.Commands
 
         private readonly IReadOnlyList<Command> _commands;
         private readonly string _url;
-        private readonly GameLogic _gameLogic;
+        private readonly Settings _settings;
 
-        public StartCommand(IReadOnlyList<Command> commands, string url, GameLogic gameLogic)
+        public StartCommand(IReadOnlyList<Command> commands, string url, Settings settings)
         {
             _commands = commands;
             _url = url;
-            _gameLogic = gameLogic;
+            _settings = settings;
         }
 
         internal override async Task ExecuteAsync(Message message, ITelegramBotClient client)
@@ -38,9 +38,10 @@ namespace DaresGame.Bot.Web.Models.Commands
 
             await client.SendTextMessageAsync(message.Chat, builder.ToString());
 
-            if (!_gameLogic.IsGameValid)
+            if (!GameLogic.IsGameValid(message.Chat))
             {
-                await _gameLogic.StartNewGameAsync(message.Chat);
+                await GameLogic.StartNewGameAsync(_settings.InitialPlayersAmount, _settings.InitialChoiceChance,
+                    _settings.Decks, client, message.Chat);
             }
         }
     }

@@ -5,23 +5,26 @@ namespace DaresGame.Logic
 {
     public class Game
     {
-        private readonly Queue<Deck> _decks;
-        private Settings _settings;
+        public int PlayersAmount;
+        public float ChoiceChance;
+
+        public string Players => $"Игроков: {PlayersAmount}";
+        public string Chance => $"Шанс на 🤩: {ChoiceChance:P0}";
+
         public bool Empty => _decks.Count == 0;
 
-        public Game(Settings settings)
+        public Game(int playersAmount, float choiceChance, IEnumerable<Deck> decks)
         {
-            _settings = settings;
+            PlayersAmount = playersAmount;
+            ChoiceChance = choiceChance;
 
             _decks = new Queue<Deck>();
-            foreach (Deck deck in _settings.Decks.Select(Deck.Copy))
+            foreach (Deck deck in decks.Select(Deck.Copy))
             {
                 deck.Shuffle();
                 _decks.Enqueue(deck);
             }
         }
-
-        public void UpdateSettings(Settings settings) { _settings = settings; }
 
         public Turn Draw()
         {
@@ -69,7 +72,7 @@ namespace DaresGame.Logic
                 }
 
                 Card next = deck.Draw();
-                if (next.Players <= _settings.PlayersAmount)
+                if (next.Players <= PlayersAmount)
                 {
                     return next;
                 }
@@ -80,12 +83,12 @@ namespace DaresGame.Logic
 
         private Turn CreateTurn(Card card, string deckTag)
         {
-            Queue<int> partnersQueue = Enumerable.Range(1, _settings.PlayersAmount - 1).ToShuffeledQueue();
+            Queue<int> partnersQueue = Enumerable.Range(1, PlayersAmount - 1).ToShuffeledQueue();
 
             var partners = new List<Partner>(card.PartnersToAssign);
             for (int i = 0; i < card.PartnersToAssign; ++i)
             {
-                bool byChoice = Utils.Random.NextDouble() < _settings.ChoiceChance;
+                bool byChoice = Utils.Random.NextDouble() < ChoiceChance;
                 Partner partner = byChoice ? new Partner() : new Partner(partnersQueue.Dequeue());
                 partners.Add(partner);
             }
@@ -93,5 +96,7 @@ namespace DaresGame.Logic
 
             return new Turn($"{deckTag} {card.Description}", partners);
         }
+
+        private readonly Queue<Deck> _decks;
     }
 }

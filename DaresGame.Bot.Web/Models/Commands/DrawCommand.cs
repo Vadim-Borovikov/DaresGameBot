@@ -10,13 +10,13 @@ namespace DaresGame.Bot.Web.Models.Commands
         internal override string Name => "draw";
         internal override string Description => Caption.ToLowerInvariant();
 
-        internal const string Caption = "Вытянуть фант";
+        public const string Caption = "Вытянуть фант";
 
-        private readonly GameLogic _gameLogic;
+        private readonly Settings _settings;
 
-        public DrawCommand(GameLogic gameLogic)
+        public DrawCommand(Settings settings)
         {
-            _gameLogic = gameLogic;
+            _settings = settings;
         }
 
         internal override bool Contains(Message message)
@@ -27,7 +27,7 @@ namespace DaresGame.Bot.Web.Models.Commands
 
         internal override Task ExecuteAsync(Message message, ITelegramBotClient client)
         {
-            return _gameLogic.DrawAsync(message.Chat);
+            return GameLogic.DrawAsync(_settings, client, message.Chat);
         }
     }
 }

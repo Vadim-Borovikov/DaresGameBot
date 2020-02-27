@@ -10,13 +10,13 @@ namespace DaresGame.Bot.Web.Models.Commands
         internal override string Name => "new";
         internal override string Description => Caption.ToLowerInvariant();
 
-        internal const string Caption = "Новая игра";
+        public const string Caption = "Новая игра";
 
-        private readonly GameLogic _gameLogic;
+        private readonly Settings _settings;
 
-        public NewCommand(GameLogic gameLogic)
+        public NewCommand(Settings settings)
         {
-            _gameLogic = gameLogic;
+            _settings = settings;
         }
 
         internal override bool Contains(Message message)
@@ -27,7 +27,8 @@ namespace DaresGame.Bot.Web.Models.Commands
 
         internal override Task ExecuteAsync(Message message, ITelegramBotClient client)
         {
-            return _gameLogic.StartNewGameAsync(message.Chat);
+            return GameLogic.StartNewGameAsync(_settings.InitialPlayersAmount, _settings.InitialChoiceChance,
+                _settings.Decks, client, message.Chat);
         }
     }
 }

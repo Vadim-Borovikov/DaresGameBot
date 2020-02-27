@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using DaresGame.Bot.Web.Models;
 using DaresGame.Bot.Web.Models.Commands;
 using DaresGame.Bot.Web.Models.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -31,13 +32,15 @@ namespace DaresGame.Bot.Web.Controllers
                 {
                     if (int.TryParse(message.Text, out int playersAmount))
                     {
-                        await _botService.GameLogic.ChangePlayersAmountAsync(message.Chat, playersAmount);
+                        await GameLogic.ChangePlayersAmountAsync(playersAmount, _botService.Settings,
+                            _botService.Client, message.Chat);
                     }
 
                     if (float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture,
                         out float choiceChance))
                     {
-                        await _botService.GameLogic.ChangeChoiceChanceAsync(message.Chat, choiceChance);
+                        await GameLogic.ChangeChoiceChanceAsync(choiceChance, _botService.Settings, _botService.Client,
+                            message.Chat);
                     }
                 }
             }

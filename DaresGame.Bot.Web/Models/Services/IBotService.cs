@@ -8,6 +8,6 @@ namespace DaresGame.Bot.Web.Models.Services
     {
         TelegramBotClient Client { get; }
         IReadOnlyList<Command> Commands { get; }
-        GameLogic GameLogic { get; }
+        Settings Settings { get; }
     }
 }

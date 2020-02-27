@@ -12,7 +12,7 @@ namespace DaresGame.Bot.Web.Models
 
         public ushort InitialPlayersAmount { get; set; }
 
-        public float ChoiceChance { get; set; }
+        public float InitialChoiceChance { get; set; }
 
         public string DecksJson { get; set; }
 

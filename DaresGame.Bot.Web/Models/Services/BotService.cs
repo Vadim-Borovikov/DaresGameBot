@@ -12,7 +12,7 @@ namespace DaresGame.Bot.Web.Models.Services
     {
         public TelegramBotClient Client { get; }
         public IReadOnlyList<Command> Commands { get; }
-        public GameLogic GameLogic { get; }
+        public Settings Settings { get; }
 
         private readonly BotConfiguration _config;
 
@@ -22,16 +22,16 @@ namespace DaresGame.Bot.Web.Models.Services
 
             Client = new TelegramBotClient(_config.Token);
 
-            GameLogic = new GameLogic(Client, _config.InitialPlayersAmount, _config.ChoiceChance, _config.DecksJson);
+            Settings = new Settings(_config.InitialPlayersAmount, _config.InitialChoiceChance, _config.DecksJson);
 
             var commands = new List<Command>
             {
-                new NewCommand(GameLogic),
-                new DrawCommand(GameLogic)
+                new NewCommand(Settings),
+                new DrawCommand(Settings)
             };
 
             Commands = commands.AsReadOnly();
-            var startCommand = new StartCommand(Commands, _config.Host, GameLogic);
+            var startCommand = new StartCommand(Commands, _config.Host, Settings);
 
             commands.Insert(0, startCommand);
         }

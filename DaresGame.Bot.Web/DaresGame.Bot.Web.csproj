@@ -17,11 +17,6 @@
 
 
   <ItemGroup>
-    <Folder Include="Models\Services\" />
-  </ItemGroup>
-
-
-  <ItemGroup>
     <ProjectReference Include="..\DaresGame.Logic\DaresGame.Logic.csproj" />
   </ItemGroup>
 
