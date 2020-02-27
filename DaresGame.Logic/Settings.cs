@@ -5,7 +5,7 @@ namespace DaresGame.Logic
     public class Settings
     {
         public int PlayersAmount;
-        public double ChoiceChance;
+        public float ChoiceChance;
         public IEnumerable<Deck> Decks;
     }
 }

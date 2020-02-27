@@ -34,8 +34,8 @@ namespace DaresGame.Bot.Web.Controllers
                         await _botService.GameLogic.ChangePlayersAmountAsync(message.Chat, playersAmount);
                     }
 
-                    if (double.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture,
-                        out double choiceChance))
+                    if (float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture,
+                        out float choiceChance))
                     {
                         await _botService.GameLogic.ChangeChoiceChanceAsync(message.Chat, choiceChance);
                     }

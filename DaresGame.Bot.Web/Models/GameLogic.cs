@@ -21,7 +21,7 @@ namespace DaresGame.Bot.Web.Models
         private string Players => $"Игроков: {_settings.PlayersAmount}";
         private string Chance => $"Шанс на 🤩: {_settings.ChoiceChance:P0}";
 
-        internal GameLogic(TelegramBotClient client, int initialPlayersAmount, double choiceChance,
+        internal GameLogic(TelegramBotClient client, int initialPlayersAmount, float choiceChance,
             IEnumerable<Deck> decks)
         {
             _settings = new Settings
@@ -63,9 +63,9 @@ namespace DaresGame.Bot.Web.Models
             return _client.SendTextMessageAsync(chat, $"Принято! {Players}", replyMarkup: GetKeyboard());
         }
 
-        internal Task ChangeChoiceChanceAsync(Chat chat, double choiceChance)
+        internal Task ChangeChoiceChanceAsync(Chat chat, float choiceChance)
         {
-            if ((choiceChance < 0.0) || (choiceChance > 1.0))
+            if ((choiceChance < 0.0f) || (choiceChance > 1.0f))
             {
                 return Task.CompletedTask;
             }
