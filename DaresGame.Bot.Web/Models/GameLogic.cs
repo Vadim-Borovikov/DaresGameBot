@@ -20,7 +20,7 @@ namespace DaresGame.Bot.Web.Models
         {
             var game = new Game(initialPlayersAmount, initialChoiceChance, decks);
 
-            Games.AddOrUpdate(chat.Id, game, (id, g) => g);
+            Games.AddOrUpdate(chat.Id, game, (id, g) => game);
 
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
@@ -38,7 +38,7 @@ namespace DaresGame.Bot.Web.Models
                 return Task.CompletedTask;
             }
 
-            bool success = Games.TryGetValue(chat.Id, out Game game);
+            bool success = IsGameValid(chat, out Game game);
             if (!success)
             {
                 return StartNewGameAsync(playersAmount, settings.InitialChoiceChance, settings.Decks, client, chat);
@@ -58,7 +58,7 @@ namespace DaresGame.Bot.Web.Models
                 return Task.CompletedTask;
             }
 
-            bool success = Games.TryGetValue(chat.Id, out Game game);
+            bool success = IsGameValid(chat, out Game game);
             if (!success)
             {
                 return StartNewGameAsync(settings.InitialPlayersAmount, choiceChance, settings.Decks, client, chat);
@@ -72,7 +72,7 @@ namespace DaresGame.Bot.Web.Models
 
         public static Task DrawAsync(Settings settings, ITelegramBotClient client, Chat chat)
         {
-            bool success = Games.TryGetValue(chat.Id, out Game game);
+            bool success = IsGameValid(chat, out Game game);
             if (!success)
             {
                 return StartNewGameAsync(settings.InitialPlayersAmount, settings.InitialChoiceChance, settings.Decks,
@@ -84,9 +84,11 @@ namespace DaresGame.Bot.Web.Models
             return client.SendTextMessageAsync(chat, text, replyMarkup: GetKeyboard(IsValid(game)));
         }
 
-        public static bool IsGameValid(Chat chat)
+        public static bool IsGameValid(Chat chat) => IsGameValid(chat, out Game _);
+
+        private static bool IsGameValid(Chat chat, out Game game)
         {
-            bool success = Games.TryGetValue(chat.Id, out Game game);
+            bool success = Games.TryGetValue(chat.Id, out game);
             return success && IsValid(game);
         }
 
