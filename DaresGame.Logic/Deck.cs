@@ -1,5 +1,6 @@
 // ReSharper disable MemberCanBeInternal
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DaresGame.Logic
 {
@@ -12,9 +13,7 @@ namespace DaresGame.Logic
 
         internal void Add(IEnumerable<Card> cards) { Cards.AddRange(cards); }
 
-        internal void Shuffle() => Cards.Shuffle();
-
-        internal static Deck Copy(Deck deck) => deck.Copy();
+        internal static Deck GetShuffledCopy(Deck deck) => deck.GetShuffledCopy();
 
         internal Card Draw()
         {
@@ -23,6 +22,14 @@ namespace DaresGame.Logic
             return card;
         }
 
-        private Deck Copy() => new Deck { Tag = Tag, Cards = new List<Card>(Cards) };
+        private Deck GetShuffledCopy()
+        {
+            var cards = new List<Card>(Cards);
+            return new Deck
+            {
+                Tag = Tag,
+                Cards = cards.Shuffle().ToList()
+            };
+        }
     }
 }

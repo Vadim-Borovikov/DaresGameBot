@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using DaresGame.Logic;
-using Newtonsoft.Json;
 
 namespace DaresGame.Bot.Web.Models
 {
@@ -8,13 +7,13 @@ namespace DaresGame.Bot.Web.Models
     {
         internal readonly int InitialPlayersAmount;
         internal readonly float InitialChoiceChance;
-        internal readonly List<Deck> Decks;
+        internal readonly IReadOnlyCollection<Deck> Decks;
 
-        internal Settings(int initialPlayersAmount, float initialChoiceChance, string decksJson)
+        internal Settings(int initialPlayersAmount, float initialChoiceChance, IReadOnlyCollection<Deck> decks)
         {
             InitialPlayersAmount = initialPlayersAmount;
             InitialChoiceChance = initialChoiceChance;
-            Decks = JsonConvert.DeserializeObject<List<Deck>>(decksJson);
+            Decks = decks;
         }
     }
 }

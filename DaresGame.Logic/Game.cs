@@ -18,12 +18,7 @@ namespace DaresGame.Logic
             PlayersAmount = playersAmount;
             ChoiceChance = choiceChance;
 
-            _decks = new Queue<Deck>();
-            foreach (Deck deck in decks.Select(Deck.Copy))
-            {
-                deck.Shuffle();
-                _decks.Enqueue(deck);
-            }
+            _decks = new Queue<Deck>(decks.Select(Deck.GetShuffledCopy));
         }
 
         public Turn Draw()
