@@ -39,7 +39,7 @@ namespace DaresGame.Bot.Web.Models.Services
 
             Commands = commands.AsReadOnly();
             var startCommand = new StartCommand(Commands, _config.ManualLines, _config.AdditionalCommandsLines,
-                _config.Host, Settings);
+                Settings);
 
             commands.Insert(0, startCommand);
 

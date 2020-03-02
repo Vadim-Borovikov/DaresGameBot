@@ -14,16 +14,14 @@ namespace DaresGame.Bot.Web.Models.Commands
         private readonly IReadOnlyList<Command> _commands;
         private readonly List<string> _manualLines;
         private readonly List<string> _additionalCommandsLines;
-        private readonly string _url;
         private readonly Settings _settings;
 
         public StartCommand(IReadOnlyList<Command> commands, List<string> manualLines,
-            List<string> additionalCommandsLines, string url, Settings settings)
+            List<string> additionalCommandsLines, Settings settings)
         {
             _commands = commands;
             _manualLines = manualLines;
             _additionalCommandsLines = additionalCommandsLines;
-            _url = url;
             _settings = settings;
         }
 
@@ -44,8 +42,6 @@ namespace DaresGame.Bot.Web.Models.Commands
             {
                 builder.AppendLine(line);
             }
-            builder.AppendLine();
-            builder.AppendLine($"Иногда я засыпаю, но ты можешь меня разбудить, если зайдёшь на {_url}.");
 
             await client.SendTextMessageAsync(message.Chat, builder.ToString());
 
