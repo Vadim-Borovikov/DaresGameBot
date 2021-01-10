@@ -1,6 +1,5 @@
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 // ReSharper disable MemberCanBePrivate.Global
-using System;
 using System.Collections.Generic;
 using DaresGame.Logic;
 using Newtonsoft.Json;
@@ -14,10 +13,6 @@ namespace DaresGame.Bot.Web.Models
         public string Host { get; set; }
 
         public int Port { get; set; }
-
-        public int PingPeriodSeconds { get; set; }
-
-        public TimeSpan PingPeriod => TimeSpan.FromSeconds(PingPeriodSeconds);
 
         public ushort InitialPlayersAmount { get; set; }
 
