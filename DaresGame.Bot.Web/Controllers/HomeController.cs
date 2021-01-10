@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Threading.Tasks;
 using DaresGame.Bot.Web.Models;
-using DaresGame.Bot.Web.Models.Services;
 using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
 
@@ -10,9 +9,9 @@ namespace DaresGame.Bot.Web.Controllers
     [Route("")]
     public class HomeController : Controller
     {
-        private readonly IBotService _botService;
+        private readonly IBot _botService;
 
-        public HomeController(IBotService botService) { _botService = botService; }
+        public HomeController(IBot botService) { _botService = botService; }
 
         [HttpGet]
         [Route("")]

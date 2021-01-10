@@ -2,12 +2,15 @@
 using DaresGame.Bot.Web.Models.Commands;
 using Telegram.Bot;
 
-namespace DaresGame.Bot.Web.Models.Services
+namespace DaresGame.Bot.Web.Models
 {
-    public interface IBotService
+    public interface IBot
     {
         TelegramBotClient Client { get; }
-        IReadOnlyList<Command> Commands { get; }
+        IReadOnlyCollection<Command> Commands { get; }
+        Config.Config Config { get; }
         Settings Settings { get; }
+
+        void InitCommands();
     }
 }

@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using DaresGame.Bot.Web.Models;
 using DaresGame.Bot.Web.Models.Commands;
-using DaresGame.Bot.Web.Models.Services;
 using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -12,9 +11,9 @@ namespace DaresGame.Bot.Web.Controllers
 {
     public class UpdateController : Controller
     {
-        private readonly IBotService _botService;
+        private readonly IBot _botService;
 
-        public UpdateController(IBotService botService) { _botService = botService; }
+        public UpdateController(IBot botService) { _botService = botService; }
 
         [HttpPost]
         public async Task<OkResult> Post([FromBody]Update update)

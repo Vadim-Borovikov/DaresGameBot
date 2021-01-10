@@ -11,12 +11,12 @@ namespace DaresGame.Bot.Web.Models.Commands
         internal override string Name => "start";
         internal override string Description => "инструкция и список команд";
 
-        private readonly IReadOnlyList<Command> _commands;
+        private readonly IReadOnlyCollection<Command> _commands;
         private readonly List<string> _manualLines;
         private readonly List<string> _additionalCommandsLines;
         private readonly Settings _settings;
 
-        public StartCommand(IReadOnlyList<Command> commands, List<string> manualLines,
+        public StartCommand(IReadOnlyCollection<Command> commands, List<string> manualLines,
             List<string> additionalCommandsLines, Settings settings)
         {
             _commands = commands;
