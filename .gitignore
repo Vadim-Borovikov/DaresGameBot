@@ -330,5 +330,4 @@ ASALocalRun/
 .mfractor/
 
 /DaresGameBot.Web/appsettings.Development.json
-/DaresGameBot.Web/errors.txt
 /CardsExporter/project.json
