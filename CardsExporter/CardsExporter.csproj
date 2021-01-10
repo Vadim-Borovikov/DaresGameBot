@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DaresGame.Logic\DaresGame.Logic.csproj" />
+    <ProjectReference Include="..\DaresGameBot.Logic\DaresGameBot.Logic.csproj" />
   </ItemGroup>
 
   <ItemGroup>
