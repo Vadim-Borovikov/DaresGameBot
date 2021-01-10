@@ -5,7 +5,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Web.Models.Commands
 {
-    internal class DrawCommand : Command
+    internal sealed class DrawCommand : Command
     {
         internal override string Name => "draw";
         internal override string Description => Caption.ToLowerInvariant();
@@ -14,10 +14,7 @@ namespace DaresGameBot.Web.Models.Commands
 
         private readonly Settings _settings;
 
-        public DrawCommand(Settings settings)
-        {
-            _settings = settings;
-        }
+        public DrawCommand(Settings settings) => _settings = settings;
 
         internal override bool Contains(Message message)
         {

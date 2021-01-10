@@ -11,7 +11,7 @@ namespace DaresGameBot.Web.Controllers
     {
         private readonly IBot _botService;
 
-        public HomeController(IBot botService) { _botService = botService; }
+        public HomeController(IBot botService) => _botService = botService;
 
         [HttpGet]
         [Route("")]

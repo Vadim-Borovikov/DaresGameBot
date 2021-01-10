@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace DaresGameBot.Web.Models
 {
-    internal class Service : IHostedService
+    internal sealed class Service : IHostedService
     {
         public Service(IBot bot)
         {

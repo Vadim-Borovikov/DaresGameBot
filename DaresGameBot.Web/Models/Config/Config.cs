@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace DaresGameBot.Web.Models.Config
 {
-    public class Config
+    public sealed class Config
     {
         [JsonProperty]
         public string Token { get; set; }

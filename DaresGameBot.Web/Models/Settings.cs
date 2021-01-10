@@ -3,7 +3,7 @@ using DaresGameBot.Logic;
 
 namespace DaresGameBot.Web.Models
 {
-    public class Settings
+    public sealed class Settings
     {
         internal readonly int InitialPlayersAmount;
         internal readonly float InitialChoiceChance;

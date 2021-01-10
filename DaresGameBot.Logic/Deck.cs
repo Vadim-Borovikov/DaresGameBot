@@ -1,13 +1,11 @@
-// ReSharper disable MemberCanBeInternal
-
 using System.Collections.Generic;
 using System.Linq;
 
 namespace DaresGameBot.Logic
 {
-    public class Deck
+    public sealed class Deck
     {
-        public string Tag { get; set; }
+        public string Tag { internal get; set; }
         public List<Card> Cards { get; set; }
 
         internal bool Empty => Cards.Count == 0;

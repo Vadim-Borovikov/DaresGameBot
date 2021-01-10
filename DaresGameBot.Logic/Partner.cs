@@ -2,13 +2,13 @@
 
 namespace DaresGameBot.Logic
 {
-    public class Partner : IComparable<Partner>
+    public sealed class Partner : IComparable<Partner>
     {
         private readonly int? _number;
 
-        internal Partner(int partnerNumber) { _number = partnerNumber; }
+        internal Partner(int partnerNumber) => _number = partnerNumber;
 
-        internal Partner() { _number = null; }
+        internal Partner() => _number = null;
 
         public int CompareTo(Partner other)
         {

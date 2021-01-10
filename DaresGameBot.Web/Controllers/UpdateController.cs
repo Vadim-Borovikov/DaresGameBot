@@ -9,11 +9,11 @@ using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Web.Controllers
 {
-    public class UpdateController : Controller
+    public sealed class UpdateController : Controller
     {
         private readonly IBot _botService;
 
-        public UpdateController(IBot botService) { _botService = botService; }
+        public UpdateController(IBot botService) => _botService = botService;
 
         [HttpPost]
         public async Task<OkResult> Post([FromBody]Update update)

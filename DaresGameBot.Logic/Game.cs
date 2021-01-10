@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace DaresGameBot.Logic
 {
-    public class Game
+    public sealed class Game
     {
         public int PlayersAmount;
         public float ChoiceChance;

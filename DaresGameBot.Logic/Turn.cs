@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DaresGameBot.Logic
 {
-    public class Turn
+    public sealed class Turn
     {
         private readonly string _text;
         private readonly List<Partner> _partners;

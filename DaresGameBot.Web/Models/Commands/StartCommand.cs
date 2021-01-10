@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Web.Models.Commands
 {
-    internal class StartCommand : Command
+    internal sealed class StartCommand : Command
     {
         internal override string Name => "start";
         internal override string Description => "инструкция и список команд";

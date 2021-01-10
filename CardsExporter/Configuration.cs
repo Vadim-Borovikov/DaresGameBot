@@ -1,11 +1,16 @@
-// ReSharper disable ClassNeverInstantiated.Global
-// ReSharper disable UnusedAutoPropertyAccessor.Global
+using Newtonsoft.Json;
+
 namespace CardsExporter
 {
-    internal class Configuration
+    internal sealed class Configuration
     {
+        [JsonProperty]
         public string GoogleProjectJsonPath { get; set; }
+
+        [JsonProperty]
         public string SheetId { get; set; }
+
+        [JsonProperty]
         public string ResultPath { get; set; }
     }
 }
