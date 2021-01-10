@@ -9,15 +9,13 @@ namespace DaresGameBot.Web.Controllers
     [Route("")]
     public sealed class HomeController : Controller
     {
-        private readonly IBot _botService;
-
-        public HomeController(IBot botService) => _botService = botService;
+        public HomeController(IBot bot) => _bot = bot;
 
         [HttpGet]
         [Route("")]
         public async Task<IActionResult> Index()
         {
-            User model = await _botService.Client.GetMeAsync();
+            User model = await _bot.Client.GetMeAsync();
             return View(model);
         }
 
@@ -27,5 +25,7 @@ namespace DaresGameBot.Web.Controllers
             var model = new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier };
             return View(model);
         }
+
+        private readonly IBot _bot;
     }
 }

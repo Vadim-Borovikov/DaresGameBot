@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using DaresGameBot.Logic;
-using DaresGameBot.Web.Models.Commands;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -13,6 +12,9 @@ namespace DaresGameBot.Web.Models
 {
     internal static class GameLogic
     {
+        public const string DrawCaption = "Вытянуть фант";
+        public const string NewGameCaption = "Новая игра";
+
         private static readonly ConcurrentDictionary<long, Game> Games = new ConcurrentDictionary<long, Game>();
 
         public static Task StartNewGameAsync(int initialPlayersAmount, float initialChoiceChance,
@@ -26,8 +28,7 @@ namespace DaresGameBot.Web.Models
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
             stringBuilder.AppendLine(game.Players);
             stringBuilder.AppendLine(game.Chance);
-            return
-                client.SendTextMessageAsync(chatId, stringBuilder.ToString(), replyMarkup: GetKeyboard(IsValid(game)));
+            return client.SendTextMessageAsync(chatId, stringBuilder.ToString(), replyMarkup: GetKeyboard(true));
         }
 
         public static Task ChangePlayersAmountAsync(int playersAmount, Settings settings, ITelegramBotClient client,
@@ -46,7 +47,7 @@ namespace DaresGameBot.Web.Models
 
             game.PlayersAmount = playersAmount;
 
-            return client.SendTextMessageAsync(chatId, $"Принято! {game.Players}", replyMarkup: GetKeyboard(IsValid(game)));
+            return client.SendTextMessageAsync(chatId, $"Принято! {game.Players}", replyMarkup: GetKeyboard(game));
         }
 
         public static Task ChangeChoiceChanceAsync(float choiceChance, Settings settings, ITelegramBotClient client,
@@ -65,8 +66,7 @@ namespace DaresGameBot.Web.Models
 
             game.ChoiceChance = choiceChance;
 
-            return
-                client.SendTextMessageAsync(chatId, $"Принято! {game.Chance}", replyMarkup: GetKeyboard(IsValid(game)));
+            return client.SendTextMessageAsync(chatId, $"Принято! {game.Chance}", replyMarkup: GetKeyboard(game));
         }
 
         public static Task DrawAsync(Settings settings, ITelegramBotClient client, ChatId chatId)
@@ -80,7 +80,7 @@ namespace DaresGameBot.Web.Models
 
             Turn turn = game?.Draw();
             string text = turn?.GetMessage(game.PlayersAmount) ?? "Игра закончена";
-            return client.SendTextMessageAsync(chatId, text, replyMarkup: GetKeyboard(IsValid(game)));
+            return client.SendTextMessageAsync(chatId, text, replyMarkup: GetKeyboard(game));
         }
 
         public static bool IsGameValid(ChatId chatId) => IsGameValid(chatId, out Game _);
@@ -91,9 +91,15 @@ namespace DaresGameBot.Web.Models
             return success && IsValid(game);
         }
 
-        private static ReplyKeyboardMarkup GetKeyboard(bool draw)
+        private static ReplyKeyboardMarkup GetKeyboard(Game game)
         {
-            string caption = draw ? DrawCommand.Caption : NewCommand.Caption;
+            bool shouldDraw = IsValid(game);
+            return GetKeyboard(shouldDraw);
+        }
+
+        private static ReplyKeyboardMarkup GetKeyboard(bool shouldDraw)
+        {
+            string caption = shouldDraw ? DrawCaption : NewGameCaption;
             var button = new KeyboardButton(caption);
             var raw = new[] { button };
             return new ReplyKeyboardMarkup(raw, true);

@@ -25,7 +25,7 @@ namespace DaresGameBot.Web.Models.Commands
             _settings = settings;
         }
 
-        internal override async Task ExecuteAsync(Message message, ITelegramBotClient client)
+        internal override async Task ExecuteAsync(ChatId chatId, ITelegramBotClient client)
         {
             var builder = new StringBuilder();
             foreach (string line in _manualLines)
@@ -43,12 +43,12 @@ namespace DaresGameBot.Web.Models.Commands
                 builder.AppendLine(line);
             }
 
-            await client.SendTextMessageAsync(message.Chat, builder.ToString());
+            await client.SendTextMessageAsync(chatId, builder.ToString());
 
-            if (!GameLogic.IsGameValid(message.Chat))
+            if (!GameLogic.IsGameValid(chatId))
             {
                 await GameLogic.StartNewGameAsync(_settings.InitialPlayersAmount, _settings.InitialChoiceChance,
-                    _settings.Decks, client, message.Chat);
+                    _settings.Decks, client, chatId);
             }
         }
     }

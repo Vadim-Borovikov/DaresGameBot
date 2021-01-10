@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Web.Models.Commands
 {
@@ -9,22 +8,15 @@ namespace DaresGameBot.Web.Models.Commands
     {
         internal override string Name => "draw";
         internal override string Description => Caption.ToLowerInvariant();
-
-        public const string Caption = "Вытянуть фант";
+        protected override string Caption => GameLogic.DrawCaption;
 
         private readonly Settings _settings;
 
         public DrawCommand(Settings settings) => _settings = settings;
 
-        internal override bool Contains(Message message)
+        internal override Task ExecuteAsync(ChatId chatId, ITelegramBotClient client)
         {
-            return (message.Type == MessageType.Text)
-                && (message.Text.Contains(Name) || message.Text.Contains(Caption));
-        }
-
-        internal override Task ExecuteAsync(Message message, ITelegramBotClient client)
-        {
-            return GameLogic.DrawAsync(_settings, client, message.Chat);
+            return GameLogic.DrawAsync(_settings, client, chatId);
         }
     }
 }

@@ -11,9 +11,7 @@ namespace DaresGameBot.Web.Controllers
 {
     public sealed class UpdateController : Controller
     {
-        private readonly IBot _botService;
-
-        public UpdateController(IBot botService) => _botService = botService;
+        public UpdateController(IBot bot) => _bot = bot;
 
         [HttpPost]
         public async Task<OkResult> Post([FromBody]Update update)
@@ -22,29 +20,30 @@ namespace DaresGameBot.Web.Controllers
             {
                 Message message = update.Message;
 
-                Command command = _botService.Commands.FirstOrDefault(c => c.Contains(message));
-                if (command != null)
-                {
-                    await command.ExecuteAsync(message, _botService.Client);
-                }
-                else
-                {
-                    if (int.TryParse(message.Text, out int playersAmount))
-                    {
-                        await GameLogic.ChangePlayersAmountAsync(playersAmount, _botService.Settings,
-                            _botService.Client, message.Chat);
-                    }
-
-                    if (float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture,
-                        out float choiceChance))
-                    {
-                        await GameLogic.ChangeChoiceChanceAsync(choiceChance, _botService.Settings, _botService.Client,
-                            message.Chat);
-                    }
-                }
+                await GetAction(message);
             }
 
             return Ok();
         }
+
+        private Task GetAction(Message message)
+        {
+            Command command = _bot.Commands.FirstOrDefault(c => c.IsInvokingBy(message));
+            if (command != null)
+            {
+                return command.ExecuteAsync(message.Chat.Id, _bot.Client);
+            }
+
+            if (int.TryParse(message.Text, out int playersAmount))
+            {
+                return GameLogic.ChangePlayersAmountAsync(playersAmount, _bot.Settings, _bot.Client, message.Chat);
+            }
+
+            return float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance)
+                ? GameLogic.ChangeChoiceChanceAsync(choiceChance, _bot.Settings, _bot.Client, message.Chat)
+                : Task.CompletedTask;
+        }
+
+        private readonly IBot _bot;
     }
 }

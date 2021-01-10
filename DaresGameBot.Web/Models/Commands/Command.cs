@@ -10,11 +10,15 @@ namespace DaresGameBot.Web.Models.Commands
         internal abstract string Name { get; }
         internal abstract string Description { get; }
 
-        internal virtual bool Contains(Message message)
+        protected virtual string Caption => null;
+
+        internal bool IsInvokingBy(Message message)
         {
-            return (message.Type == MessageType.Text) && message.Text.Contains(Name);
+            return (message.Type == MessageType.Text) &&
+                   ((message.Text == $"/{Name}") ||
+                    (!string.IsNullOrWhiteSpace(Caption) && (message.Text == Caption)));
         }
 
-        internal abstract Task ExecuteAsync(Message message, ITelegramBotClient client);
+        internal abstract Task ExecuteAsync(ChatId chatId, ITelegramBotClient client);
     }
 }
