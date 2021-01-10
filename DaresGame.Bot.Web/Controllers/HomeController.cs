@@ -7,7 +7,7 @@ using Telegram.Bot.Types;
 namespace DaresGame.Bot.Web.Controllers
 {
     [Route("")]
-    public class HomeController : Controller
+    public sealed class HomeController : Controller
     {
         private readonly IBot _botService;
 

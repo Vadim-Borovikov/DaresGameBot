@@ -1,13 +1,11 @@
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using DaresGame.Bot.Web.Models.Commands;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 
 namespace DaresGame.Bot.Web.Models
 {
-    internal class Bot : IBot
+    internal sealed class Bot : IBot
     {
         public TelegramBotClient Client { get; }
 
