@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using DaresGameBot.Logic;
+using DaresGameBot.Web.Models.Config;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -17,18 +18,10 @@ namespace DaresGameBot.Web.Models
 
         private static readonly ConcurrentDictionary<long, Game> Games = new ConcurrentDictionary<long, Game>();
 
-        public static Task StartNewGameAsync(ushort initialPlayersAmount, float initialChoiceChance,
-            IEnumerable<Deck> decks, ITelegramBotClient client, ChatId chatId)
+        public static Task StartNewGameAsync(Settings settings, ITelegramBotClient client, ChatId chatId)
         {
-            var game = new Game(initialPlayersAmount, initialChoiceChance, decks);
-
-            Games.AddOrUpdate(chatId.Identifier, game, (id, g) => game);
-
-            var stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine("🔥 Начинаем новую игру!");
-            stringBuilder.AppendLine(game.Players);
-            stringBuilder.AppendLine(game.Chance);
-            return client.SendTextMessageAsync(chatId, stringBuilder.ToString(), replyMarkup: GetKeyboard(true));
+            return StartNewGameAsync(settings.InitialPlayersAmount, settings.InitialChoiceChance, settings.Decks,
+                client, chatId);
         }
 
         public static Task ChangePlayersAmountAsync(ushort playersAmount, Settings settings, ITelegramBotClient client,
@@ -74,8 +67,7 @@ namespace DaresGameBot.Web.Models
             bool success = IsGameValid(chatId, out Game game);
             if (!success)
             {
-                return StartNewGameAsync(settings.InitialPlayersAmount, settings.InitialChoiceChance, settings.Decks,
-                    client, chatId);
+                return StartNewGameAsync(settings, client, chatId);
             }
 
             Turn turn = game?.Draw();
@@ -84,6 +76,20 @@ namespace DaresGameBot.Web.Models
         }
 
         public static bool IsGameValid(ChatId chatId) => IsGameValid(chatId, out Game _);
+
+        private static Task StartNewGameAsync(ushort initialPlayersAmount, float initialChoiceChance,
+            IEnumerable<Deck> decks, ITelegramBotClient client, ChatId chatId)
+        {
+            var game = new Game(initialPlayersAmount, initialChoiceChance, decks);
+
+            Games.AddOrUpdate(chatId.Identifier, game, (id, g) => game);
+
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine("🔥 Начинаем новую игру!");
+            stringBuilder.AppendLine(game.Players);
+            stringBuilder.AppendLine(game.Chance);
+            return client.SendTextMessageAsync(chatId, stringBuilder.ToString(), replyMarkup: GetKeyboard(true));
+        }
 
         private static bool IsGameValid(ChatId chatId, out Game game)
         {

@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using DaresGameBot.Web.Models.Config;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 

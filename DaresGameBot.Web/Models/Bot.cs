@@ -13,27 +13,23 @@ namespace DaresGameBot.Web.Models
 
         public Config.Config Config { get; }
 
-        public Settings Settings { get; }
-
         public Bot(IOptions<Config.Config> options)
         {
             Config = options.Value;
 
             Client = new TelegramBotClient(Config.Token);
-
-            Settings = new Settings(Config.InitialPlayersAmount, Config.InitialChoiceChance, Config.Decks);
         }
 
         public void InitCommands()
         {
             _commands = new List<Command>
             {
-                new NewCommand(Settings),
-                new DrawCommand(Settings)
+                new NewCommand(Config.Settings),
+                new DrawCommand(Config.Settings)
             };
 
             var startCommand =
-                new StartCommand(Commands, Config.ManualLines, Config.AdditionalCommandsLines, Settings);
+                new StartCommand(Commands, Config.ManualLines, Config.AdditionalCommandsLines, Config.Settings);
 
             _commands.Insert(0, startCommand);
         }

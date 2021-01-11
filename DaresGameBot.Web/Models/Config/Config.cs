@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using DaresGameBot.Logic;
 using Newtonsoft.Json;
 
 namespace DaresGameBot.Web.Models.Config
@@ -16,15 +15,7 @@ namespace DaresGameBot.Web.Models.Config
         public int Port { get; set; }
 
         [JsonProperty]
-        public ushort InitialPlayersAmount { get; set; }
-
-        [JsonProperty]
-        public float InitialChoiceChance { get; set; }
-
-        [JsonProperty]
-        public string DecksJson { get; set; }
-
-        internal List<Deck> Decks => JsonConvert.DeserializeObject<List<Deck>>(DecksJson);
+        public Settings Settings { get; set; }
 
         internal string Url => $"{Host}:{Port}/{Token}";
 

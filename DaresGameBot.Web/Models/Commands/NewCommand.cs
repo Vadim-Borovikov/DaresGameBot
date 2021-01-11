@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using DaresGameBot.Web.Models.Config;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -16,8 +17,7 @@ namespace DaresGameBot.Web.Models.Commands
 
         internal override Task ExecuteAsync(ChatId chatId, ITelegramBotClient client)
         {
-            return GameLogic.StartNewGameAsync(_settings.InitialPlayersAmount, _settings.InitialChoiceChance,
-                _settings.Decks, client, chatId);
+            return GameLogic.StartNewGameAsync(_settings, client, chatId);
         }
     }
 }

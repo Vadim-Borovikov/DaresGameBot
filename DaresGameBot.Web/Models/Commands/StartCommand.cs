@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using DaresGameBot.Web.Models.Config;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -47,8 +48,7 @@ namespace DaresGameBot.Web.Models.Commands
 
             if (!GameLogic.IsGameValid(chatId))
             {
-                await GameLogic.StartNewGameAsync(_settings.InitialPlayersAmount, _settings.InitialChoiceChance,
-                    _settings.Decks, client, chatId);
+                await GameLogic.StartNewGameAsync(_settings, client, chatId);
             }
         }
     }

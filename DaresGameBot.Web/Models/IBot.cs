@@ -9,7 +9,6 @@ namespace DaresGameBot.Web.Models
         TelegramBotClient Client { get; }
         IReadOnlyCollection<Command> Commands { get; }
         Config.Config Config { get; }
-        Settings Settings { get; }
 
         void InitCommands();
     }
