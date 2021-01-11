@@ -17,7 +17,7 @@ namespace DaresGameBot.Web.Models.Commands
 
         internal override Task ExecuteAsync(ChatId chatId, ITelegramBotClient client)
         {
-            return GameLogic.DrawAsync(_settings, client, chatId);
+            return GamesRepository.DrawAsync(_settings, client, chatId);
         }
     }
 }

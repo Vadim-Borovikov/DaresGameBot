@@ -46,9 +46,9 @@ namespace DaresGameBot.Web.Models.Commands
 
             await client.SendTextMessageAsync(chatId, builder.ToString());
 
-            if (!GameLogic.IsGameValid(chatId))
+            if (!GamesRepository.IsGameValid(chatId))
             {
-                await GameLogic.StartNewGameAsync(_settings, client, chatId);
+                await GamesRepository.StartNewGameAsync(_settings, client, chatId);
             }
         }
     }

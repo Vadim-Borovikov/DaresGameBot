@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using DaresGameBot.Logic;
 using Newtonsoft.Json;
 
 namespace DaresGameBot.Web.Models.Config
@@ -14,7 +12,5 @@ namespace DaresGameBot.Web.Models.Config
 
         [JsonProperty]
         public string DecksJson { get; set; }
-
-        internal IEnumerable<Deck> Decks => JsonConvert.DeserializeObject<List<Deck>>(DecksJson);
     }
 }
