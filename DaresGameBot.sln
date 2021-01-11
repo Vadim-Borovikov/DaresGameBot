@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaresGameBot.Logic", "Dares
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaresGameBot.Web", "DaresGameBot.Web\DaresGameBot.Web.csproj", "{88614F5E-CE3F-4BA9-9B67-760C3B747346}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardsExporter", "CardsExporter\CardsExporter.csproj", "{B0767C95-907C-4E17-A73C-D8D893068475}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{88614F5E-CE3F-4BA9-9B67-760C3B747346}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88614F5E-CE3F-4BA9-9B67-760C3B747346}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{88614F5E-CE3F-4BA9-9B67-760C3B747346}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B0767C95-907C-4E17-A73C-D8D893068475}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B0767C95-907C-4E17-A73C-D8D893068475}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B0767C95-907C-4E17-A73C-D8D893068475}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B0767C95-907C-4E17-A73C-D8D893068475}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

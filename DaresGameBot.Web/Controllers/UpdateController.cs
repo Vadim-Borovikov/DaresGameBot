@@ -36,13 +36,13 @@ namespace DaresGameBot.Web.Controllers
 
             if (ushort.TryParse(message.Text, out ushort playersAmount))
             {
-                return GamesRepository.ChangePlayersAmountAsync(playersAmount, _bot.Config.Settings, _bot.Client,
-                    message.Chat);
+                return GamesRepository.ChangePlayersAmountAsync(playersAmount, _bot.Config, _bot.GoogleSheetsProvider,
+                    _bot.Client, message.Chat);
             }
 
             return float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance)
-                ? GamesRepository.ChangeChoiceChanceAsync(choiceChance, _bot.Config.Settings, _bot.Client,
-                    message.Chat)
+                ? GamesRepository.ChangeChoiceChanceAsync(choiceChance, _bot.Config, _bot.GoogleSheetsProvider,
+                    _bot.Client, message.Chat)
                 : Task.CompletedTask;
         }
 

@@ -2,8 +2,7 @@
 using System.Text;
 using System.Threading.Tasks;
 using DaresGameBot.Logic;
-using DaresGameBot.Web.Models.Config;
-using Newtonsoft.Json;
+using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -16,27 +15,18 @@ namespace DaresGameBot.Web.Models
         public const string DrawCaption = "Вытянуть фант";
         public const string NewGameCaption = "Новая игра";
 
-        public bool Valid => _game.Empty;
+        public bool Valid => !_game.Empty;
 
-        public GameLogic(Settings settings, ITelegramBotClient client, ChatId chatId)
+        public GameLogic(Config.Config config, Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
         {
-            _decksJson = settings.DecksJson;
+            _googleRange = config.GoogleRange;
+            _initialPlayersAmount = config.InitialPlayersAmount;
+            _initialChoiceChance = config.InitialChoiceChance;
+            _googleSheetsProvider = googleSheetsProvider;
             _client = client;
             _chatId = chatId;
 
-            _game = CreateNewGame(settings);
-        }
-
-        private Game CreateNewGame(Settings settings)
-        {
-            var decks = JsonConvert.DeserializeObject<List<Deck>>(_decksJson);
-            return new Game(settings.InitialPlayersAmount, settings.InitialChoiceChance, decks);
-        }
-
-        private Game CreateNewGame()
-        {
-            var decks = JsonConvert.DeserializeObject<List<Deck>>(_decksJson);
-            return new Game(_game.PlayersAmount, _game.ChoiceChance, decks);
+            _game = CreateNewGame();
         }
 
         public Task StartNewGameAsync()
@@ -60,8 +50,8 @@ namespace DaresGameBot.Web.Models
             _game.PlayersAmount = playersAmount;
 
             return Valid
-                ? StartNewGameAsync()
-                : _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", replyMarkup: GetKeyboard());
+                ? _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", replyMarkup: GetKeyboard())
+                : StartNewGameAsync();
         }
 
         public Task ChangeChoiceChanceAsync(float choiceChance)
@@ -74,25 +64,31 @@ namespace DaresGameBot.Web.Models
             _game.ChoiceChance = choiceChance;
 
             return Valid
-                ? StartNewGameAsync()
-                : _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", replyMarkup: GetKeyboard());
+                ? _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", replyMarkup: GetKeyboard())
+                : StartNewGameAsync();
         }
 
         public Task DrawAsync()
         {
-            if (Valid)
+            if (!Valid)
             {
                 return StartNewGameAsync();
             }
 
-            Turn turn = _game?.Draw();
+            Turn turn = _game.Draw();
             string text = turn?.GetMessage(_game.PlayersAmount) ?? "Игра закончена";
             return _client.SendTextMessageAsync(_chatId, text, replyMarkup: GetKeyboard());
         }
 
+        private Game CreateNewGame()
+        {
+            IEnumerable<Deck> decks = Utils.GetDecks(_googleSheetsProvider, _googleRange);
+            return new Game(_initialPlayersAmount, _initialChoiceChance, decks);
+        }
+
         private ReplyKeyboardMarkup GetKeyboard()
         {
-            string caption = Valid ? NewGameCaption : DrawCaption;
+            string caption = Valid ? DrawCaption : NewGameCaption;
             var button = new KeyboardButton(caption);
             var raw = new[] { button };
             return new ReplyKeyboardMarkup(raw, true);
@@ -100,8 +96,10 @@ namespace DaresGameBot.Web.Models
 
         private Game _game;
 
-        private readonly string _decksJson;
-
+        private readonly Provider _googleSheetsProvider;
+        private readonly string _googleRange;
+        private readonly ushort _initialPlayersAmount;
+        private readonly float _initialChoiceChance;
         private readonly ITelegramBotClient _client;
         private readonly ChatId _chatId;
     }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using DaresGameBot.Web.Models.Commands;
+using GoogleSheetsManager;
 using Telegram.Bot;
 
 namespace DaresGameBot.Web.Models
@@ -9,7 +10,8 @@ namespace DaresGameBot.Web.Models
         TelegramBotClient Client { get; }
         IReadOnlyCollection<Command> Commands { get; }
         Config.Config Config { get; }
+        Provider GoogleSheetsProvider { get; }
 
-        void InitCommands();
+        void Initialize(Provider googleSheetsProvider);
     }
 }

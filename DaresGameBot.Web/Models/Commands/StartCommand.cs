@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using DaresGameBot.Web.Models.Config;
+using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -12,18 +12,14 @@ namespace DaresGameBot.Web.Models.Commands
         internal override string Name => "start";
         internal override string Description => "инструкция и список команд";
 
-        private readonly IReadOnlyCollection<Command> _commands;
-        private readonly List<string> _manualLines;
-        private readonly List<string> _additionalCommandsLines;
-        private readonly Settings _settings;
-
         public StartCommand(IReadOnlyCollection<Command> commands, List<string> manualLines,
-            List<string> additionalCommandsLines, Settings settings)
+            List<string> additionalCommandsLines, Config.Config config, Provider googleSheetsProvider)
         {
             _commands = commands;
             _manualLines = manualLines;
             _additionalCommandsLines = additionalCommandsLines;
-            _settings = settings;
+            _config = config;
+            _googleSheetsProvider = googleSheetsProvider;
         }
 
         internal override async Task ExecuteAsync(ChatId chatId, ITelegramBotClient client)
@@ -48,8 +44,14 @@ namespace DaresGameBot.Web.Models.Commands
 
             if (!GamesRepository.IsGameValid(chatId))
             {
-                await GamesRepository.StartNewGameAsync(_settings, client, chatId);
+                await GamesRepository.StartNewGameAsync(_config, _googleSheetsProvider, client, chatId);
             }
         }
+
+        private readonly IReadOnlyCollection<Command> _commands;
+        private readonly List<string> _manualLines;
+        private readonly List<string> _additionalCommandsLines;
+        private readonly Config.Config _config;
+        private readonly Provider _googleSheetsProvider;
     }
 }

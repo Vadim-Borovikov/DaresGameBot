@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using DaresGameBot.Web.Models.Config;
+using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -9,15 +9,21 @@ namespace DaresGameBot.Web.Models.Commands
     {
         internal override string Name => "draw";
         internal override string Description => Caption.ToLowerInvariant();
+
         protected override string Caption => GameLogic.DrawCaption;
 
-        private readonly Settings _settings;
-
-        public DrawCommand(Settings settings) => _settings = settings;
+        public DrawCommand(Config.Config config, Provider googleSheetsProvider)
+        {
+            _config = config;
+            _googleSheetsProvider = googleSheetsProvider;
+        }
 
         internal override Task ExecuteAsync(ChatId chatId, ITelegramBotClient client)
         {
-            return GamesRepository.DrawAsync(_settings, client, chatId);
+            return GamesRepository.DrawAsync(_config, _googleSheetsProvider, client, chatId);
         }
+
+        private readonly Config.Config _config;
+        private readonly Provider _googleSheetsProvider;
     }
 }

@@ -15,9 +15,24 @@ namespace DaresGameBot.Web.Models.Config
         public int Port { get; set; }
 
         [JsonProperty]
-        public Settings Settings { get; set; }
+        public ushort InitialPlayersAmount { get; set; }
+
+        [JsonProperty]
+        public float InitialChoiceChance { get; set; }
+
+        [JsonProperty]
+        public Dictionary<string, string> GoogleCredentials { get; set; }
+
+        [JsonProperty]
+        public string GoogleCredentialsJson { get; set; }
 
         internal string Url => $"{Host}:{Port}/{Token}";
+
+        [JsonProperty]
+        public string GoogleSheetId { get; set; }
+
+        [JsonProperty]
+        public string GoogleRange { get; set; }
 
         [JsonProperty]
         public List<string> ManualLines { get; set; }

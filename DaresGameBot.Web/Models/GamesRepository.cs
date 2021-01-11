@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using DaresGameBot.Web.Models.Config;
+using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -8,29 +8,31 @@ namespace DaresGameBot.Web.Models
 {
     internal static class GamesRepository
     {
-        public static Task StartNewGameAsync(Settings settings, ITelegramBotClient client, ChatId chatId)
+        public static Task StartNewGameAsync(Config.Config config, Provider googleSheetsProvider,
+            ITelegramBotClient client, ChatId chatId)
         {
-            GameLogic game = GetOrAddGame(settings, client, chatId);
+            GameLogic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
             return game.StartNewGameAsync();
         }
 
-        public static Task ChangePlayersAmountAsync(ushort playersAmount, Settings settings, ITelegramBotClient client,
-            ChatId chatId)
+        public static Task ChangePlayersAmountAsync(ushort playersAmount, Config.Config config,
+            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
         {
-            GameLogic game = GetOrAddGame(settings, client, chatId);
+            GameLogic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
             return game.ChangePlayersAmountAsync(playersAmount);
         }
 
-        public static Task ChangeChoiceChanceAsync(float choiceChance, Settings settings, ITelegramBotClient client,
-            ChatId chatId)
+        public static Task ChangeChoiceChanceAsync(float choiceChance, Config.Config config,
+            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
         {
-            GameLogic game = GetOrAddGame(settings, client, chatId);
+            GameLogic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
             return game.ChangeChoiceChanceAsync(choiceChance);
         }
 
-        public static Task DrawAsync(Settings settings, ITelegramBotClient client, ChatId chatId)
+        public static Task DrawAsync(Config.Config config, Provider googleSheetsProvider, ITelegramBotClient client,
+            ChatId chatId)
         {
-            GameLogic game = GetOrAddGame(settings, client, chatId);
+            GameLogic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
             return game.DrawAsync();
         }
 
@@ -39,9 +41,10 @@ namespace DaresGameBot.Web.Models
             return Games.TryGetValue(chatId.Identifier, out GameLogic game) && game.Valid;
         }
 
-        private static GameLogic GetOrAddGame(Settings settings, ITelegramBotClient client, ChatId chatId)
+        private static GameLogic GetOrAddGame(Config.Config config, Provider googleSheetsProvider,
+            ITelegramBotClient client, ChatId chatId)
         {
-            return Games.GetOrAdd(chatId.Identifier, id => new GameLogic(settings, client, id));
+            return Games.GetOrAdd(chatId.Identifier, id => new GameLogic(config, googleSheetsProvider, client, id));
         }
 
         private static readonly ConcurrentDictionary<long, GameLogic> Games =
