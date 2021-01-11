@@ -89,8 +89,8 @@ namespace CardsExporter
 
                 var card = new Card
                 {
-                    Players = int.Parse(parts[0]),
-                    PartnersToAssign = int.Parse(parts[1]),
+                    Players = ushort.Parse(parts[0]),
+                    PartnersToAssign = ushort.Parse(parts[1]),
                     Description = string.Join(',', parts.Skip(2).SkipLast(2)).Replace("\"", "")
                 };
 

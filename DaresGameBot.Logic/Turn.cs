@@ -15,7 +15,7 @@ namespace DaresGameBot.Logic
             _partners = partners;
         }
 
-        public string GetMessage(int playersAmount)
+        public string GetMessage(ushort playersAmount)
         {
             if ((_partners.Count == 0) || (_partners.Count == (playersAmount - 1)))
             {

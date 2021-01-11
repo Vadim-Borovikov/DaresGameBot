@@ -34,7 +34,7 @@ namespace DaresGameBot.Web.Controllers
                 return command.ExecuteAsync(message.Chat.Id, _bot.Client);
             }
 
-            if (int.TryParse(message.Text, out int playersAmount))
+            if (ushort.TryParse(message.Text, out ushort playersAmount))
             {
                 return GameLogic.ChangePlayersAmountAsync(playersAmount, _bot.Settings, _bot.Client, message.Chat);
             }

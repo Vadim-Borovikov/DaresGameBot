@@ -17,7 +17,7 @@ namespace DaresGameBot.Web.Models
 
         private static readonly ConcurrentDictionary<long, Game> Games = new ConcurrentDictionary<long, Game>();
 
-        public static Task StartNewGameAsync(int initialPlayersAmount, float initialChoiceChance,
+        public static Task StartNewGameAsync(ushort initialPlayersAmount, float initialChoiceChance,
             IEnumerable<Deck> decks, ITelegramBotClient client, ChatId chatId)
         {
             var game = new Game(initialPlayersAmount, initialChoiceChance, decks);
@@ -31,7 +31,7 @@ namespace DaresGameBot.Web.Models
             return client.SendTextMessageAsync(chatId, stringBuilder.ToString(), replyMarkup: GetKeyboard(true));
         }
 
-        public static Task ChangePlayersAmountAsync(int playersAmount, Settings settings, ITelegramBotClient client,
+        public static Task ChangePlayersAmountAsync(ushort playersAmount, Settings settings, ITelegramBotClient client,
             ChatId chatId)
         {
             if (playersAmount <= 0)

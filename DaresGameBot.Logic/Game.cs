@@ -5,7 +5,7 @@ namespace DaresGameBot.Logic
 {
     public sealed class Game
     {
-        public int PlayersAmount;
+        public ushort PlayersAmount;
         public float ChoiceChance;
 
         public string Players => $"Игроков: {PlayersAmount}";
@@ -13,7 +13,7 @@ namespace DaresGameBot.Logic
 
         public bool Empty => _decks.Count == 0;
 
-        public Game(int playersAmount, float choiceChance, IEnumerable<Deck> decks)
+        public Game(ushort playersAmount, float choiceChance, IEnumerable<Deck> decks)
         {
             PlayersAmount = playersAmount;
             ChoiceChance = choiceChance;
@@ -78,10 +78,12 @@ namespace DaresGameBot.Logic
 
         private Turn CreateTurn(Card card, string deckTag)
         {
-            Queue<int> partnersQueue = Enumerable.Range(1, PlayersAmount - 1).ToShuffeledQueue();
+            Queue<ushort> partnersQueue = Enumerable.Range(1, PlayersAmount - 1)
+                                                    .Select(i => (ushort) i)
+                                                    .ToShuffeledQueue();
 
             var partners = new List<Partner>(card.PartnersToAssign);
-            for (int i = 0; i < card.PartnersToAssign; ++i)
+            for (ushort i = 0; i < card.PartnersToAssign; ++i)
             {
                 bool byChoice = Utils.Random.NextDouble() < ChoiceChance;
                 Partner partner = byChoice ? new Partner() : new Partner(partnersQueue.Dequeue());

@@ -5,11 +5,11 @@ namespace DaresGameBot.Web.Models
 {
     public sealed class Settings
     {
-        internal readonly int InitialPlayersAmount;
+        internal readonly ushort InitialPlayersAmount;
         internal readonly float InitialChoiceChance;
         internal readonly IReadOnlyCollection<Deck> Decks;
 
-        internal Settings(int initialPlayersAmount, float initialChoiceChance, IReadOnlyCollection<Deck> decks)
+        internal Settings(ushort initialPlayersAmount, float initialChoiceChance, IReadOnlyCollection<Deck> decks)
         {
             InitialPlayersAmount = initialPlayersAmount;
             InitialChoiceChance = initialChoiceChance;
