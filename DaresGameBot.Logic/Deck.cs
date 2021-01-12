@@ -6,7 +6,7 @@ namespace DaresGameBot.Logic
     public sealed class Deck
     {
         public string Tag { internal get; set; }
-        public List<Card> Cards { get; set; }
+        public List<Card> Cards { private get; set; }
 
         internal bool Empty => Cards.Count == 0;
 
