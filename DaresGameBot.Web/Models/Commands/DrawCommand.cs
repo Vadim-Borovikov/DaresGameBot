@@ -18,9 +18,9 @@ namespace DaresGameBot.Web.Models.Commands
             _googleSheetsProvider = googleSheetsProvider;
         }
 
-        internal override Task ExecuteAsync(ChatId chatId, ITelegramBotClient client)
+        internal override Task ExecuteAsync(ChatId chatId, int replyToMessageId, ITelegramBotClient client)
         {
-            return GamesRepository.DrawAsync(_config, _googleSheetsProvider, client, chatId);
+            return GamesRepository.DrawAsync(_config, _googleSheetsProvider, client, chatId, replyToMessageId);
         }
 
         private readonly Config.Config _config;

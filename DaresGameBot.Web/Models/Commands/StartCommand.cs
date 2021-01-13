@@ -22,7 +22,7 @@ namespace DaresGameBot.Web.Models.Commands
             _googleSheetsProvider = googleSheetsProvider;
         }
 
-        internal override async Task ExecuteAsync(ChatId chatId, ITelegramBotClient client)
+        internal override async Task ExecuteAsync(ChatId chatId, int replyToMessageId, ITelegramBotClient client)
         {
             var builder = new StringBuilder();
             foreach (string line in _manualLines)
@@ -44,7 +44,8 @@ namespace DaresGameBot.Web.Models.Commands
 
             if (!GamesRepository.IsGameValid(chatId))
             {
-                await GamesRepository.StartNewGameAsync(_config, _googleSheetsProvider, client, chatId);
+                await GamesRepository.StartNewGameAsync(_config, _googleSheetsProvider, client, chatId,
+                    replyToMessageId);
             }
         }
 

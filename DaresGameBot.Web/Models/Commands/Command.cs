@@ -12,13 +12,13 @@ namespace DaresGameBot.Web.Models.Commands
 
         protected virtual string Caption => null;
 
-        internal bool IsInvokingBy(Message message)
+        internal bool IsInvokingBy(Message message, bool fromChat, string botName)
         {
-            return (message.Type == MessageType.Text) &&
-                   ((message.Text == $"/{Name}") ||
-                    (!string.IsNullOrWhiteSpace(Caption) && (message.Text == Caption)));
+            return (message.Type == MessageType.Text)
+                   && ((message.Text == (fromChat ? $"/{Name}@{botName}" : $"/{Name}"))
+                       || (!string.IsNullOrWhiteSpace(Caption) && (message.Text == Caption)));
         }
 
-        internal abstract Task ExecuteAsync(ChatId chatId, ITelegramBotClient client);
+        internal abstract Task ExecuteAsync(ChatId chatId, int replyToMessageId, ITelegramBotClient client);
     }
 }

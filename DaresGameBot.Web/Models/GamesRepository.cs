@@ -9,31 +9,31 @@ namespace DaresGameBot.Web.Models
     internal static class GamesRepository
     {
         public static Task StartNewGameAsync(Config.Config config, Provider googleSheetsProvider,
-            ITelegramBotClient client, ChatId chatId)
+            ITelegramBotClient client, ChatId chatId, int replyToMessageId)
         {
             GameLogic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.StartNewGameAsync();
+            return game.StartNewGameAsync(replyToMessageId);
         }
 
         public static Task ChangePlayersAmountAsync(ushort playersAmount, Config.Config config,
-            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
+            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId, int replyToMessageId)
         {
             GameLogic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.ChangePlayersAmountAsync(playersAmount);
+            return game.ChangePlayersAmountAsync(playersAmount, replyToMessageId);
         }
 
         public static Task ChangeChoiceChanceAsync(float choiceChance, Config.Config config,
-            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
+            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId, int replyToMessageId)
         {
             GameLogic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.ChangeChoiceChanceAsync(choiceChance);
+            return game.ChangeChoiceChanceAsync(choiceChance, replyToMessageId);
         }
 
         public static Task DrawAsync(Config.Config config, Provider googleSheetsProvider, ITelegramBotClient client,
-            ChatId chatId)
+            ChatId chatId, int replyToMessageId)
         {
             GameLogic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.DrawAsync();
+            return game.DrawAsync(replyToMessageId);
         }
 
         public static bool IsGameValid(ChatId chatId)

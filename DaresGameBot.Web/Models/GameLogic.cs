@@ -29,7 +29,7 @@ namespace DaresGameBot.Web.Models
             _game = CreateNewGame();
         }
 
-        public Task StartNewGameAsync()
+        public Task StartNewGameAsync(int replyToMessageId)
         {
             _game = CreateNewGame();
 
@@ -37,10 +37,11 @@ namespace DaresGameBot.Web.Models
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
             stringBuilder.AppendLine(_game.Players);
             stringBuilder.AppendLine(_game.Chance);
-            return _client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), replyMarkup: GetKeyboard());
+            return _client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), replyToMessageId: replyToMessageId,
+                replyMarkup: GetKeyboard());
         }
 
-        public Task ChangePlayersAmountAsync(ushort playersAmount)
+        public Task ChangePlayersAmountAsync(ushort playersAmount, int replyToMessageId)
         {
             if (playersAmount <= 0)
             {
@@ -50,11 +51,12 @@ namespace DaresGameBot.Web.Models
             _game.PlayersAmount = playersAmount;
 
             return Valid
-                ? _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", replyMarkup: GetKeyboard())
-                : StartNewGameAsync();
+                ? _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", replyToMessageId: replyToMessageId,
+                    replyMarkup: GetKeyboard())
+                : StartNewGameAsync(replyToMessageId);
         }
 
-        public Task ChangeChoiceChanceAsync(float choiceChance)
+        public Task ChangeChoiceChanceAsync(float choiceChance, int replyToMessageId)
         {
             if ((choiceChance < 0.0f) || (choiceChance > 1.0f))
             {
@@ -64,20 +66,22 @@ namespace DaresGameBot.Web.Models
             _game.ChoiceChance = choiceChance;
 
             return Valid
-                ? _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", replyMarkup: GetKeyboard())
-                : StartNewGameAsync();
+                ? _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", replyToMessageId: replyToMessageId,
+                    replyMarkup: GetKeyboard())
+                : StartNewGameAsync(replyToMessageId);
         }
 
-        public Task DrawAsync()
+        public Task DrawAsync(int replyToMessageId)
         {
             if (!Valid)
             {
-                return StartNewGameAsync();
+                return StartNewGameAsync(replyToMessageId);
             }
 
             Turn turn = _game.Draw();
             string text = turn?.GetMessage(_game.PlayersAmount) ?? "Игра закончена";
-            return _client.SendTextMessageAsync(_chatId, text, replyMarkup: GetKeyboard());
+            return _client.SendTextMessageAsync(_chatId, text, replyToMessageId: replyToMessageId,
+                replyMarkup: GetKeyboard());
         }
 
         private Game CreateNewGame()
