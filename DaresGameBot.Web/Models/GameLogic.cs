@@ -27,10 +27,10 @@ namespace DaresGameBot.Web.Models
             _chatId = chatId;
         }
 
-        public Task StartNewGameAsync(int replyToMessageId)
+        public Task StartNewGameAsync(int replyToMessageId, ushort? playersAmount = null, float? choiceChance = null)
         {
             IEnumerable<Deck> decks = Utils.GetDecks(_googleSheetsProvider, _googleRange);
-            _game = new Game(_initialPlayersAmount, _initialChoiceChance, decks);
+            _game = new Game(playersAmount ?? _initialPlayersAmount, choiceChance ?? _initialChoiceChance, decks);
 
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
@@ -49,7 +49,7 @@ namespace DaresGameBot.Web.Models
 
             if (!Valid)
             {
-                return StartNewGameAsync(replyToMessageId);
+                return StartNewGameAsync(replyToMessageId, playersAmount);
             }
 
             _game.PlayersAmount = playersAmount;
@@ -67,7 +67,7 @@ namespace DaresGameBot.Web.Models
 
             if (!Valid)
             {
-                return StartNewGameAsync(replyToMessageId);
+                return StartNewGameAsync(replyToMessageId, choiceChance: choiceChance);
             }
 
             _game.ChoiceChance = choiceChance;
