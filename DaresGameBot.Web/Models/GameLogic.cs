@@ -15,7 +15,7 @@ namespace DaresGameBot.Web.Models
         public const string DrawCaption = "Вытянуть фант";
         public const string NewGameCaption = "Новая игра";
 
-        public bool Valid => !_game.Empty;
+        public bool Valid => (_game != null) && !_game.Empty;
 
         public GameLogic(Config.Config config, Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
         {
@@ -25,13 +25,12 @@ namespace DaresGameBot.Web.Models
             _googleSheetsProvider = googleSheetsProvider;
             _client = client;
             _chatId = chatId;
-
-            _game = CreateNewGame();
         }
 
         public Task StartNewGameAsync(int replyToMessageId)
         {
-            _game = CreateNewGame();
+            IEnumerable<Deck> decks = Utils.GetDecks(_googleSheetsProvider, _googleRange);
+            _game = new Game(_initialPlayersAmount, _initialChoiceChance, decks);
 
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
@@ -48,12 +47,15 @@ namespace DaresGameBot.Web.Models
                 return Task.CompletedTask;
             }
 
+            if (!Valid)
+            {
+                return StartNewGameAsync(replyToMessageId);
+            }
+
             _game.PlayersAmount = playersAmount;
 
-            return Valid
-                ? _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", replyToMessageId: replyToMessageId,
-                    replyMarkup: GetKeyboard())
-                : StartNewGameAsync(replyToMessageId);
+            return _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}",
+                replyToMessageId: replyToMessageId, replyMarkup: GetKeyboard());
         }
 
         public Task ChangeChoiceChanceAsync(float choiceChance, int replyToMessageId)
@@ -63,12 +65,15 @@ namespace DaresGameBot.Web.Models
                 return Task.CompletedTask;
             }
 
+            if (!Valid)
+            {
+                return StartNewGameAsync(replyToMessageId);
+            }
+
             _game.ChoiceChance = choiceChance;
 
-            return Valid
-                ? _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", replyToMessageId: replyToMessageId,
-                    replyMarkup: GetKeyboard())
-                : StartNewGameAsync(replyToMessageId);
+            return _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}",
+                replyToMessageId: replyToMessageId, replyMarkup: GetKeyboard());
         }
 
         public Task DrawAsync(int replyToMessageId)
@@ -82,12 +87,6 @@ namespace DaresGameBot.Web.Models
             string text = turn?.GetMessage(_game.PlayersAmount) ?? "Игра закончена";
             return _client.SendTextMessageAsync(_chatId, text, replyToMessageId: replyToMessageId,
                 replyMarkup: GetKeyboard());
-        }
-
-        private Game CreateNewGame()
-        {
-            IEnumerable<Deck> decks = Utils.GetDecks(_googleSheetsProvider, _googleRange);
-            return new Game(_initialPlayersAmount, _initialChoiceChance, decks);
         }
 
         private ReplyKeyboardMarkup GetKeyboard()
