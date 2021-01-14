@@ -28,6 +28,12 @@ namespace DaresGameBot.Web
             return client.SendStickerAsync(message.Chat, sticker, replyToMessageId: message.MessageId);
         }
 
+        public static async Task<string> GetNameAsync(this ITelegramBotClient client)
+        {
+            User me = await client.GetMeAsync();
+            return me.Username;
+        }
+
         public static IEnumerable<Deck> GetDecks(Provider googleSheetsProvider, string googleRange)
         {
             IList<LoadableCard> cards = DataManager.GetValues<LoadableCard>(googleSheetsProvider, googleRange);

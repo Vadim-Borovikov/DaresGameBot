@@ -33,12 +33,7 @@ namespace DaresGameBot.Web.Controllers
 
             Message message = update.Message;
             bool fromChat = message.Chat.Id != message.From.Id;
-            string botName = null;
-            if (fromChat)
-            {
-                User me = await _bot.Client.GetMeAsync();
-                botName = me.Username;
-            }
+            string botName = fromChat ? await _bot.Client.GetNameAsync() : null;
 
             int replyToMessageId = fromChat ? message.MessageId : 0;
 
