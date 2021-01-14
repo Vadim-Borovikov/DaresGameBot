@@ -8,6 +8,7 @@ using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.InputFiles;
+using Telegram.Bot.Types.ReplyMarkups;
 using File = System.IO.File;
 
 namespace DaresGameBot.Web
@@ -26,6 +27,15 @@ namespace DaresGameBot.Web
             InputOnlineFile sticker)
         {
             return client.SendStickerAsync(message.Chat, sticker, replyToMessageId: message.MessageId);
+        }
+
+        public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
+            int replyToMessageId, string buttonCaption)
+        {
+            var button = new KeyboardButton(buttonCaption);
+            var raw = new[] { button };
+            var markup = new ReplyKeyboardMarkup(raw, true);
+            return client.SendTextMessageAsync(chatId, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
         }
 
         public static async Task<string> GetNameAsync(this ITelegramBotClient client)

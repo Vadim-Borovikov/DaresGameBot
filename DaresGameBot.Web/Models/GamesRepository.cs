@@ -38,7 +38,7 @@ namespace DaresGameBot.Web.Models
 
         public static bool IsGameValid(ChatId chatId)
         {
-            return Games.TryGetValue(chatId.Identifier, out GameLogic game) && game.Valid;
+            return Games.TryGetValue(chatId.Identifier, out GameLogic game) && (game != null);
         }
 
         private static GameLogic GetOrAddGame(Config.Config config, Provider googleSheetsProvider,

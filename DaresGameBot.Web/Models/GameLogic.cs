@@ -5,7 +5,6 @@ using DaresGameBot.Logic;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 using Game = DaresGameBot.Logic.Game;
 
 namespace DaresGameBot.Web.Models
@@ -14,8 +13,6 @@ namespace DaresGameBot.Web.Models
     {
         public const string DrawCaption = "Вытянуть фант";
         public const string NewGameCaption = "Новая игра";
-
-        public bool Valid => (_game != null) && !_game.Empty;
 
         public GameLogic(Config.Config config, Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
         {
@@ -36,8 +33,7 @@ namespace DaresGameBot.Web.Models
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
             stringBuilder.AppendLine(_game.Players);
             stringBuilder.AppendLine(_game.Chance);
-            return _client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), replyToMessageId: replyToMessageId,
-                replyMarkup: GetKeyboard());
+            return _client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), replyToMessageId, DrawCaption);
         }
 
         public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount, int replyToMessageId)
@@ -47,16 +43,16 @@ namespace DaresGameBot.Web.Models
                 return false;
             }
 
-            if (Valid)
+            if (_game == null)
             {
-                _game.PlayersAmount = playersAmount;
-
-                await _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}",
-                    replyToMessageId: replyToMessageId, replyMarkup: GetKeyboard());
+                await StartNewGameAsync(replyToMessageId, playersAmount);
             }
             else
             {
-                await StartNewGameAsync(replyToMessageId, playersAmount);
+                _game.PlayersAmount = playersAmount;
+
+                await
+                    _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", replyToMessageId, DrawCaption);
             }
             return true;
         }
@@ -68,16 +64,15 @@ namespace DaresGameBot.Web.Models
                 return false;
             }
 
-            if (Valid)
+            if (_game == null)
             {
-                _game.ChoiceChance = choiceChance;
-
-                await _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}",
-                    replyToMessageId: replyToMessageId, replyMarkup: GetKeyboard());
+                await StartNewGameAsync(replyToMessageId, choiceChance: choiceChance);
             }
             else
             {
-                await StartNewGameAsync(replyToMessageId, choiceChance: choiceChance);
+                _game.ChoiceChance = choiceChance;
+
+                await _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", replyToMessageId, DrawCaption);
             }
 
             return true;
@@ -85,23 +80,21 @@ namespace DaresGameBot.Web.Models
 
         public Task DrawAsync(int replyToMessageId)
         {
-            if (!Valid)
+            if (_game == null)
             {
                 return StartNewGameAsync(replyToMessageId);
             }
 
             Turn turn = _game.Draw();
-            string text = turn?.GetMessage(_game.PlayersAmount) ?? "Игра закончена";
-            return _client.SendTextMessageAsync(_chatId, text, replyToMessageId: replyToMessageId,
-                replyMarkup: GetKeyboard());
-        }
+            string text = turn.GetMessage(_game.PlayersAmount);
 
-        private ReplyKeyboardMarkup GetKeyboard()
-        {
-            string caption = Valid ? DrawCaption : NewGameCaption;
-            var button = new KeyboardButton(caption);
-            var raw = new[] { button };
-            return new ReplyKeyboardMarkup(raw, true);
+            string caption = DrawCaption;
+            if (_game.Empty)
+            {
+                _game = null;
+                caption = NewGameCaption;
+            }
+            return _client.SendTextMessageAsync(_chatId, text, replyToMessageId, caption);
         }
 
         private Game _game;
