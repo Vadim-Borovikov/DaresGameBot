@@ -39,5 +39,8 @@ namespace DaresGameBot.Web.Models.Config
 
         [JsonProperty]
         public List<string> AdditionalCommandsLines { get; set; }
+
+        [JsonProperty]
+        public string DontUnderstandStickerFileId { get; set; }
     }
 }

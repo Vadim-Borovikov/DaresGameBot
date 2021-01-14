@@ -6,56 +6,67 @@ using DaresGameBot.Web.Models.Commands;
 using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.InputFiles;
 
 namespace DaresGameBot.Web.Controllers
 {
     public sealed class UpdateController : Controller
     {
-        public UpdateController(IBot bot) => _bot = bot;
+        public UpdateController(IBot bot)
+        {
+            _bot = bot;
+            _dontUnderstandSticker = new InputOnlineFile(_bot.Config.DontUnderstandStickerFileId);
+        }
 
-        [HttpPost]
         public async Task<OkResult> Post([FromBody]Update update)
         {
-            if (update?.Type == UpdateType.Message)
-            {
-                Message message = update.Message;
-
-                string botName = null;
-                bool fromChat = message.Chat.Id != message.From.Id;
-                if (fromChat)
-                {
-                    User me = await _bot.Client.GetMeAsync();
-                    botName = me.Username;
-                }
-
-                await GetAction(message, fromChat, botName);
-            }
-
+            await ProcessAsync(update);
             return Ok();
         }
 
-        private Task GetAction(Message message, bool fromChat, string botName)
+        private async Task ProcessAsync(Update update)
         {
+            if (update?.Type != UpdateType.Message)
+            {
+                return;
+            }
+
+            Message message = update.Message;
+            bool fromChat = message.Chat.Id != message.From.Id;
+            string botName = null;
+            if (fromChat)
+            {
+                User me = await _bot.Client.GetMeAsync();
+                botName = me.Username;
+            }
+
             int replyToMessageId = fromChat ? message.MessageId : 0;
 
             Command command = _bot.Commands.FirstOrDefault(c => c.IsInvokingBy(message, fromChat, botName));
             if (command != null)
             {
-                return command.ExecuteAsync(message.Chat.Id, replyToMessageId, _bot.Client);
+                await command.ExecuteAsync(message.Chat.Id, replyToMessageId, _bot.Client);
+                return;
             }
 
             if (ushort.TryParse(message.Text, out ushort playersAmount))
             {
-                return GamesRepository.ChangePlayersAmountAsync(playersAmount, _bot.Config, _bot.GoogleSheetsProvider,
+                await GamesRepository.ChangePlayersAmountAsync(playersAmount, _bot.Config, _bot.GoogleSheetsProvider,
                     _bot.Client, message.Chat, replyToMessageId);
+                return;
             }
 
-            return float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance)
-                ? GamesRepository.ChangeChoiceChanceAsync(choiceChance, _bot.Config, _bot.GoogleSheetsProvider,
-                    _bot.Client, message.Chat, replyToMessageId)
-                : Task.CompletedTask;
+            if (float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance))
+            {
+                await GamesRepository.ChangeChoiceChanceAsync(choiceChance, _bot.Config, _bot.GoogleSheetsProvider,
+                    _bot.Client, message.Chat, replyToMessageId);
+                return;
+            }
+
+            await _bot.Client.SendStickerAsync(message, _dontUnderstandSticker);
         }
 
         private readonly IBot _bot;
+        private readonly InputOnlineFile _dontUnderstandSticker;
     }
 }

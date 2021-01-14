@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using DaresGameBot.Logic;
 using DaresGameBot.Web.Models;
 using GoogleSheetsManager;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.InputFiles;
 using File = System.IO.File;
 
 namespace DaresGameBot.Web
@@ -17,6 +21,12 @@ namespace DaresGameBot.Web
         private static ushort? ToUshort(object o) => ushort.TryParse(o?.ToString(), out ushort i) ? (ushort?)i : null;
 
         #endregion // Google
+
+        public static Task<Message> SendStickerAsync(this ITelegramBotClient client, Message message,
+            InputOnlineFile sticker)
+        {
+            return client.SendStickerAsync(message.Chat, sticker, replyToMessageId: message.MessageId);
+        }
 
         public static IEnumerable<Deck> GetDecks(Provider googleSheetsProvider, string googleRange)
         {
