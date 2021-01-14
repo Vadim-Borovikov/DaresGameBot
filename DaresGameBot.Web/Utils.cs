@@ -7,6 +7,7 @@ using DaresGameBot.Web.Models;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.ReplyMarkups;
 using File = System.IO.File;
@@ -22,6 +23,13 @@ namespace DaresGameBot.Web
         private static ushort? ToUshort(object o) => ushort.TryParse(o?.ToString(), out ushort i) ? (ushort?)i : null;
 
         #endregion // Google
+
+        public static Task<Message> FinalizeStatusMessageAsync(this ITelegramBotClient client, Message message,
+            string postfix = "")
+        {
+            string text = $"_{message.Text}_ Готово.{postfix}";
+            return client.EditMessageTextAsync(message.Chat, message.MessageId, text, ParseMode.Markdown);
+        }
 
         public static Task<Message> SendStickerAsync(this ITelegramBotClient client, Message message,
             InputOnlineFile sticker)

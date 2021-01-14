@@ -5,6 +5,7 @@ using DaresGameBot.Logic;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Game = DaresGameBot.Logic.Game;
 
 namespace DaresGameBot.Web.Models
@@ -24,16 +25,21 @@ namespace DaresGameBot.Web.Models
             _chatId = chatId;
         }
 
-        public Task StartNewGameAsync(int replyToMessageId, ushort? playersAmount = null, float? choiceChance = null)
+        public async Task StartNewGameAsync(int replyToMessageId, ushort? playersAmount = null,
+            float? choiceChance = null)
         {
+            Message statusMessage = await _client.SendTextMessageAsync(_chatId, "_Читаю колоды…_", ParseMode.Markdown,
+                disableNotification: true);
             IEnumerable<Deck> decks = Utils.GetDecks(_googleSheetsProvider, _googleRange);
+            await _client.FinalizeStatusMessageAsync(statusMessage);
+
             _game = new Game(playersAmount ?? _initialPlayersAmount, choiceChance ?? _initialChoiceChance, decks);
 
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
             stringBuilder.AppendLine(_game.Players);
             stringBuilder.AppendLine(_game.Chance);
-            return _client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), replyToMessageId, DrawCaption);
+            await _client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), replyToMessageId, DrawCaption);
         }
 
         public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount, int replyToMessageId)
