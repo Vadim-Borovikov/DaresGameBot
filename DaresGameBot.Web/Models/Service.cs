@@ -17,7 +17,7 @@ namespace DaresGameBot.Web.Models
             {
                 googleCredentialsJson = JsonConvert.SerializeObject(_bot.Config.GoogleCredentials);
             }
-            _googleSheetsProvider = new Provider(googleCredentialsJson, _bot.Config.GoogleSheetId);
+            _googleSheetsProvider = new Provider(googleCredentialsJson, ApplicationName, _bot.Config.GoogleSheetId);
             _bot.Initialize(_googleSheetsProvider);
 
             return _bot.Client.SetWebhookAsync(_bot.Config.Url, cancellationToken: cancellationToken);
@@ -31,5 +31,7 @@ namespace DaresGameBot.Web.Models
 
         private readonly IBot _bot;
         private Provider _googleSheetsProvider;
+
+        private const string ApplicationName = "DaresGameBot";
     }
 }

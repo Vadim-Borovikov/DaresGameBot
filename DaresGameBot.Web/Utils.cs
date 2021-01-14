@@ -18,7 +18,7 @@ namespace DaresGameBot.Web
     {
         #region Google
 
-        public static ushort? ToUshort(this IList<object> values, int index) => values.Extract(index, ToUshort);
+        public static ushort? ToUshort(this IList<object> values, int index) => values.To(index, ToUshort);
 
         private static ushort? ToUshort(object o) => ushort.TryParse(o?.ToString(), out ushort i) ? (ushort?)i : null;
 
