@@ -40,40 +40,47 @@ namespace DaresGameBot.Web.Models
                 replyMarkup: GetKeyboard());
         }
 
-        public Task ChangePlayersAmountAsync(ushort playersAmount, int replyToMessageId)
+        public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount, int replyToMessageId)
         {
-            if (playersAmount <= 0)
+            if (playersAmount <= 1)
             {
-                return Task.CompletedTask;
+                return false;
             }
 
-            if (!Valid)
+            if (Valid)
             {
-                return StartNewGameAsync(replyToMessageId, playersAmount);
+                _game.PlayersAmount = playersAmount;
+
+                await _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}",
+                    replyToMessageId: replyToMessageId, replyMarkup: GetKeyboard());
             }
-
-            _game.PlayersAmount = playersAmount;
-
-            return _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}",
-                replyToMessageId: replyToMessageId, replyMarkup: GetKeyboard());
+            else
+            {
+                await StartNewGameAsync(replyToMessageId, playersAmount);
+            }
+            return true;
         }
 
-        public Task ChangeChoiceChanceAsync(float choiceChance, int replyToMessageId)
+        public async Task<bool> ChangeChoiceChanceAsync(float choiceChance, int replyToMessageId)
         {
             if ((choiceChance < 0.0f) || (choiceChance > 1.0f))
             {
-                return Task.CompletedTask;
+                return false;
             }
 
-            if (!Valid)
+            if (Valid)
             {
-                return StartNewGameAsync(replyToMessageId, choiceChance: choiceChance);
+                _game.ChoiceChance = choiceChance;
+
+                await _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}",
+                    replyToMessageId: replyToMessageId, replyMarkup: GetKeyboard());
+            }
+            else
+            {
+                await StartNewGameAsync(replyToMessageId, choiceChance: choiceChance);
             }
 
-            _game.ChoiceChance = choiceChance;
-
-            return _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}",
-                replyToMessageId: replyToMessageId, replyMarkup: GetKeyboard());
+            return true;
         }
 
         public Task DrawAsync(int replyToMessageId)

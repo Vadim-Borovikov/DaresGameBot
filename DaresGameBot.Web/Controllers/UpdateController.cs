@@ -46,16 +46,22 @@ namespace DaresGameBot.Web.Controllers
 
             if (ushort.TryParse(message.Text, out ushort playersAmount))
             {
-                await GamesRepository.ChangePlayersAmountAsync(playersAmount, _bot.Config, _bot.GoogleSheetsProvider,
-                    _bot.Client, message.Chat, replyToMessageId);
-                return;
+                bool success = await GamesRepository.ChangePlayersAmountAsync(playersAmount, _bot.Config,
+                    _bot.GoogleSheetsProvider, _bot.Client, message.Chat, replyToMessageId);
+                if (success)
+                {
+                    return;
+                }
             }
 
             if (float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance))
             {
-                await GamesRepository.ChangeChoiceChanceAsync(choiceChance, _bot.Config, _bot.GoogleSheetsProvider,
-                    _bot.Client, message.Chat, replyToMessageId);
-                return;
+                bool success = await GamesRepository.ChangeChoiceChanceAsync(choiceChance, _bot.Config,
+                    _bot.GoogleSheetsProvider, _bot.Client, message.Chat, replyToMessageId);
+                if (success)
+                {
+                    return;
+                }
             }
 
             await _bot.Client.SendStickerAsync(message, _dontUnderstandSticker);

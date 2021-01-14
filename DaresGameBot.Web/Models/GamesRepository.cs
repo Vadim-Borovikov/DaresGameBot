@@ -15,14 +15,14 @@ namespace DaresGameBot.Web.Models
             return game.StartNewGameAsync(replyToMessageId);
         }
 
-        public static Task ChangePlayersAmountAsync(ushort playersAmount, Config.Config config,
+        public static Task<bool> ChangePlayersAmountAsync(ushort playersAmount, Config.Config config,
             Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId, int replyToMessageId)
         {
             GameLogic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
             return game.ChangePlayersAmountAsync(playersAmount, replyToMessageId);
         }
 
-        public static Task ChangeChoiceChanceAsync(float choiceChance, Config.Config config,
+        public static Task<bool> ChangeChoiceChanceAsync(float choiceChance, Config.Config config,
             Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId, int replyToMessageId)
         {
             GameLogic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
