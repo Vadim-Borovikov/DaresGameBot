@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace DaresGameBot.Logic
+namespace DaresGameBot.Web.Models.Game
 {
-    public sealed class Game
+    internal sealed class Game
     {
         public ushort PlayersAmount;
         public float ChoiceChance;

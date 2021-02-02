@@ -1,6 +1,6 @@
-namespace DaresGameBot.Logic
+namespace DaresGameBot.Web.Models.Game
 {
-    public class Card
+    internal class Card
     {
         protected internal string Description { get; protected set; }
         protected internal ushort Players { get; protected set; }

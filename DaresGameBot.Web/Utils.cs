@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DaresGameBot.Logic;
 using DaresGameBot.Web.Models;
+using DaresGameBot.Web.Models.Game;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;

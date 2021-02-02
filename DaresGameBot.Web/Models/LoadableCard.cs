@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using DaresGameBot.Logic;
+using DaresGameBot.Web.Models.Game;
 using GoogleSheetsManager;
 
 namespace DaresGameBot.Web.Models

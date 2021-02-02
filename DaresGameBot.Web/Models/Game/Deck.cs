@@ -1,20 +1,20 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DaresGameBot.Logic
+namespace DaresGameBot.Web.Models.Game
 {
-    public sealed class Deck
+    internal sealed class Deck
     {
         public string Tag { internal get; set; }
         public List<Card> Cards { private get; set; }
 
-        internal bool Empty => Cards.Count == 0;
+        public bool Empty => Cards.Count == 0;
 
-        internal void Add(IEnumerable<Card> cards) { Cards.AddRange(cards); }
+        public void Add(IEnumerable<Card> cards) { Cards.AddRange(cards); }
 
-        internal static Deck GetShuffledCopy(Deck deck) => deck.GetShuffledCopy();
+        public static Deck GetShuffledCopy(Deck deck) => deck.GetShuffledCopy();
 
-        internal Card Draw()
+        public Card Draw()
         {
             Card card = Cards[0];
             Cards.RemoveAt(0);

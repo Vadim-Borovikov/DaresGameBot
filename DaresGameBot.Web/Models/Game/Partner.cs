@@ -1,14 +1,14 @@
 ﻿using System;
 
-namespace DaresGameBot.Logic
+namespace DaresGameBot.Web.Models.Game
 {
-    public sealed class Partner : IComparable<Partner>
+    internal sealed class Partner : IComparable<Partner>
     {
         private readonly ushort? _number;
 
-        internal Partner(ushort partnerNumber) => _number = partnerNumber;
+        public Partner(ushort partnerNumber) => _number = partnerNumber;
 
-        internal Partner() => _number = null;
+        public Partner() => _number = null;
 
         public int CompareTo(Partner other)
         {

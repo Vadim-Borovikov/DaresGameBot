@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using DaresGameBot.Logic;
+using DaresGameBot.Web.Models.Game;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Game = DaresGameBot.Logic.Game;
 
 namespace DaresGameBot.Web.Models
 {
@@ -33,7 +32,7 @@ namespace DaresGameBot.Web.Models
             IEnumerable<Deck> decks = Utils.GetDecks(_googleSheetsProvider, _googleRange);
             await _client.FinalizeStatusMessageAsync(statusMessage);
 
-            _game = new Game(playersAmount ?? _initialPlayersAmount, choiceChance ?? _initialChoiceChance, decks);
+            _game = new Game.Game(playersAmount ?? _initialPlayersAmount, choiceChance ?? _initialChoiceChance, decks);
 
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
@@ -103,7 +102,7 @@ namespace DaresGameBot.Web.Models
             return _client.SendTextMessageAsync(_chatId, text, replyToMessageId, caption);
         }
 
-        private Game _game;
+        private Game.Game _game;
 
         private readonly Provider _googleSheetsProvider;
         private readonly string _googleRange;

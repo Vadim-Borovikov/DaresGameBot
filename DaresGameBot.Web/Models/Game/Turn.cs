@@ -2,14 +2,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace DaresGameBot.Logic
+namespace DaresGameBot.Web.Models.Game
 {
-    public sealed class Turn
+    internal sealed class Turn
     {
         private readonly string _text;
         private readonly List<Partner> _partners;
 
-        internal Turn(string text, List<Partner> partners)
+        public Turn(string text, List<Partner> partners)
         {
             _text = text;
             _partners = partners;
