@@ -2,8 +2,8 @@ namespace DaresGameBot.Web.Models.Game
 {
     internal class Card
     {
-        protected internal string Description { get; protected set; }
-        protected internal ushort Players { get; protected set; }
-        protected internal ushort PartnersToAssign { get; protected set; }
+        public string Description { get; protected set; }
+        public ushort Players { get; protected set; }
+        public ushort PartnersToAssign { get; protected set; }
     }
 }
