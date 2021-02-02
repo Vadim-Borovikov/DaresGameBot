@@ -15,7 +15,7 @@ namespace DaresGameBot.Web
         [SuppressMessage("ReSharper", "UnusedMember.Global")]
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IBot, Bot>();
+            services.AddSingleton<Bot>();
             services.AddHostedService<Service>();
             services.Configure<Config>(_config);
 
