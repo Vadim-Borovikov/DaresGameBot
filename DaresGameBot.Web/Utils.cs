@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DaresGameBot.Web.Models;
 using DaresGameBot.Web.Models.Game;
 using GoogleSheetsManager;
 using Telegram.Bot;
@@ -54,17 +53,17 @@ namespace DaresGameBot.Web
 
         public static IEnumerable<Deck> GetDecks(Provider googleSheetsProvider, string googleRange)
         {
-            IList<LoadableCard> cards = DataManager.GetValues<LoadableCard>(googleSheetsProvider, googleRange);
+            IList<Card> cards = DataManager.GetValues<Card>(googleSheetsProvider, googleRange);
             return cards.GroupBy(c => c.Tag)
                         .Select(g => CreateDeck(g.Key, g.ToList()));
         }
 
-        private static Deck CreateDeck(string tag, IEnumerable<LoadableCard> cards)
+        private static Deck CreateDeck(string tag, IEnumerable<Card> cards)
         {
             return new Deck
             {
                 Tag = tag,
-                Cards = cards.Cast<Card>().ToList()
+                Cards = cards.ToList()
             };
         }
 
