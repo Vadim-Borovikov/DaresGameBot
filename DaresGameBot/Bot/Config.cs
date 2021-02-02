@@ -20,12 +20,6 @@ namespace DaresGameBot.Bot
         [JsonProperty]
         public float InitialChoiceChance { get; set; }
 
-        [JsonProperty]
-        public Dictionary<string, string> GoogleCredentials { get; set; }
-
-        [JsonProperty]
-        public string GoogleCredentialsJson { get; set; }
-
         internal string Url => $"{Host}:{Port}/{Token}";
 
         [JsonProperty]
