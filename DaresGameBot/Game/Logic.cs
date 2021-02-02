@@ -1,20 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using DaresGameBot.Web.Models.Game;
+using DaresGameBot.Bot;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace DaresGameBot.Web.Models
+namespace DaresGameBot.Game
 {
-    internal sealed class GameLogic
+    internal sealed class Logic
     {
         public const string DrawCaption = "Вытянуть фант";
         public const string NewGameCaption = "Новая игра";
 
-        public GameLogic(Config.Config config, Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
+        public Logic(Config config, Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
         {
             _googleRange = config.GoogleRange;
             _initialPlayersAmount = config.InitialPlayersAmount;
@@ -32,7 +32,7 @@ namespace DaresGameBot.Web.Models
             IEnumerable<Deck> decks = Utils.GetDecks(_googleSheetsProvider, _googleRange);
             await _client.FinalizeStatusMessageAsync(statusMessage);
 
-            _game = new Game.Game(playersAmount ?? _initialPlayersAmount, choiceChance ?? _initialChoiceChance, decks);
+            _game = new Game(playersAmount ?? _initialPlayersAmount, choiceChance ?? _initialChoiceChance, decks);
 
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
@@ -102,7 +102,7 @@ namespace DaresGameBot.Web.Models
             return _client.SendTextMessageAsync(_chatId, text, replyToMessageId, caption);
         }
 
-        private Game.Game _game;
+        private Game _game;
 
         private readonly Provider _googleSheetsProvider;
         private readonly string _googleRange;

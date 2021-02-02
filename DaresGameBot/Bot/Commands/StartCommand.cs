@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using DaresGameBot.Game;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace DaresGameBot.Web.Models.Commands
+namespace DaresGameBot.Bot.Commands
 {
     internal sealed class StartCommand : Command
     {
@@ -13,7 +14,7 @@ namespace DaresGameBot.Web.Models.Commands
         internal override string Description => "инструкция и список команд";
 
         public StartCommand(IReadOnlyCollection<Command> commands, List<string> manualLines,
-            List<string> additionalCommandsLines, Config.Config config, Provider googleSheetsProvider)
+            List<string> additionalCommandsLines, Config config, Provider googleSheetsProvider)
         {
             _commands = commands;
             _manualLines = manualLines;
@@ -22,7 +23,7 @@ namespace DaresGameBot.Web.Models.Commands
             _googleSheetsProvider = googleSheetsProvider;
         }
 
-        internal override async Task ExecuteAsync(ChatId chatId, int replyToMessageId, ITelegramBotClient client)
+        public override async Task ExecuteAsync(ChatId chatId, int replyToMessageId, ITelegramBotClient client)
         {
             var builder = new StringBuilder();
             foreach (string line in _manualLines)
@@ -42,9 +43,9 @@ namespace DaresGameBot.Web.Models.Commands
 
             await client.SendTextMessageAsync(chatId, builder.ToString());
 
-            if (!GamesRepository.IsGameValid(chatId))
+            if (!Repository.IsGameValid(chatId))
             {
-                await GamesRepository.StartNewGameAsync(_config, _googleSheetsProvider, client, chatId,
+                await Repository.StartNewGameAsync(_config, _googleSheetsProvider, client, chatId,
                     replyToMessageId);
             }
         }
@@ -52,7 +53,7 @@ namespace DaresGameBot.Web.Models.Commands
         private readonly IReadOnlyCollection<Command> _commands;
         private readonly List<string> _manualLines;
         private readonly List<string> _additionalCommandsLines;
-        private readonly Config.Config _config;
+        private readonly Config _config;
         private readonly Provider _googleSheetsProvider;
     }
 }

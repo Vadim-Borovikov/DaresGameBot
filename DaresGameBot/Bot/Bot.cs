@@ -4,7 +4,8 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DaresGameBot.Web.Models.Commands;
+using DaresGameBot.Bot.Commands;
+using DaresGameBot.Game;
 using GoogleSheetsManager;
 using Newtonsoft.Json;
 using Telegram.Bot;
@@ -12,11 +13,11 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InputFiles;
 
-namespace DaresGameBot.Web.Models
+namespace DaresGameBot.Bot
 {
-    internal sealed class Bot : IDisposable
+    public sealed class Bot : IDisposable
     {
-        public Bot(Config.Config config)
+        public Bot(Config config)
         {
             _config = config;
 
@@ -65,7 +66,7 @@ namespace DaresGameBot.Web.Models
 
             if (ushort.TryParse(message.Text, out ushort playersAmount))
             {
-                bool success = await GamesRepository.ChangePlayersAmountAsync(playersAmount, _config,
+                bool success = await Repository.ChangePlayersAmountAsync(playersAmount, _config,
                     _googleSheetsProvider, _client, message.Chat, replyToMessageId);
                 if (success)
                 {
@@ -75,7 +76,7 @@ namespace DaresGameBot.Web.Models
 
             if (float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance))
             {
-                bool success = await GamesRepository.ChangeChoiceChanceAsync(choiceChance, _config,
+                bool success = await Repository.ChangeChoiceChanceAsync(choiceChance, _config,
                     _googleSheetsProvider, _client, message.Chat, replyToMessageId);
                 if (success)
                 {
@@ -93,7 +94,7 @@ namespace DaresGameBot.Web.Models
         public Task<User> GetUserAsunc() => _client.GetMeAsync();
 
         private readonly TelegramBotClient _client;
-        private readonly Config.Config _config;
+        private readonly Config _config;
         private readonly List<Command> _commands;
         private readonly InputOnlineFile _dontUnderstandSticker;
         private readonly Provider _googleSheetsProvider;

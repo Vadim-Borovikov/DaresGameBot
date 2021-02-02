@@ -1,29 +1,30 @@
 ﻿using System.Threading.Tasks;
+using DaresGameBot.Game;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace DaresGameBot.Web.Models.Commands
+namespace DaresGameBot.Bot.Commands
 {
     internal sealed class DrawCommand : Command
     {
         internal override string Name => "draw";
         internal override string Description => Caption.ToLowerInvariant();
 
-        protected override string Caption => GameLogic.DrawCaption;
+        protected override string Caption => Logic.DrawCaption;
 
-        public DrawCommand(Config.Config config, Provider googleSheetsProvider)
+        public DrawCommand(Config config, Provider googleSheetsProvider)
         {
             _config = config;
             _googleSheetsProvider = googleSheetsProvider;
         }
 
-        internal override Task ExecuteAsync(ChatId chatId, int replyToMessageId, ITelegramBotClient client)
+        public override Task ExecuteAsync(ChatId chatId, int replyToMessageId, ITelegramBotClient client)
         {
-            return GamesRepository.DrawAsync(_config, _googleSheetsProvider, client, chatId, replyToMessageId);
+            return Repository.DrawAsync(_config, _googleSheetsProvider, client, chatId, replyToMessageId);
         }
 
-        private readonly Config.Config _config;
+        private readonly Config _config;
         private readonly Provider _googleSheetsProvider;
     }
 }

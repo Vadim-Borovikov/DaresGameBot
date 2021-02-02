@@ -3,7 +3,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace DaresGameBot.Web.Models.Commands
+namespace DaresGameBot.Bot.Commands
 {
     internal abstract class Command
     {
@@ -12,13 +12,13 @@ namespace DaresGameBot.Web.Models.Commands
 
         protected virtual string Caption => null;
 
-        internal bool IsInvokingBy(Message message, bool fromChat, string botName)
+        public bool IsInvokingBy(Message message, bool fromChat, string botName)
         {
             return (message.Type == MessageType.Text)
                    && ((message.Text == (fromChat ? $"/{Name}@{botName}" : $"/{Name}"))
                        || (!string.IsNullOrWhiteSpace(Caption) && (message.Text == Caption)));
         }
 
-        internal abstract Task ExecuteAsync(ChatId chatId, int replyToMessageId, ITelegramBotClient client);
+        public abstract Task ExecuteAsync(ChatId chatId, int replyToMessageId, ITelegramBotClient client);
     }
 }

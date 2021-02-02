@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DaresGameBot.Web.Models.Game
+namespace DaresGameBot.Game
 {
     internal sealed class Partner : IComparable<Partner>
     {

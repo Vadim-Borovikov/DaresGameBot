@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using DaresGameBot.Bot;
 using DaresGameBot.Web.Models;
-using DaresGameBot.Web.Models.Config;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;

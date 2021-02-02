@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace DaresGameBot.Web.Models.Config
+namespace DaresGameBot.Bot
 {
     public sealed class Config
     {

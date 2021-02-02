@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace DaresGameBot.Web.Models.Game
+namespace DaresGameBot.Game
 {
     internal sealed class Turn
     {

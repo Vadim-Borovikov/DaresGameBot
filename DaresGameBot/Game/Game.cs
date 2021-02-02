@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace DaresGameBot.Web.Models.Game
+namespace DaresGameBot.Game
 {
     internal sealed class Game
     {

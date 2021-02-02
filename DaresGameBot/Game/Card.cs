@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using GoogleSheetsManager;
 
-namespace DaresGameBot.Web.Models.Game
+namespace DaresGameBot.Game
 {
-    internal class Card : ILoadable
+    internal sealed class Card : ILoadable
     {
         public string Description { get; private set; }
         public ushort Players { get; private set; }

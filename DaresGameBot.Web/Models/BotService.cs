@@ -12,6 +12,6 @@ namespace DaresGameBot.Web.Models
 
         public Task StopAsync(CancellationToken cancellationToken) => _bot.StopAsync(cancellationToken);
 
-        private readonly Bot _bot;
+        private readonly Bot.Bot _bot;
     }
 }
