@@ -5,7 +5,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Web.Models.Commands
 {
-    public abstract class Command
+    internal abstract class Command
     {
         internal abstract string Name { get; }
         internal abstract string Description { get; }

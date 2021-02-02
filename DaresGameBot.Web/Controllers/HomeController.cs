@@ -11,9 +11,9 @@ namespace DaresGameBot.Web.Controllers
     {
         [HttpGet]
         [Route("")]
-        public async Task<IActionResult> Index([FromServices]Bot bot)
+        public async Task<IActionResult> Index([FromServices]BotSingleton singleton)
         {
-            User model = await bot.GetUserAsunc();
+            User model = await singleton.Bot.GetUserAsunc();
             return View(model);
         }
 

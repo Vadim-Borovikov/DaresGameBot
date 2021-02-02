@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using DaresGameBot.Web.Models.Commands;
 using GoogleSheetsManager;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -15,11 +14,11 @@ using Telegram.Bot.Types.InputFiles;
 
 namespace DaresGameBot.Web.Models
 {
-    public sealed class Bot : IDisposable
+    internal sealed class Bot : IDisposable
     {
-        public Bot(IOptions<Config.Config> options)
+        public Bot(Config.Config config)
         {
-            _config = options.Value;
+            _config = config;
 
             _client = new TelegramBotClient(_config.Token);
 
@@ -39,12 +38,12 @@ namespace DaresGameBot.Web.Models
             _dontUnderstandSticker = new InputOnlineFile(_config.DontUnderstandStickerFileId);
         }
 
-        internal Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
             return _client.SetWebhookAsync(_config.Url, cancellationToken: cancellationToken);
         }
 
-        internal async Task UpdateAsync(Update update)
+        public async Task UpdateAsync(Update update)
         {
             if (update?.Type != UpdateType.Message)
             {
@@ -87,11 +86,11 @@ namespace DaresGameBot.Web.Models
             await _client.SendStickerAsync(message, _dontUnderstandSticker);
         }
 
-        internal Task StopAsync(CancellationToken cancellationToken) => _client.DeleteWebhookAsync(cancellationToken);
+        public Task StopAsync(CancellationToken cancellationToken) => _client.DeleteWebhookAsync(cancellationToken);
 
         public void Dispose() => _googleSheetsProvider?.Dispose();
 
-        internal Task<User> GetUserAsunc() => _client.GetMeAsync();
+        public Task<User> GetUserAsunc() => _client.GetMeAsync();
 
         private readonly TelegramBotClient _client;
         private readonly Config.Config _config;

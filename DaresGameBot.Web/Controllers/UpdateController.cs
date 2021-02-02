@@ -7,9 +7,9 @@ namespace DaresGameBot.Web.Controllers
 {
     public sealed class UpdateController : Controller
     {
-        public async Task<OkResult> Post([FromBody]Update update, [FromServices]Bot bot)
+        public async Task<OkResult> Post([FromBody]Update update, [FromServices]BotSingleton singleton)
         {
-            await bot.UpdateAsync(update);
+            await singleton.Bot.UpdateAsync(update);
             return Ok();
         }
     }
