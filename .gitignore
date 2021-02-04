@@ -330,3 +330,5 @@ ASALocalRun/
 .mfractor/
 
 /DaresGameBot.Web/appsettings.Development.json
+/DaresGameBot/nuget.config
+/DaresGameBot/nuget push.cmd
