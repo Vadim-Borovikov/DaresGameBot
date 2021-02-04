@@ -23,8 +23,8 @@ namespace DaresGameBot.Bot
 
             _client = new TelegramBotClient(_config.Token);
 
-            string googleCredentialsJson = JsonConvert.SerializeObject(_config.GoogleCredential);
-            _googleSheetsProvider = new Provider(googleCredentialsJson, ApplicationName, _config.GoogleSheetId);
+            string googleCredentialJson = JsonConvert.SerializeObject(_config.GoogleCredential);
+            _googleSheetsProvider = new Provider(googleCredentialJson, ApplicationName, _config.GoogleSheetId);
 
             _commands = new List<Command>();
             _commands.Add(new StartCommand(_commands, _config.ManualLines, _config.AdditionalCommandsLines, _config,
