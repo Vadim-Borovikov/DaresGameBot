@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace DaresGameBot.Web
+namespace DaresGameBot.Web.Models
 {
     public sealed class Config : Bot.Config
     {
