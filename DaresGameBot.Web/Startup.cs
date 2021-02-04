@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 
 namespace DaresGameBot.Web
 {
@@ -39,14 +38,7 @@ namespace DaresGameBot.Web
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
-            string token = _config.GetSection("BotConfig")["Token"];
-            if (string.IsNullOrEmpty(token))
-            {
-                var botConfig = JsonConvert.DeserializeObject<Bot.Config>(_config["BotConfigJson"]);
-                token = botConfig.Token;
-            }
-
-            app.UseMvc(routes => routes.MapRoute("update", $"{token}/{{controller=Update}}/{{action=post}}"));
+            app.UseMvc(routes => routes.MapRoute("update", $"{_config["Token"]}/{{controller=Update}}/{{action=post}}"));
         }
 
         private readonly IConfiguration _config;

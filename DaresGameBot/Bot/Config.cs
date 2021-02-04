@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace DaresGameBot.Bot
 {
-    public sealed class Config
+    public class Config
     {
         [JsonProperty]
         public string Token { get; set; }
@@ -21,6 +21,9 @@ namespace DaresGameBot.Bot
         public float InitialChoiceChance { get; set; }
 
         internal string Url => $"{Host}:{Port}/{Token}";
+
+        [JsonProperty]
+        public Dictionary<string, string> GoogleCredential { get; set; }
 
         [JsonProperty]
         public string GoogleSheetId { get; set; }

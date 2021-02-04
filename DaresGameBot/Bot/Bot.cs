@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DaresGameBot.Bot.Commands;
 using DaresGameBot.Game;
 using GoogleSheetsManager;
+using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -16,12 +17,13 @@ namespace DaresGameBot.Bot
 {
     public sealed class Bot : IDisposable
     {
-        public Bot(Config config, string googleCredentialsJson)
+        public Bot(Config config)
         {
             _config = config;
 
             _client = new TelegramBotClient(_config.Token);
 
+            string googleCredentialsJson = JsonConvert.SerializeObject(_config.GoogleCredential);
             _googleSheetsProvider = new Provider(googleCredentialsJson, ApplicationName, _config.GoogleSheetId);
 
             _commands = new List<Command>();

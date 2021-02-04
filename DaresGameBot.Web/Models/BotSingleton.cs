@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -12,14 +13,12 @@ namespace DaresGameBot.Web.Models
         {
             Config config = options.Value;
 
-            Bot.Config botConfig = config.BotConfig ?? JsonConvert.DeserializeObject<Bot.Config>(config.BotConfigJson);
-
-            string googleCredentialsJson = config.GoogleCredentialsJson;
-            if (string.IsNullOrWhiteSpace(googleCredentialsJson))
+            if ((config.GoogleCredential == null) || (config.GoogleCredential.Count == 0))
             {
-                googleCredentialsJson = JsonConvert.SerializeObject(config.GoogleCredentials);
+                config.GoogleCredential =
+                    JsonConvert.DeserializeObject<Dictionary<string, string>>(config.GoogleCredentialJson);
             }
-            Bot = new Bot.Bot(botConfig, googleCredentialsJson);
+            Bot = new Bot.Bot(config);
         }
 
         public void Dispose() => Bot.Dispose();
