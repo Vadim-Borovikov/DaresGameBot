@@ -1,59 +1,39 @@
-﻿using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using AbstractBot;
 using DaresGameBot.Game;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DaresGameBot.Bot.Commands
 {
-    internal sealed class StartCommand : Command
+    internal sealed class StartCommand : CommandBase
     {
-        internal override string Name => "start";
-        internal override string Description => "инструкция и список команд";
+        protected override string Name => "start";
+        protected override string Description => "инструкции и команды";
 
-        public StartCommand(IReadOnlyCollection<Command> commands, List<string> manualLines,
-            List<string> additionalCommandsLines, Config config, Provider googleSheetsProvider)
+        public StartCommand(IDescriptionProvider descriptionProvider, BotConfig config, Provider googleSheetsProvider)
         {
-            _commands = commands;
-            _manualLines = manualLines;
-            _additionalCommandsLines = additionalCommandsLines;
+            _descriptionProvider = descriptionProvider;
             _config = config;
             _googleSheetsProvider = googleSheetsProvider;
         }
 
-        public override async Task ExecuteAsync(ChatId chatId, int replyToMessageId, ITelegramBotClient client)
+        public override async Task ExecuteAsync(ChatId chatId, ITelegramBotClient client, int replyToMessageId = 0,
+            IReplyMarkup replyMarkup = null)
         {
-            var builder = new StringBuilder();
-            foreach (string line in _manualLines)
-            {
-                builder.AppendLine(line);
-            }
-            builder.AppendLine();
-            builder.AppendLine("Команды:");
-            foreach (Command command in _commands)
-            {
-                builder.AppendLine($"/{command.Name} – {command.Description}");
-            }
-            foreach (string line in _additionalCommandsLines)
-            {
-                builder.AppendLine(line);
-            }
-
-            await client.SendTextMessageAsync(chatId, builder.ToString());
+            await client.SendTextMessageAsync(chatId, _descriptionProvider.GetDescription(),
+                replyToMessageId: replyToMessageId, replyMarkup: replyMarkup);
 
             if (!Repository.IsGameValid(chatId))
             {
-                await Repository.StartNewGameAsync(_config, _googleSheetsProvider, client, chatId,
-                    replyToMessageId);
+                await Repository.StartNewGameAsync(_config, _googleSheetsProvider, client, chatId, replyToMessageId);
             }
         }
 
-        private readonly IReadOnlyCollection<Command> _commands;
-        private readonly List<string> _manualLines;
-        private readonly List<string> _additionalCommandsLines;
-        private readonly Config _config;
+        private readonly IDescriptionProvider _descriptionProvider;
+        private readonly BotConfig _config;
         private readonly Provider _googleSheetsProvider;
     }
 }

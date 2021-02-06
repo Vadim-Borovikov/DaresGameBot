@@ -66,12 +66,6 @@ namespace DaresGameBot
             return client.SendTextMessageAsync(chatId, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
         }
 
-        public static async Task<string> GetNameAsync(this ITelegramBotClient client)
-        {
-            User me = await client.GetMeAsync();
-            return me.Username;
-        }
-
         public static IEnumerable<Deck> GetDecks(Provider googleSheetsProvider, string googleRange)
         {
             IList<Card> cards = DataManager.GetValues<Card>(googleSheetsProvider, googleRange);

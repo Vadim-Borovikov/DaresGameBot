@@ -14,7 +14,7 @@ namespace DaresGameBot.Game
         public const string DrawCaption = "Вытянуть фант";
         public const string NewGameCaption = "Новая игра";
 
-        public Logic(Config config, Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
+        public Logic(BotConfig config, Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
         {
             _googleRange = config.GoogleRange;
             _initialPlayersAmount = config.InitialPlayersAmount;

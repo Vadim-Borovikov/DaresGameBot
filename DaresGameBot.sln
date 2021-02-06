@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.28307.329
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaresGameBot.Web", "DaresGameBot.Web\DaresGameBot.Web.csproj", "{88614F5E-CE3F-4BA9-9B67-760C3B747346}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaresGameBot", "DaresGameBot\DaresGameBot.csproj", "{FEFB9867-80E8-4299-92E0-6C38C948541F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaresGameBot", "DaresGameBot\DaresGameBot.csproj", "{FEFB9867-80E8-4299-92E0-6C38C948541F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
