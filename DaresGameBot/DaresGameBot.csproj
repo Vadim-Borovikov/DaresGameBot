@@ -2,12 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-    <Version>0.2.0</Version>
-    <Authors>Vadim-Borovikov</Authors>
-    <Company>Vadim-Borovikov</Company>
-    <Description>Telegram bot that provides a Dares game for group of people.</Description>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <RepositoryUrl>https://github.com/Vadim-Borovikov/DaresGameBot</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
