@@ -7,7 +7,6 @@ using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DaresGameBot
@@ -49,12 +48,6 @@ namespace DaresGameBot
         {
             string text = $"_{message.Text}_ Готово.{postfix}";
             return client.EditMessageTextAsync(message.Chat, message.MessageId, text, ParseMode.Markdown);
-        }
-
-        public static Task<Message> SendStickerAsync(this ITelegramBotClient client, Message message,
-            InputOnlineFile sticker)
-        {
-            return client.SendStickerAsync(message.Chat, sticker, replyToMessageId: message.MessageId);
         }
 
         public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,

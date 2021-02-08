@@ -45,7 +45,7 @@ namespace DaresGameBot.Bot
                 }
             }
 
-            await Client.SendStickerAsync(message, DontUnderstandSticker);
+            await Client.SendStickerAsync(message.Chat, DontUnderstandSticker);
         }
     }
 }
