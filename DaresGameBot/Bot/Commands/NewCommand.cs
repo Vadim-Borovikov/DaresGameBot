@@ -10,13 +10,13 @@ namespace DaresGameBot.Bot.Commands
         protected override string Name => "new";
         protected override string Description => Alias.ToLowerInvariant();
 
-        protected override string Alias => Manager.NewGameCaption;
+        protected override string Alias => Game.Game.NewGameCaption;
 
         public NewCommand(Bot bot) : base(bot) { }
 
         public override Task ExecuteAsync(Message message, bool fromChat = false)
         {
-            return Repository.StartNewGameAsync(Bot, message.Chat);
+            return Manager.StartNewGameAsync(Bot, message.Chat);
         }
     }
 }

@@ -10,14 +10,14 @@ namespace DaresGameBot.Bot.Commands
         protected override string Name => "draw";
         protected override string Description => Alias.ToLowerInvariant();
 
-        protected override string Alias => Manager.DrawCaption;
+        protected override string Alias => Game.Game.DrawCaption;
 
         public DrawCommand(Bot bot) : base(bot) { }
 
         public override Task ExecuteAsync(Message message, bool fromChat = false)
         {
             int replyToMessageId = fromChat ? message.MessageId : 0;
-            return Repository.DrawAsync(Bot, message.Chat, replyToMessageId);
+            return Manager.DrawAsync(Bot, message.Chat, replyToMessageId);
         }
     }
 }

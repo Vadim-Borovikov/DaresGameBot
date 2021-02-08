@@ -27,7 +27,7 @@ namespace DaresGameBot.Bot
 
             if (ushort.TryParse(message.Text, out ushort playersAmount))
             {
-                bool success = await Repository.ChangePlayersAmountAsync(playersAmount, this, message.Chat);
+                bool success = await Manager.ChangePlayersAmountAsync(playersAmount, this, message.Chat);
                 if (success)
                 {
                     return;
@@ -36,7 +36,7 @@ namespace DaresGameBot.Bot
 
             if (float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance))
             {
-                bool success = await Repository.ChangeChoiceChanceAsync(choiceChance, this, message.Chat);
+                bool success = await Manager.ChangeChoiceChanceAsync(choiceChance, this, message.Chat);
                 if (success)
                 {
                     return;

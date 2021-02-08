@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DaresGameBot.Game
+namespace DaresGameBot.Game.Data
 {
     internal sealed class Deck
     {

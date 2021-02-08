@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DaresGameBot.Game;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -49,22 +48,6 @@ namespace DaresGameBot
             var raw = new[] { button };
             var markup = new ReplyKeyboardMarkup(raw, true);
             return client.SendTextMessageAsync(chatId, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
-        }
-
-        public static IEnumerable<Deck> GetDecks(Provider googleSheetsProvider, string googleRange)
-        {
-            IList<Card> cards = DataManager.GetValues<Card>(googleSheetsProvider, googleRange);
-            return cards.GroupBy(c => c.Tag)
-                        .Select(g => CreateDeck(g.Key, g.ToList()));
-        }
-
-        private static Deck CreateDeck(string tag, IEnumerable<Card> cards)
-        {
-            return new Deck
-            {
-                Tag = tag,
-                Cards = cards.ToList()
-            };
         }
     }
 }

@@ -16,9 +16,9 @@ namespace DaresGameBot.Bot.Commands
         {
             await Bot.Client.SendTextMessageAsync(message.Chat, Bot.GetDescription());
 
-            if (!Repository.IsGameManagerValid(message.Chat))
+            if (!Manager.IsGameManagerValid(message.Chat))
             {
-                await Repository.StartNewGameAsync(Bot, message.Chat);
+                await Manager.StartNewGameAsync(Bot, message.Chat);
             }
         }
     }

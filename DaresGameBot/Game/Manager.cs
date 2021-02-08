@@ -1,103 +1,67 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using AbstractBot;
+using DaresGameBot.Game.Data;
+using GoogleSheetsManager;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Game
 {
-    internal sealed class Manager
+    internal static class Manager
     {
-        public const string DrawCaption = "Вытянуть фант";
-        public const string NewGameCaption = "Новая игра";
-
-        public Manager(Bot.Bot bot, ChatId chatId)
+        public static Task StartNewGameAsync(Bot.Bot bot, ChatId chatId)
         {
-            _bot = bot;
-            _chatId = chatId;
+            Game manager = GetOrAddGameManager(bot, chatId);
+            return manager.StartNewGameAsync();
         }
 
-        public async Task StartNewGameAsync(ushort? playersAmount = null, float? choiceChance = null)
+        public static Task<bool> ChangePlayersAmountAsync(ushort playersAmount, Bot.Bot bot, ChatId chatId)
         {
-            Message statusMessage = await _bot.Client.SendTextMessageAsync(_chatId, "_Читаю колоды…_",
-                ParseMode.Markdown, disableNotification: true);
-            IEnumerable<Deck> decks = Utils.GetDecks(_bot.GoogleSheetsProvider, _bot.Config.GoogleRange);
-            await _bot.Client.FinalizeStatusMessageAsync(statusMessage);
-
-            _game = new Game(playersAmount ?? _bot.Config.InitialPlayersAmount,
-                choiceChance ?? _bot.Config.InitialChoiceChance, decks);
-
-            var stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine("🔥 Начинаем новую игру!");
-            stringBuilder.AppendLine(_game.Players);
-            stringBuilder.AppendLine(_game.Chance);
-            await _bot.Client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), DrawCaption);
+            Game manager = GetOrAddGameManager(bot, chatId);
+            return manager.ChangePlayersAmountAsync(playersAmount);
         }
 
-        public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount)
+        public static Task<bool> ChangeChoiceChanceAsync(float choiceChance, Bot.Bot bot, ChatId chatId)
         {
-            if (playersAmount <= 1)
-            {
-                return false;
-            }
-
-            if (_game == null)
-            {
-                await StartNewGameAsync(playersAmount);
-            }
-            else
-            {
-                _game.PlayersAmount = playersAmount;
-
-                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", DrawCaption);
-            }
-            return true;
+            Game manager = GetOrAddGameManager(bot, chatId);
+            return manager.ChangeChoiceChanceAsync(choiceChance);
         }
 
-        public async Task<bool> ChangeChoiceChanceAsync(float choiceChance)
+        public static Task DrawAsync(Bot.Bot bot, ChatId chatId, int replyToMessageId)
         {
-            if ((choiceChance < 0.0f) || (choiceChance > 1.0f))
-            {
-                return false;
-            }
-
-            if (_game == null)
-            {
-                await StartNewGameAsync(choiceChance: choiceChance);
-            }
-            else
-            {
-                _game.ChoiceChance = choiceChance;
-
-                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", DrawCaption);
-            }
-
-            return true;
+            Game manager = GetOrAddGameManager(bot, chatId);
+            return manager.DrawAsync(replyToMessageId);
         }
 
-        public Task DrawAsync(int replyToMessageId)
+        public static bool IsGameManagerValid(ChatId chatId)
         {
-            if (_game == null)
-            {
-                return StartNewGameAsync();
-            }
-
-            Turn turn = _game.Draw();
-            string text = turn.GetMessage(_game.PlayersAmount);
-
-            string caption = DrawCaption;
-            if (_game.Empty)
-            {
-                _game = null;
-                caption = NewGameCaption;
-            }
-            return _bot.Client.SendTextMessageAsync(_chatId, text, caption, replyToMessageId);
+            return GameManagers.TryGetValue(chatId.Identifier, out Game gameManager) && (gameManager != null);
         }
 
-        private Game _game;
+        private static Game GetOrAddGameManager(Bot.Bot bot, ChatId chatId)
+        {
+            return GameManagers.GetOrAdd(chatId.Identifier, id => new Game(bot, id));
+        }
 
-        private readonly Bot.Bot _bot;
-        private readonly ChatId _chatId;
+
+        public static IEnumerable<Deck> GetDecks(Bot.Bot bot)
+        {
+            IList<Card> cards = DataManager.GetValues<Card>(bot.GoogleSheetsProvider, bot.Config.GoogleRange);
+            return cards.GroupBy(c => c.Tag)
+                        .Select(g => CreateDeck(g.Key, g.ToList()));
+        }
+
+        private static Deck CreateDeck(string tag, IEnumerable<Card> cards)
+        {
+            return new Deck
+            {
+                Tag = tag,
+                Cards = cards.ToList()
+            };
+        }
+
+        private static readonly ConcurrentDictionary<long, Game> GameManagers =
+            new ConcurrentDictionary<long, Game>();
     }
 }

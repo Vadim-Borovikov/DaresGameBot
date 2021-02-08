@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using GoogleSheetsManager;
 
-namespace DaresGameBot.Game
+namespace DaresGameBot.Game.Data
 {
     internal sealed class Card : ILoadable
     {

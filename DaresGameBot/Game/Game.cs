@@ -1,99 +1,104 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using AbstractBot;
+using DaresGameBot.Game.Data;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Game
 {
     internal sealed class Game
     {
-        public ushort PlayersAmount;
-        public float ChoiceChance;
+        public const string DrawCaption = "Вытянуть фант";
+        public const string NewGameCaption = "Новая игра";
 
-        public string Players => $"Игроков: {PlayersAmount}";
-        public string Chance => $"Шанс на 🤩: {ChoiceChance:P0}";
-
-        public bool Empty => _decks.Count == 0;
-
-        public Game(ushort playersAmount, float choiceChance, IEnumerable<Deck> decks)
+        public Game(Bot.Bot bot, ChatId chatId)
         {
-            PlayersAmount = playersAmount;
-            ChoiceChance = choiceChance;
-
-            _decks = new Queue<Deck>(decks.Select(Deck.GetShuffledCopy));
+            _bot = bot;
+            _chatId = chatId;
         }
 
-        public Turn Draw()
+        public async Task StartNewGameAsync(ushort? playersAmount = null, float? choiceChance = null)
         {
-            Card card = DrawCard(out string deckTag);
-            return CreateTurn(card, deckTag);
+            Message statusMessage = await _bot.Client.SendTextMessageAsync(_chatId, "_Читаю колоды…_",
+                ParseMode.Markdown, disableNotification: true);
+            IEnumerable<Deck> decks = Manager.GetDecks(_bot);
+            await _bot.Client.FinalizeStatusMessageAsync(statusMessage);
+
+            _game = new Data.Game(playersAmount ?? _bot.Config.InitialPlayersAmount,
+                choiceChance ?? _bot.Config.InitialChoiceChance, decks);
+
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine("🔥 Начинаем новую игру!");
+            stringBuilder.AppendLine(_game.Players);
+            stringBuilder.AppendLine(_game.Chance);
+            await _bot.Client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), DrawCaption);
         }
 
-        private Card DrawCard(out string deckTag)
+        public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount)
         {
-            while (true)
+            if (playersAmount <= 1)
             {
-                if (Empty)
-                {
-                    deckTag = null;
-                    return null;
-                }
-
-                Deck current = _decks.Peek();
-                deckTag = current.Tag;
-
-                var crowdCards = new Queue<Card>();
-                Card card = Draw(current, crowdCards);
-
-                if (current.Empty)
-                {
-                    _decks.Dequeue();
-                    if (card == null)
-                    {
-                        continue;
-                    }
-                }
-
-                current.Add(crowdCards);
-                return card;
+                return false;
             }
-        }
 
-        private Card Draw(Deck deck, Queue<Card> crowdCards)
-        {
-            while (true)
+            if (_game == null)
             {
-                if (deck.Empty)
-                {
-                    return null;
-                }
-
-                Card next = deck.Draw();
-                if (next.Players <= PlayersAmount)
-                {
-                    return next;
-                }
-
-                crowdCards.Enqueue(next);
+                await StartNewGameAsync(playersAmount);
             }
-        }
-
-        private Turn CreateTurn(Card card, string deckTag)
-        {
-            Queue<ushort> partnersQueue = Enumerable.Range(1, PlayersAmount - 1)
-                                                    .Select(i => (ushort) i)
-                                                    .ToShuffeledQueue();
-
-            var partners = new List<Partner>(card.PartnersToAssign);
-            for (ushort i = 0; i < card.PartnersToAssign; ++i)
+            else
             {
-                bool byChoice = Utils.Random.NextDouble() < ChoiceChance;
-                Partner partner = byChoice ? new Partner() : new Partner(partnersQueue.Dequeue());
-                partners.Add(partner);
-            }
-            partners.Sort();
+                _game.PlayersAmount = playersAmount;
 
-            return new Turn($"{deckTag} {card.Description}", partners);
+                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", DrawCaption);
+            }
+            return true;
         }
 
-        private readonly Queue<Deck> _decks;
+        public async Task<bool> ChangeChoiceChanceAsync(float choiceChance)
+        {
+            if ((choiceChance < 0.0f) || (choiceChance > 1.0f))
+            {
+                return false;
+            }
+
+            if (_game == null)
+            {
+                await StartNewGameAsync(choiceChance: choiceChance);
+            }
+            else
+            {
+                _game.ChoiceChance = choiceChance;
+
+                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", DrawCaption);
+            }
+
+            return true;
+        }
+
+        public Task DrawAsync(int replyToMessageId)
+        {
+            if (_game == null)
+            {
+                return StartNewGameAsync();
+            }
+
+            Turn turn = _game.Draw();
+            string text = turn.GetMessage(_game.PlayersAmount);
+
+            string caption = DrawCaption;
+            if (_game.Empty)
+            {
+                _game = null;
+                caption = NewGameCaption;
+            }
+            return _bot.Client.SendTextMessageAsync(_chatId, text, caption, replyToMessageId);
+        }
+
+        private Data.Game _game;
+
+        private readonly Bot.Bot _bot;
+        private readonly ChatId _chatId;
     }
 }
