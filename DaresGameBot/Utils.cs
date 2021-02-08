@@ -6,7 +6,6 @@ using DaresGameBot.Game;
 using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DaresGameBot
@@ -42,13 +41,6 @@ namespace DaresGameBot
         public static Queue<T> ToShuffeledQueue<T>(this IEnumerable<T> items) => items.ToList().Shuffle().ToQueue();
 
         private static Queue<T> ToQueue<T>(this IEnumerable<T> items) => new Queue<T>(items);
-
-        public static Task<Message> FinalizeStatusMessageAsync(this ITelegramBotClient client, Message message,
-            string postfix = "")
-        {
-            string text = $"_{message.Text}_ Готово.{postfix}";
-            return client.EditMessageTextAsync(message.Chat, message.MessageId, text, ParseMode.Markdown);
-        }
 
         public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
             string buttonCaption, int replyToMessageId = 0)

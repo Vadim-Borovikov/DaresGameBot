@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using AbstractBot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
