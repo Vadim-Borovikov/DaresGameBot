@@ -24,8 +24,7 @@ namespace DaresGameBot.Game
             _chatId = chatId;
         }
 
-        public async Task StartNewGameAsync(int replyToMessageId, ushort? playersAmount = null,
-            float? choiceChance = null)
+        public async Task StartNewGameAsync(ushort? playersAmount = null, float? choiceChance = null)
         {
             Message statusMessage = await _client.SendTextMessageAsync(_chatId, "_Читаю колоды…_", ParseMode.Markdown,
                 disableNotification: true);
@@ -38,10 +37,10 @@ namespace DaresGameBot.Game
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
             stringBuilder.AppendLine(_game.Players);
             stringBuilder.AppendLine(_game.Chance);
-            await _client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), replyToMessageId, DrawCaption);
+            await _client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), DrawCaption);
         }
 
-        public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount, int replyToMessageId)
+        public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount)
         {
             if (playersAmount <= 1)
             {
@@ -50,19 +49,19 @@ namespace DaresGameBot.Game
 
             if (_game == null)
             {
-                await StartNewGameAsync(replyToMessageId, playersAmount);
+                await StartNewGameAsync(playersAmount);
             }
             else
             {
                 _game.PlayersAmount = playersAmount;
 
                 await
-                    _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", replyToMessageId, DrawCaption);
+                    _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", DrawCaption);
             }
             return true;
         }
 
-        public async Task<bool> ChangeChoiceChanceAsync(float choiceChance, int replyToMessageId)
+        public async Task<bool> ChangeChoiceChanceAsync(float choiceChance)
         {
             if ((choiceChance < 0.0f) || (choiceChance > 1.0f))
             {
@@ -71,13 +70,13 @@ namespace DaresGameBot.Game
 
             if (_game == null)
             {
-                await StartNewGameAsync(replyToMessageId, choiceChance: choiceChance);
+                await StartNewGameAsync(choiceChance: choiceChance);
             }
             else
             {
                 _game.ChoiceChance = choiceChance;
 
-                await _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", replyToMessageId, DrawCaption);
+                await _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", DrawCaption);
             }
 
             return true;
@@ -87,7 +86,7 @@ namespace DaresGameBot.Game
         {
             if (_game == null)
             {
-                return StartNewGameAsync(replyToMessageId);
+                return StartNewGameAsync();
             }
 
             Turn turn = _game.Draw();
@@ -99,7 +98,7 @@ namespace DaresGameBot.Game
                 _game = null;
                 caption = NewGameCaption;
             }
-            return _client.SendTextMessageAsync(_chatId, text, replyToMessageId, caption);
+            return _client.SendTextMessageAsync(_chatId, text, caption, replyToMessageId);
         }
 
         private Game _game;

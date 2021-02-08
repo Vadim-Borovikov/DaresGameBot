@@ -10,24 +10,24 @@ namespace DaresGameBot.Game
     internal static class Repository
     {
         public static Task StartNewGameAsync(BotConfig config, Provider googleSheetsProvider,
-            ITelegramBotClient client, ChatId chatId, int replyToMessageId)
+            ITelegramBotClient client, ChatId chatId)
         {
             Logic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.StartNewGameAsync(replyToMessageId);
+            return game.StartNewGameAsync();
         }
 
         public static Task<bool> ChangePlayersAmountAsync(ushort playersAmount, BotConfig config,
-            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId, int replyToMessageId)
+            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
         {
             Logic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.ChangePlayersAmountAsync(playersAmount, replyToMessageId);
+            return game.ChangePlayersAmountAsync(playersAmount);
         }
 
         public static Task<bool> ChangeChoiceChanceAsync(float choiceChance, BotConfig config,
-            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId, int replyToMessageId)
+            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
         {
             Logic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.ChangeChoiceChanceAsync(choiceChance, replyToMessageId);
+            return game.ChangeChoiceChanceAsync(choiceChance);
         }
 
         public static Task DrawAsync(BotConfig config, Provider googleSheetsProvider, ITelegramBotClient client,

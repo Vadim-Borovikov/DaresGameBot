@@ -1,39 +1,24 @@
 ﻿using System.Threading.Tasks;
-using AbstractBot;
 using DaresGameBot.Game;
-using GoogleSheetsManager;
-using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DaresGameBot.Bot.Commands
 {
-    internal sealed class StartCommand : CommandBase
+    internal sealed class StartCommand : Command
     {
         protected override string Name => "start";
         protected override string Description => "инструкции и команды";
 
-        public StartCommand(IDescriptionProvider descriptionProvider, BotConfig config, Provider googleSheetsProvider)
-        {
-            _descriptionProvider = descriptionProvider;
-            _config = config;
-            _googleSheetsProvider = googleSheetsProvider;
-        }
+        public StartCommand(Bot bot) : base(bot) { }
 
-        public override async Task ExecuteAsync(ChatId chatId, ITelegramBotClient client, int replyToMessageId = 0,
-            IReplyMarkup replyMarkup = null)
+        public override async Task ExecuteAsync(Message message, bool fromChat = false)
         {
-            await client.SendTextMessageAsync(chatId, _descriptionProvider.GetDescription(),
-                replyToMessageId: replyToMessageId, replyMarkup: replyMarkup);
+            await Bot.Client.SendTextMessageAsync(message.Chat, Bot.GetDescription());
 
-            if (!Repository.IsGameValid(chatId))
+            if (!Repository.IsGameValid(message.Chat))
             {
-                await Repository.StartNewGameAsync(_config, _googleSheetsProvider, client, chatId, replyToMessageId);
+                await Repository.StartNewGameAsync(Bot.Config, GoogleSheetsProvider, Bot.Client, message.Chat);
             }
         }
-
-        private readonly IDescriptionProvider _descriptionProvider;
-        private readonly BotConfig _config;
-        private readonly Provider _googleSheetsProvider;
     }
 }

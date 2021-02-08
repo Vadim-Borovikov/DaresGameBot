@@ -1,33 +1,21 @@
 ﻿using System.Threading.Tasks;
-using AbstractBot;
 using DaresGameBot.Game;
-using GoogleSheetsManager;
-using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DaresGameBot.Bot.Commands
 {
-    internal sealed class NewCommand : CommandBase
+    internal sealed class NewCommand : Command
     {
         protected override string Name => "new";
         protected override string Description => Alias.ToLowerInvariant();
 
         protected override string Alias => Logic.NewGameCaption;
 
-        public NewCommand(BotConfig config, Provider googleSheetsProvider)
-        {
-            _config = config;
-            _googleSheetsProvider = googleSheetsProvider;
-        }
+        public NewCommand(Bot bot) : base(bot) { }
 
-        public override Task ExecuteAsync(ChatId chatId, ITelegramBotClient client, int replyToMessageId = 0,
-            IReplyMarkup replyMarkup = null)
+        public override Task ExecuteAsync(Message message, bool fromChat = false)
         {
-            return Repository.StartNewGameAsync(_config, _googleSheetsProvider, client, chatId, replyToMessageId);
+            return Repository.StartNewGameAsync(Bot.Config, GoogleSheetsProvider, Bot.Client, message.Chat);
         }
-
-        private readonly BotConfig _config;
-        private readonly Provider _googleSheetsProvider;
     }
 }

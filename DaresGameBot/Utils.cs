@@ -58,7 +58,7 @@ namespace DaresGameBot
         }
 
         public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
-            int replyToMessageId, string buttonCaption)
+            string buttonCaption, int replyToMessageId = 0)
         {
             var button = new KeyboardButton(buttonCaption);
             var raw = new[] { button };

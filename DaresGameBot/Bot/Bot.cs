@@ -11,24 +11,24 @@ namespace DaresGameBot.Bot
     {
         public Bot(BotConfig config) : base(config)
         {
-            Commands.Add(new StartCommand(this, Config, GoogleSheetsProvider));
-            Commands.Add(new NewCommand(Config, GoogleSheetsProvider));
-            Commands.Add(new DrawCommand(Config, GoogleSheetsProvider));
+            Commands.Add(new StartCommand(this));
+            Commands.Add(new NewCommand(this));
+            Commands.Add(new DrawCommand(this));
         }
 
-        protected override async Task UpdateAsync(Message message, CommandBase command, bool fromChat = false)
+        protected override async Task UpdateAsync(Message message, CommandBase<BotConfig> command,
+            bool fromChat = false)
         {
-            int replyToMessageId = fromChat ? message.MessageId : 0;
             if (command != null)
             {
-                await command.ExecuteAsync(message.Chat.Id, Client, replyToMessageId);
+                await command.ExecuteAsync(message, fromChat);
                 return;
             }
 
             if (ushort.TryParse(message.Text, out ushort playersAmount))
             {
                 bool success = await Repository.ChangePlayersAmountAsync(playersAmount, Config,
-                    GoogleSheetsProvider, Client, message.Chat, replyToMessageId);
+                    GoogleSheetsProvider, Client, message.Chat);
                 if (success)
                 {
                     return;
@@ -38,7 +38,7 @@ namespace DaresGameBot.Bot
             if (float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance))
             {
                 bool success = await Repository.ChangeChoiceChanceAsync(choiceChance, Config,
-                    GoogleSheetsProvider, Client, message.Chat, replyToMessageId);
+                    GoogleSheetsProvider, Client, message.Chat);
                 if (success)
                 {
                     return;
