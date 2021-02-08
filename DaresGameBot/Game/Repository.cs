@@ -1,54 +1,46 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using DaresGameBot.Bot;
-using GoogleSheetsManager;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game
 {
     internal static class Repository
     {
-        public static Task StartNewGameAsync(BotConfig config, Provider googleSheetsProvider,
-            ITelegramBotClient client, ChatId chatId)
+        public static Task StartNewGameAsync(Bot.Bot bot, ChatId chatId)
         {
-            Logic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.StartNewGameAsync();
+            Manager manager = GetOrAddGameManager(bot, chatId);
+            return manager.StartNewGameAsync();
         }
 
-        public static Task<bool> ChangePlayersAmountAsync(ushort playersAmount, BotConfig config,
-            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
+        public static Task<bool> ChangePlayersAmountAsync(ushort playersAmount, Bot.Bot bot, ChatId chatId)
         {
-            Logic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.ChangePlayersAmountAsync(playersAmount);
+            Manager manager = GetOrAddGameManager(bot, chatId);
+            return manager.ChangePlayersAmountAsync(playersAmount);
         }
 
-        public static Task<bool> ChangeChoiceChanceAsync(float choiceChance, BotConfig config,
-            Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
+        public static Task<bool> ChangeChoiceChanceAsync(float choiceChance, Bot.Bot bot, ChatId chatId)
         {
-            Logic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.ChangeChoiceChanceAsync(choiceChance);
+            Manager manager = GetOrAddGameManager(bot, chatId);
+            return manager.ChangeChoiceChanceAsync(choiceChance);
         }
 
-        public static Task DrawAsync(BotConfig config, Provider googleSheetsProvider, ITelegramBotClient client,
-            ChatId chatId, int replyToMessageId)
+        public static Task DrawAsync(Bot.Bot bot, ChatId chatId, int replyToMessageId)
         {
-            Logic game = GetOrAddGame(config, googleSheetsProvider, client, chatId);
-            return game.DrawAsync(replyToMessageId);
+            Manager manager = GetOrAddGameManager(bot, chatId);
+            return manager.DrawAsync(replyToMessageId);
         }
 
-        public static bool IsGameValid(ChatId chatId)
+        public static bool IsGameManagerValid(ChatId chatId)
         {
-            return Games.TryGetValue(chatId.Identifier, out Logic game) && (game != null);
+            return GameManagers.TryGetValue(chatId.Identifier, out Manager gameManager) && (gameManager != null);
         }
 
-        private static Logic GetOrAddGame(BotConfig config, Provider googleSheetsProvider,
-            ITelegramBotClient client, ChatId chatId)
+        private static Manager GetOrAddGameManager(Bot.Bot bot, ChatId chatId)
         {
-            return Games.GetOrAdd(chatId.Identifier, id => new Logic(config, googleSheetsProvider, client, id));
+            return GameManagers.GetOrAdd(chatId.Identifier, id => new Manager(bot, id));
         }
 
-        private static readonly ConcurrentDictionary<long, Logic> Games =
-            new ConcurrentDictionary<long, Logic>();
+        private static readonly ConcurrentDictionary<long, Manager> GameManagers =
+            new ConcurrentDictionary<long, Manager>();
     }
 }

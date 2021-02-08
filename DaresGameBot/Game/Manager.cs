@@ -1,43 +1,37 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using DaresGameBot.Bot;
-using GoogleSheetsManager;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Game
 {
-    internal sealed class Logic
+    internal sealed class Manager
     {
         public const string DrawCaption = "Вытянуть фант";
         public const string NewGameCaption = "Новая игра";
 
-        public Logic(BotConfig config, Provider googleSheetsProvider, ITelegramBotClient client, ChatId chatId)
+        public Manager(Bot.Bot bot, ChatId chatId)
         {
-            _googleRange = config.GoogleRange;
-            _initialPlayersAmount = config.InitialPlayersAmount;
-            _initialChoiceChance = config.InitialChoiceChance;
-            _googleSheetsProvider = googleSheetsProvider;
-            _client = client;
+            _bot = bot;
             _chatId = chatId;
         }
 
         public async Task StartNewGameAsync(ushort? playersAmount = null, float? choiceChance = null)
         {
-            Message statusMessage = await _client.SendTextMessageAsync(_chatId, "_Читаю колоды…_", ParseMode.Markdown,
-                disableNotification: true);
-            IEnumerable<Deck> decks = Utils.GetDecks(_googleSheetsProvider, _googleRange);
-            await _client.FinalizeStatusMessageAsync(statusMessage);
+            Message statusMessage = await _bot.Client.SendTextMessageAsync(_chatId, "_Читаю колоды…_",
+                ParseMode.Markdown, disableNotification: true);
+            IEnumerable<Deck> decks = Utils.GetDecks(_bot.GoogleSheetsProvider, _bot.Config.GoogleRange);
+            await _bot.Client.FinalizeStatusMessageAsync(statusMessage);
 
-            _game = new Game(playersAmount ?? _initialPlayersAmount, choiceChance ?? _initialChoiceChance, decks);
+            _game = new Game(playersAmount ?? _bot.Config.InitialPlayersAmount,
+                choiceChance ?? _bot.Config.InitialChoiceChance, decks);
 
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
             stringBuilder.AppendLine(_game.Players);
             stringBuilder.AppendLine(_game.Chance);
-            await _client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), DrawCaption);
+            await _bot.Client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), DrawCaption);
         }
 
         public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount)
@@ -55,8 +49,7 @@ namespace DaresGameBot.Game
             {
                 _game.PlayersAmount = playersAmount;
 
-                await
-                    _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", DrawCaption);
+                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", DrawCaption);
             }
             return true;
         }
@@ -76,7 +69,7 @@ namespace DaresGameBot.Game
             {
                 _game.ChoiceChance = choiceChance;
 
-                await _client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", DrawCaption);
+                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", DrawCaption);
             }
 
             return true;
@@ -98,16 +91,12 @@ namespace DaresGameBot.Game
                 _game = null;
                 caption = NewGameCaption;
             }
-            return _client.SendTextMessageAsync(_chatId, text, caption, replyToMessageId);
+            return _bot.Client.SendTextMessageAsync(_chatId, text, caption, replyToMessageId);
         }
 
         private Game _game;
 
-        private readonly Provider _googleSheetsProvider;
-        private readonly string _googleRange;
-        private readonly ushort _initialPlayersAmount;
-        private readonly float _initialChoiceChance;
-        private readonly ITelegramBotClient _client;
+        private readonly Bot.Bot _bot;
         private readonly ChatId _chatId;
     }
 }
