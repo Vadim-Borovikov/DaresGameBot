@@ -41,11 +41,26 @@ namespace DaresGameBot
 
         private static Queue<T> ToQueue<T>(this IEnumerable<T> items) => new Queue<T>(items);
 
+        public static void AddRange<T>(this Queue<T> queue, IEnumerable<T> items)
+        {
+            foreach (T item in items)
+            {
+                queue.Enqueue(item);
+            }
+        }
+
         public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
-            string buttonCaption, int replyToMessageId = 0)
+            string buttonCaption, string button2Caption = null, int replyToMessageId = 0)
         {
             var button = new KeyboardButton(buttonCaption);
-            var raw = new[] { button };
+            var raw = new List<KeyboardButton> { button };
+
+            if (button2Caption != null)
+            {
+                var button2 = new KeyboardButton(button2Caption);
+                raw.Add(button2);
+            }
+
             var markup = new ReplyKeyboardMarkup(raw, true);
             return client.SendTextMessageAsync(chatId, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
         }

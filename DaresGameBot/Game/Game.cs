@@ -12,6 +12,9 @@ namespace DaresGameBot.Game
     {
         public const string DrawCaption = "Вытянуть фант";
         public const string NewGameCaption = "Новая игра";
+        public const string RejectCaptionPrefix = "Отказ";
+
+        private const string RejectCaptionFormat = RejectCaptionPrefix + " ({0})";
 
         public Game(Bot.Bot bot, ChatId chatId)
         {
@@ -19,7 +22,8 @@ namespace DaresGameBot.Game
             _chatId = chatId;
         }
 
-        public async Task StartNewGameAsync(ushort? playersAmount = null, float? choiceChance = null)
+        public async Task StartNewGameAsync(ushort? playersAmount = null, float? choiceChance = null,
+            ushort? rejectsAmount = null)
         {
             Message statusMessage = await _bot.Client.SendTextMessageAsync(_chatId, "_Читаю колоды…_",
                 ParseMode.Markdown, disableNotification: true);
@@ -27,13 +31,15 @@ namespace DaresGameBot.Game
             await _bot.Client.FinalizeStatusMessageAsync(statusMessage);
 
             _game = new Data.Game(playersAmount ?? _bot.Config.InitialPlayersAmount,
-                choiceChance ?? _bot.Config.InitialChoiceChance, decks);
+                choiceChance ?? _bot.Config.InitialChoiceChance, rejectsAmount ?? _bot.Config.InitialRejectsAmount,
+                decks);
 
             var stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine("🔥 Начинаем новую игру!");
+            stringBuilder.AppendLine("Начинаем новую игру 🎉");
             stringBuilder.AppendLine(_game.Players);
             stringBuilder.AppendLine(_game.Chance);
-            await _bot.Client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), DrawCaption);
+            stringBuilder.AppendLine(_game.Rejects);
+            await SendMessageAsync(stringBuilder.ToString());
         }
 
         public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount)
@@ -51,7 +57,7 @@ namespace DaresGameBot.Game
             {
                 _game.PlayersAmount = playersAmount;
 
-                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", DrawCaption);
+                await SendMessageAsync($"Принято! {_game.Players}");
             }
             return true;
         }
@@ -71,9 +77,24 @@ namespace DaresGameBot.Game
             {
                 _game.ChoiceChance = choiceChance;
 
-                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", DrawCaption);
+                await SendMessageAsync($"Принято! {_game.Chance}");
             }
 
+            return true;
+        }
+
+        public async Task<bool> ChangeRejectsAmountAsync(ushort rejectsAmount)
+        {
+            if (_game == null)
+            {
+                await StartNewGameAsync(rejectsAmount: rejectsAmount);
+            }
+            else
+            {
+                _game.RejectsAmount = rejectsAmount;
+
+                await SendMessageAsync($"Принято! {_game.Rejects}");
+            }
             return true;
         }
 
@@ -84,16 +105,52 @@ namespace DaresGameBot.Game
                 return StartNewGameAsync();
             }
 
-            Turn turn = _game.Draw();
-            string text = turn.GetMessage(_game.PlayersAmount);
+            Card card = _game.Draw();
+            _currentTurn = _game.CreateTurn(card);
 
+            return SendMessageAsync(_currentTurn.GetMessage(), replyToMessageId);
+        }
+
+        private Turn _currentTurn;
+
+        public async Task<bool> RerollPartnersAsync(int replyToMessageId)
+        {
+            if (_game == null)
+            {
+                await StartNewGameAsync();
+                return false;
+            }
+
+            if (_currentTurn.Rejects <= 0)
+            {
+                return false;
+            }
+
+            if (_currentTurn.Card.PartnersToAssign >= _game.PlayersAmount)
+            {
+                return false;
+            }
+
+            _game.Reroll(_currentTurn);
+
+            await SendMessageAsync(_currentTurn.GetMessage(), replyToMessageId);
+            return true;
+        }
+
+        private Task SendMessageAsync(string text, int replyToMessageId = 0)
+        {
             string caption = DrawCaption;
+            string caption2 = null;
             if (_game.Empty)
             {
                 _game = null;
                 caption = NewGameCaption;
             }
-            return _bot.Client.SendTextMessageAsync(_chatId, text, caption, replyToMessageId);
+            else if ((_currentTurn?.Card?.PartnersToAssign > 0) && (_currentTurn?.Rejects > 0))
+            {
+                caption2 = string.Format(RejectCaptionFormat, _currentTurn.Rejects);
+            }
+            return _bot.Client.SendTextMessageAsync(_chatId, text, caption, caption2, replyToMessageId);
         }
 
         private Data.Game _game;
