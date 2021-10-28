@@ -13,7 +13,8 @@ namespace DaresGameBot.Bot
         {
             Commands.Add(new StartCommand(this));
             Commands.Add(new NewCommand(this));
-            Commands.Add(new DrawCommand(this));
+            Commands.Add(new DrawActionCommand(this));
+            Commands.Add(new DrawQuestionCommand(this));
         }
 
         protected override async Task UpdateAsync(Message message, CommandBase<Bot, BotConfig> command,

@@ -10,7 +10,8 @@ namespace DaresGameBot.Game
 {
     internal sealed class Game
     {
-        public const string DrawCaption = "Вытянуть фант";
+        public const string DrawActionCaption = "Вытянуть фант";
+        public const string DrawQuestionCaption = "Вытянуть вопрос";
         public const string NewGameCaption = "Новая игра";
 
         public Game(Bot.Bot bot, ChatId chatId)
@@ -23,17 +24,18 @@ namespace DaresGameBot.Game
         {
             Message statusMessage = await _bot.Client.SendTextMessageAsync(_chatId, "_Читаю колоды…_",
                 ParseMode.Markdown, disableNotification: true);
-            IEnumerable<Deck> decks = Manager.GetDecks(_bot);
+            IEnumerable<Deck<CardAction>> actionDecks = Manager.GetActionDecks(_bot);
+            Deck<Card> questionsDeck = Manager.GetQuestionsDeck(_bot);
             await _bot.Client.FinalizeStatusMessageAsync(statusMessage);
 
             _game = new Data.Game(playersAmount ?? _bot.Config.InitialPlayersAmount,
-                choiceChance ?? _bot.Config.InitialChoiceChance, decks);
+                choiceChance ?? _bot.Config.InitialChoiceChance, actionDecks, questionsDeck);
 
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("🔥 Начинаем новую игру!");
             stringBuilder.AppendLine(_game.Players);
             stringBuilder.AppendLine(_game.Chance);
-            await _bot.Client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), DrawCaption);
+            await _bot.Client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), Captions);
         }
 
         public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount)
@@ -51,7 +53,7 @@ namespace DaresGameBot.Game
             {
                 _game.PlayersAmount = playersAmount;
 
-                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", DrawCaption);
+                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", Captions);
             }
             return true;
         }
@@ -71,30 +73,35 @@ namespace DaresGameBot.Game
             {
                 _game.ChoiceChance = choiceChance;
 
-                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", DrawCaption);
+                await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", Captions);
             }
 
             return true;
         }
 
-        public Task DrawAsync(int replyToMessageId)
+        public Task DrawAsync(int replyToMessageId, bool action = true)
         {
             if (_game == null)
             {
                 return StartNewGameAsync();
             }
 
-            Turn turn = _game.Draw();
+            Turn turn = action ? _game.DrawAction() : _game.DrawQuestion();
             string text = turn.GetMessage(_game.PlayersAmount);
 
-            string caption = DrawCaption;
             if (_game.Empty)
             {
                 _game = null;
-                caption = NewGameCaption;
+                return _bot.Client.SendTextMessageAsync(_chatId, text, NewGameCaption, replyToMessageId);
             }
-            return _bot.Client.SendTextMessageAsync(_chatId, text, caption, replyToMessageId);
+            return _bot.Client.SendTextMessageAsync(_chatId, text, Captions, replyToMessageId);
         }
+
+        private static readonly IEnumerable<string> Captions = new[]
+        {
+            DrawActionCaption,
+            DrawQuestionCaption
+        };
 
         private Data.Game _game;
 

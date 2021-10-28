@@ -9,7 +9,7 @@ namespace DaresGameBot.Game.Data
         private readonly string _text;
         private readonly List<Partner> _partners;
 
-        public Turn(string text, List<Partner> partners)
+        public Turn(string text, List<Partner> partners = null)
         {
             _text = text;
             _partners = partners;
@@ -17,7 +17,7 @@ namespace DaresGameBot.Game.Data
 
         public string GetMessage(ushort playersAmount)
         {
-            if ((_partners.Count == 0) || (_partners.Count == (playersAmount - 1)))
+            if ((_partners == null) || (_partners.Count == 0) || (_partners.Count == (playersAmount - 1)))
             {
                 return _text;
             }

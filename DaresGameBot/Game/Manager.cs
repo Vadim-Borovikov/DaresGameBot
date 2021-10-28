@@ -28,10 +28,10 @@ namespace DaresGameBot.Game
             return manager.ChangeChoiceChanceAsync(choiceChance);
         }
 
-        public static Task DrawAsync(Bot.Bot bot, ChatId chatId, int replyToMessageId)
+        public static Task DrawAsync(Bot.Bot bot, ChatId chatId, int replyToMessageId, bool action = true)
         {
             Game manager = GetOrAddGameManager(bot, chatId);
-            return manager.DrawAsync(replyToMessageId);
+            return manager.DrawAsync(replyToMessageId, action);
         }
 
         public static bool IsGameManagerValid(ChatId chatId)
@@ -44,17 +44,27 @@ namespace DaresGameBot.Game
             return GameManagers.GetOrAdd(chatId.Identifier, id => new Game(bot, id));
         }
 
-
-        public static IEnumerable<Deck> GetDecks(Bot.Bot bot)
+        public static IEnumerable<Deck<CardAction>> GetActionDecks(Bot.Bot bot)
         {
-            IList<Card> cards = DataManager.GetValues<Card>(bot.GoogleSheetsProvider, bot.Config.GoogleRange);
+            IList<CardAction> cards =
+                DataManager.GetValues<CardAction>(bot.GoogleSheetsProvider, bot.Config.ActionsGoogleRange);
             return cards.GroupBy(c => c.Tag)
-                        .Select(g => CreateDeck(g.Key, g.ToList()));
+                        .Select(g => CreateActionDeck(g.Key, g.ToList()));
         }
 
-        private static Deck CreateDeck(string tag, IEnumerable<Card> cards)
+        public static Deck<Card> GetQuestionsDeck(Bot.Bot bot)
         {
-            return new Deck
+            IList<Card> cards = DataManager.GetValues<Card>(bot.GoogleSheetsProvider, bot.Config.QuestionsGoogleRange);
+            return new Deck<Card>
+            {
+                Tag = "❓",
+                Cards = cards.ToList()
+            };
+        }
+
+        private static Deck<CardAction> CreateActionDeck(string tag, IEnumerable<CardAction> cards)
+        {
+            return new Deck<CardAction>
             {
                 Tag = tag,
                 Cards = cards.ToList()

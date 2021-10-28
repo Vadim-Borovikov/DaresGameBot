@@ -44,9 +44,13 @@ namespace DaresGameBot
         public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
             string buttonCaption, int replyToMessageId = 0)
         {
-            var button = new KeyboardButton(buttonCaption);
-            var raw = new[] { button };
-            var markup = new ReplyKeyboardMarkup(raw, true);
+            var buttonCaptions = new[] { buttonCaption };
+            return SendTextMessageAsync(client, chatId, text, buttonCaptions, replyToMessageId);
+        }
+        public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
+            IEnumerable<string> buttonCaptions, int replyToMessageId = 0)
+        {
+            var markup = new ReplyKeyboardMarkup(buttonCaptions.Select(c => new KeyboardButton(c)), true);
             return client.SendTextMessageAsync(chatId, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
         }
     }

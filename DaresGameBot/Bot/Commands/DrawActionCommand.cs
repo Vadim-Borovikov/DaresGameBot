@@ -5,14 +5,14 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Bot.Commands
 {
-    internal sealed class DrawCommand : CommandBase<Bot, BotConfig>
+    internal sealed class DrawActionCommand : CommandBase<Bot, BotConfig>
     {
-        protected override string Name => "draw";
+        protected override string Name => "action";
         protected override string Description => Alias.ToLowerInvariant();
 
-        protected override string Alias => Game.Game.DrawCaption;
+        protected override string Alias => Game.Game.DrawActionCaption;
 
-        public DrawCommand(Bot bot) : base(bot) { }
+        public DrawActionCommand(Bot bot) : base(bot) { }
 
         public override Task ExecuteAsync(Message message, bool fromChat = false)
         {

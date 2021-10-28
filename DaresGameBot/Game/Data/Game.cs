@@ -11,23 +11,38 @@ namespace DaresGameBot.Game.Data
         public string Players => $"Игроков: {PlayersAmount}";
         public string Chance => $"Шанс на 🤩: {ChoiceChance:P0}";
 
-        public bool Empty => _decks.Count == 0;
+        public bool Empty => _actionDecks.Count == 0;
 
-        public Game(ushort playersAmount, float choiceChance, IEnumerable<Deck> decks)
+        public Game(ushort playersAmount, float choiceChance, IEnumerable<Deck<CardAction>> actionDecks,
+            Deck<Card> questionsDeck)
         {
             PlayersAmount = playersAmount;
             ChoiceChance = choiceChance;
 
-            _decks = new Queue<Deck>(decks.Select(Deck.GetShuffledCopy));
+            _actionDecks = new Queue<Deck<CardAction>>(actionDecks.Select(Deck<CardAction>.GetShuffledCopy));
+            _questionsDeckFull = questionsDeck;
+            _questionsDeckCurrent = new Deck<Card>();
         }
 
-        public Turn Draw()
+        public Turn DrawAction()
         {
-            Card card = DrawCard(out string deckTag);
-            return CreateTurn(card, deckTag);
+            CardAction card = DrawActionCard(out string deckTag);
+            return CreateActionTurn(card, deckTag);
         }
 
-        private Card DrawCard(out string deckTag)
+        public Turn DrawQuestion()
+        {
+            if (_questionsDeckCurrent.Empty)
+            {
+                _questionsDeckCurrent = Deck<Card>.GetShuffledCopy(_questionsDeckFull);
+            }
+
+            Card card = _questionsDeckCurrent.Draw();
+
+            return CreateQuestionTurn(card, _questionsDeckCurrent.Tag);
+        }
+
+        private CardAction DrawActionCard(out string deckTag)
         {
             while (true)
             {
@@ -37,15 +52,15 @@ namespace DaresGameBot.Game.Data
                     return null;
                 }
 
-                Deck current = _decks.Peek();
+                Deck<CardAction> current = _actionDecks.Peek();
                 deckTag = current.Tag;
 
-                var crowdCards = new Queue<Card>();
-                Card card = Draw(current, crowdCards);
+                var crowdCards = new Queue<CardAction>();
+                CardAction card = DrawAction(current, crowdCards);
 
                 if (current.Empty)
                 {
-                    _decks.Dequeue();
+                    _actionDecks.Dequeue();
                     if (card == null)
                     {
                         continue;
@@ -57,7 +72,7 @@ namespace DaresGameBot.Game.Data
             }
         }
 
-        private Card Draw(Deck deck, Queue<Card> crowdCards)
+        private CardAction DrawAction(Deck<CardAction> deck, Queue<CardAction> crowdCards)
         {
             while (true)
             {
@@ -66,7 +81,7 @@ namespace DaresGameBot.Game.Data
                     return null;
                 }
 
-                Card next = deck.Draw();
+                CardAction next = deck.Draw();
                 if (next.Players <= PlayersAmount)
                 {
                     return next;
@@ -76,7 +91,7 @@ namespace DaresGameBot.Game.Data
             }
         }
 
-        private Turn CreateTurn(Card card, string deckTag)
+        private Turn CreateActionTurn(CardAction card, string deckTag)
         {
             Queue<ushort> partnersQueue = Enumerable.Range(1, PlayersAmount - 1)
                                                     .Select(i => (ushort) i)
@@ -94,6 +109,11 @@ namespace DaresGameBot.Game.Data
             return new Turn($"{deckTag} {card.Description}", partners);
         }
 
-        private readonly Queue<Deck> _decks;
+        private static Turn CreateQuestionTurn(Card card, string deckTag) => new Turn($"{deckTag} {card.Description}");
+
+        private readonly Queue<Deck<CardAction>> _actionDecks;
+        private readonly Deck<Card> _questionsDeckFull;
+
+        private Deck<Card> _questionsDeckCurrent;
     }
 }

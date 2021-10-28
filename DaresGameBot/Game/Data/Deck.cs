@@ -3,28 +3,28 @@ using System.Linq;
 
 namespace DaresGameBot.Game.Data
 {
-    internal sealed class Deck
+    internal sealed class Deck<T> where T : Card
     {
         public string Tag { internal get; set; }
-        public List<Card> Cards { private get; set; }
+        public List<T> Cards { private get; set; } = new List<T>();
 
         public bool Empty => Cards.Count == 0;
 
-        public void Add(IEnumerable<Card> cards) { Cards.AddRange(cards); }
+        public void Add(IEnumerable<T> cards) { Cards.AddRange(cards); }
 
-        public static Deck GetShuffledCopy(Deck deck) => deck.GetShuffledCopy();
+        public static Deck<T> GetShuffledCopy(Deck<T> deck) => deck.GetShuffledCopy();
 
-        public Card Draw()
+        public T Draw()
         {
-            Card card = Cards[0];
+            T card = Cards[0];
             Cards.RemoveAt(0);
             return card;
         }
 
-        private Deck GetShuffledCopy()
+        private Deck<T> GetShuffledCopy()
         {
-            var cards = new List<Card>(Cards);
-            return new Deck
+            var cards = new List<T>(Cards);
+            return new Deck<T>
             {
                 Tag = Tag,
                 Cards = cards.Shuffle().ToList()
