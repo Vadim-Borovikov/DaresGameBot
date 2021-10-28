@@ -6,37 +6,23 @@ namespace DaresGameBot.Game.Data
 {
     internal sealed class Turn
     {
-        public ushort Rejects { get; private set; }
+        private readonly string _text;
+        private readonly List<Partner> _partners;
 
-        private string Text => $"{Card.Tag} {Card.Description}";
-        public readonly Card Card;
-        private List<Partner> _partners;
-        public readonly HashSet<ushort> MarkedPartners = new HashSet<ushort>();
-
-        public Turn(Card card, List<Partner> partners, ushort rejects)
+        public Turn(string text, List<Partner> partners)
         {
-            Card = card;
+            _text = text;
             _partners = partners;
-            Rejects = rejects;
-            MarkPartners();
         }
 
-        private void MarkPartners()
+        public string GetMessage(ushort playersAmount)
         {
-            foreach (ushort number in _partners.Where(p => p.Number.HasValue).Select(p => p.Number.Value))
+            if ((_partners.Count == 0) || (_partners.Count == (playersAmount - 1)))
             {
-                MarkedPartners.Add(number);
-            }
-        }
-
-        public string GetMessage()
-        {
-            if ((_partners.Count == 0) || (_partners.Count == (Card.PartnersToAssign - 1)))
-            {
-                return Text;
+                return _text;
             }
 
-            var builder = new StringBuilder(Text);
+            var builder = new StringBuilder(_text);
 
             builder.AppendLine();
             builder.AppendLine();
@@ -45,13 +31,6 @@ namespace DaresGameBot.Game.Data
             builder.Append(string.Join(", ", parnters));
 
             return builder.ToString();
-        }
-
-        public void Reject(List<Partner> newPartners)
-        {
-            --Rejects;
-            _partners = newPartners;
-            MarkPartners();
         }
     }
 }

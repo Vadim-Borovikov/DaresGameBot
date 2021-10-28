@@ -4,27 +4,27 @@ namespace DaresGameBot.Game.Data
 {
     internal sealed class Partner : IComparable<Partner>
     {
-        public readonly ushort? Number;
+        private readonly ushort? _number;
 
-        public Partner(ushort partnerNumber) => Number = partnerNumber;
+        public Partner(ushort partnerNumber) => _number = partnerNumber;
 
-        public Partner() => Number = null;
+        public Partner() => _number = null;
 
         public int CompareTo(Partner other)
         {
-            if (!Number.HasValue)
+            if (!_number.HasValue)
             {
                 return 1;
             }
 
-            if (!other.Number.HasValue)
+            if (!other._number.HasValue)
             {
                 return -1;
             }
 
-            return Number.Value.CompareTo(other.Number.Value);
+            return _number.Value.CompareTo(other._number.Value);
         }
 
-        public override string ToString() => Number?.ToString() ?? "🤩";
+        public override string ToString() => _number?.ToString() ?? "🤩";
     }
 }

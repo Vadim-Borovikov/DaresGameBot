@@ -1,4 +1,3 @@
-using System;
 using System.Globalization;
 using System.Threading.Tasks;
 using AbstractBot;
@@ -26,28 +25,9 @@ namespace DaresGameBot.Bot
                 return;
             }
 
-            if (message.Text.StartsWith(Game.Game.RejectCaptionPrefix, StringComparison.Ordinal))
-            {
-                bool success = await Manager.RerollPartnersAsync(this, message.Chat, 0);
-                if (!success)
-                {
-                    await Client.SendStickerAsync(message.Chat, ForbiddenSticker);
-                }
-                return;
-            }
-
             if (ushort.TryParse(message.Text, out ushort playersAmount))
             {
                 bool success = await Manager.ChangePlayersAmountAsync(playersAmount, this, message.Chat);
-                if (success)
-                {
-                    return;
-                }
-            }
-
-            if (short.TryParse(message.Text, out short negativeRejects) && (negativeRejects <= 0))
-            {
-                bool success = await Manager.ChangeRejectsAmountAsync((ushort)-negativeRejects, this, message.Chat);
                 if (success)
                 {
                     return;

@@ -28,18 +28,6 @@ namespace DaresGameBot.Game
             return manager.ChangeChoiceChanceAsync(choiceChance);
         }
 
-        public static Task<bool> ChangeRejectsAmountAsync(ushort rejectsAmount, Bot.Bot bot, ChatId chatId)
-        {
-            Game manager = GetOrAddGameManager(bot, chatId);
-            return manager.ChangeRejectsAmountAsync(rejectsAmount);
-        }
-
-        public static Task<bool> RerollPartnersAsync(Bot.Bot bot, ChatId chatId, int replyToMessageId)
-        {
-            Game manager = GetOrAddGameManager(bot, chatId);
-            return manager.RerollPartnersAsync(replyToMessageId);
-        }
-
         public static Task DrawAsync(Bot.Bot bot, ChatId chatId, int replyToMessageId)
         {
             Game manager = GetOrAddGameManager(bot, chatId);

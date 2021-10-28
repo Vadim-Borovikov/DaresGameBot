@@ -12,9 +12,6 @@ namespace DaresGameBot.Bot
         public float InitialChoiceChance { get; set; }
 
         [JsonProperty]
-        public ushort InitialRejectsAmount { get; set; }
-
-        [JsonProperty]
         public string GoogleRange { get; set; }
     }
 }
