@@ -10,7 +10,7 @@ namespace DaresGameBot.Game
 {
     internal sealed class Game
     {
-        public const string DrawActionCaption = "Вытянуть фант";
+        public const string DrawActionCaption = "Вытянуть действие";
         public const string DrawQuestionCaption = "Вытянуть вопрос";
         public const string NewGameCaption = "Новая игра";
 
