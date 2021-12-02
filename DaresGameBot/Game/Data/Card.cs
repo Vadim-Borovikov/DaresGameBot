@@ -5,8 +5,13 @@ namespace DaresGameBot.Game.Data
 {
     internal class Card : ILoadable
     {
-        public string Description { get; protected set; }
+        public string Description { get; private set; }
 
-        public virtual void Load(IList<object> values) => Description = values.ToString(0);
+        public virtual void Load(IDictionary<string, object> valueSet)
+        {
+            Description = valueSet[DescriptionTitle]?.ToString();
+        }
+
+        private const string DescriptionTitle = "Текст";
     }
 }

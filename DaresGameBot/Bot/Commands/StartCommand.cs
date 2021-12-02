@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using AbstractBot;
 using DaresGameBot.Game;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Bot.Commands
@@ -14,11 +15,11 @@ namespace DaresGameBot.Bot.Commands
 
         public override async Task ExecuteAsync(Message message, bool fromChat = false)
         {
-            await Bot.Client.SendTextMessageAsync(message.Chat, Bot.GetDescription());
+            await Bot.Client.SendTextMessageAsync(message.Chat, Bot.GetDescriptionFor(message.From.Id));
 
-            if (!Manager.IsGameManagerValid(message.Chat))
+            if (!Manager.IsGameManagerValid(message.Chat.Id))
             {
-                await Manager.StartNewGameAsync(Bot, message.Chat);
+                await Manager.StartNewGameAsync(Bot, message.Chat.Id);
             }
         }
     }

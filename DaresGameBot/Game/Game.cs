@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AbstractBot;
 using DaresGameBot.Game.Data;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -23,9 +24,9 @@ namespace DaresGameBot.Game
         public async Task StartNewGameAsync(ushort? playersAmount = null, float? choiceChance = null)
         {
             Message statusMessage = await _bot.Client.SendTextMessageAsync(_chatId, "_Читаю колоды…_",
-                ParseMode.Markdown, disableNotification: true);
-            IEnumerable<Deck<CardAction>> actionDecks = Manager.GetActionDecks(_bot);
-            Deck<Card> questionsDeck = Manager.GetQuestionsDeck(_bot);
+                ParseMode.MarkdownV2, disableNotification: true);
+            List<Deck<CardAction>> actionDecks = await Manager.GetActionDecksAsync(_bot);
+            Deck<Card> questionsDeck = await Manager.GetQuestionsDeckAsync(_bot);
             await _bot.Client.FinalizeStatusMessageAsync(statusMessage);
 
             _game = new Data.Game(playersAmount ?? _bot.Config.InitialPlayersAmount,

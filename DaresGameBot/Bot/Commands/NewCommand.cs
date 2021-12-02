@@ -16,7 +16,7 @@ namespace DaresGameBot.Bot.Commands
 
         public override Task ExecuteAsync(Message message, bool fromChat = false)
         {
-            return Manager.StartNewGameAsync(Bot, message.Chat);
+            return Manager.StartNewGameAsync(Bot, message.Chat.Id);
         }
     }
 }

@@ -11,12 +11,18 @@ namespace DaresGameBot.Game.Data
 
         public string Tag { get; private set; }
 
-        public override void Load(IList<object> values)
+        public override void Load(IDictionary<string, object> valueSet)
         {
-            Players = values.ToUshort(0) ?? throw new ArgumentNullException("Empty players");
-            PartnersToAssign = values.ToUshort(1) ?? throw new ArgumentNullException("Empty players to assign");
-            Description = values.ToString(2);
-            Tag = values.ToString(3);
+            Players = valueSet[PlayersTitle]?.ToUshort() ?? throw new ArgumentNullException("Empty players");
+            PartnersToAssign =
+                valueSet[PartnersToAssignTitle]?.ToUshort() ?? throw new ArgumentNullException("Empty players to assign");
+            Tag = valueSet[TagTitle]?.ToString();
+
+            base.Load(valueSet);
         }
+
+        private const string PlayersTitle = "Минимум";
+        private const string PartnersToAssignTitle = "Назначить";
+        private const string TagTitle = "Символ";
     }
 }

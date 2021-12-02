@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -11,14 +10,6 @@ namespace DaresGameBot
 {
     internal static class Utils
     {
-        #region Google
-
-        public static ushort? ToUshort(this IList<object> values, int index) => values.To(index, ToUshort);
-
-        private static ushort? ToUshort(object o) => ushort.TryParse(o?.ToString(), out ushort i) ? (ushort?)i : null;
-
-        #endregion // Google
-
         public static readonly Random Random = new Random();
 
         public static IList<T> Shuffle<T>(this IList<T> list)
@@ -50,7 +41,7 @@ namespace DaresGameBot
         public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
             IEnumerable<string> buttonCaptions, int replyToMessageId = 0)
         {
-            var markup = new ReplyKeyboardMarkup(buttonCaptions.Select(c => new KeyboardButton(c)), true);
+            var markup = new ReplyKeyboardMarkup(buttonCaptions.Select(c => new KeyboardButton(c)));
             return client.SendTextMessageAsync(chatId, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
         }
     }
