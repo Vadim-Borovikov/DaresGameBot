@@ -1,16 +1,19 @@
-﻿namespace DaresGameBot.Web;
+﻿using AbstractBot;
+
+namespace DaresGameBot.Web;
 
 internal static class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
+        Utils.DeleteExceptionLog();
         try
         {
-            CreateHostBuilder(args).Build().Run();
+            await CreateHostBuilder(args).Build().RunAsync();
         }
         catch (Exception ex)
         {
-            Utils.LogException(ex);
+            await Utils.LogExceptionAsync(ex);
         }
     }
 
