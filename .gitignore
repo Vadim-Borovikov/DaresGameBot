@@ -330,3 +330,5 @@ ASALocalRun/
 .mfractor/
 
 /DaresGameBot.Web/appsettings.Development.json
+/DaresGameBot.Web/.config/dotnet-tools.json
+/DaresGameBot.Web/Properties/ServiceDependencies/Dares-Game-Bot - Web Deploy/profile.arm.json

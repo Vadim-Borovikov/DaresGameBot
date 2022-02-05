@@ -1,27 +1,32 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using AbstractBot;
 using DaresGameBot.Game;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace DaresGameBot.Bot.Commands
+namespace DaresGameBot.Bot.Commands;
+
+internal sealed class StartCommand : CommandBase<Bot, BotConfig>
 {
-    internal sealed class StartCommand : CommandBase<Bot, BotConfig>
+    protected override string Name => "start";
+    protected override string Description => "инструкции и команды";
+
+    public StartCommand(Bot bot) : base(bot) { }
+
+    public override async Task ExecuteAsync(Message message, bool fromChat, string? payload)
     {
-        protected override string Name => "start";
-        protected override string Description => "инструкции и команды";
-
-        public StartCommand(Bot bot) : base(bot) { }
-
-        public override async Task ExecuteAsync(Message message, bool fromChat = false)
+        if (message.From is null)
         {
-            await Bot.Client.SendTextMessageAsync(message.Chat, Bot.GetDescriptionFor(message.From.Id), ParseMode.MarkdownV2);
+            throw new NullReferenceException(nameof(message.From));
+        }
+        await Bot.Client.SendTextMessageAsync(message.Chat.Id, Bot.GetDescriptionFor(message.From.Id),
+            ParseMode.MarkdownV2);
 
-            if (!Manager.IsGameManagerValid(message.Chat.Id))
-            {
-                await Manager.StartNewGameAsync(Bot, message.Chat.Id);
-            }
+        if (!Manager.IsGameManagerValid(message.Chat.Id))
+        {
+            await Manager.StartNewGameAsync(Bot, message.Chat.Id);
         }
     }
 }

@@ -1,10 +1,9 @@
 using Newtonsoft.Json;
 
-namespace DaresGameBot.Web.Models
+namespace DaresGameBot.Web.Models;
+
+public sealed class Config : Bot.BotConfig
 {
-    public sealed class Config : Bot.BotConfig
-    {
-        [JsonProperty]
-        public string GoogleCredentialJson { get; set; }
-    }
+    [JsonProperty]
+    public string? GoogleCredentialJson { get; set; }
 }

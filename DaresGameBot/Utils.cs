@@ -6,43 +6,40 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace DaresGameBot
+namespace DaresGameBot;
+
+internal static class Utils
 {
-    internal static class Utils
+    public static readonly Random Random = new();
+
+    public static IList<T> Shuffle<T>(this IList<T> list)
     {
-        public static readonly Random Random = new Random();
+        int n = list.Count;
 
-        public static IList<T> Shuffle<T>(this IList<T> list)
+        while (n > 1)
         {
-            int n = list.Count;
-
-            while (n > 1)
-            {
-                int k = Random.Next(n);
-                --n;
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
-            }
-
-            return list;
+            int k = Random.Next(n);
+            --n;
+            (list[k], list[n]) = (list[n], list[k]);
         }
 
-        public static Queue<T> ToShuffeledQueue<T>(this IEnumerable<T> items) => items.ToList().Shuffle().ToQueue();
+        return list;
+    }
 
-        private static Queue<T> ToQueue<T>(this IEnumerable<T> items) => new Queue<T>(items);
+    public static Queue<T> ToShuffeledQueue<T>(this IEnumerable<T> items) => items.ToList().Shuffle().ToQueue();
 
-        public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
-            string buttonCaption, int replyToMessageId = 0)
-        {
-            var buttonCaptions = new[] { buttonCaption };
-            return SendTextMessageAsync(client, chatId, text, buttonCaptions, replyToMessageId);
-        }
-        public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
-            IEnumerable<string> buttonCaptions, int replyToMessageId = 0)
-        {
-            var markup = new ReplyKeyboardMarkup(buttonCaptions.Select(c => new KeyboardButton(c)));
-            return client.SendTextMessageAsync(chatId, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
-        }
+    private static Queue<T> ToQueue<T>(this IEnumerable<T> items) => new(items);
+
+    public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
+        string buttonCaption, int replyToMessageId = 0)
+    {
+        string[] buttonCaptions = { buttonCaption };
+        return SendTextMessageAsync(client, chatId, text, buttonCaptions, replyToMessageId);
+    }
+    public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
+        IEnumerable<string> buttonCaptions, int replyToMessageId = 0)
+    {
+        ReplyKeyboardMarkup markup = new(buttonCaptions.Select(c => new KeyboardButton(c)));
+        return client.SendTextMessageAsync(chatId, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
     }
 }

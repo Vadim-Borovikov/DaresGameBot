@@ -6,46 +6,45 @@ using DaresGameBot.Game;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace DaresGameBot.Bot
+namespace DaresGameBot.Bot;
+
+public sealed class Bot : BotBaseGoogleSheets<Bot, BotConfig>
 {
-    public sealed class Bot : BotBaseGoogleSheets<Bot, BotConfig>
+    public Bot(BotConfig config) : base(config)
     {
-        public Bot(BotConfig config) : base(config)
+        Commands.Add(new StartCommand(this));
+        Commands.Add(new NewCommand(this));
+        Commands.Add(new DrawActionCommand(this));
+        Commands.Add(new DrawQuestionCommand(this));
+    }
+
+    protected override async Task ProcessTextMessageAsync(Message textMessage, bool fromChat,
+        CommandBase<Bot, BotConfig>? command = null, string? payload = null)
+    {
+        if (command is not null)
         {
-            Commands.Add(new StartCommand(this));
-            Commands.Add(new NewCommand(this));
-            Commands.Add(new DrawActionCommand(this));
-            Commands.Add(new DrawQuestionCommand(this));
+            await command.ExecuteAsync(textMessage, fromChat, payload);
+            return;
         }
 
-        protected override async Task UpdateAsync(Message message, CommandBase<Bot, BotConfig> command,
-            bool fromChat = false)
+        if (ushort.TryParse(textMessage.Text, out ushort playersAmount))
         {
-            if (command != null)
+            bool success = await Manager.ChangePlayersAmountAsync(playersAmount, this, textMessage.Chat.Id);
+            if (success)
             {
-                await command.ExecuteAsync(message, fromChat);
                 return;
             }
-
-            if (ushort.TryParse(message.Text, out ushort playersAmount))
-            {
-                bool success = await Manager.ChangePlayersAmountAsync(playersAmount, this, message.Chat.Id);
-                if (success)
-                {
-                    return;
-                }
-            }
-
-            if (float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance))
-            {
-                bool success = await Manager.ChangeChoiceChanceAsync(choiceChance, this, message.Chat.Id);
-                if (success)
-                {
-                    return;
-                }
-            }
-
-            await Client.SendStickerAsync(message.Chat, DontUnderstandSticker);
         }
+
+        if (float.TryParse(textMessage.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance))
+        {
+            bool success = await Manager.ChangeChoiceChanceAsync(choiceChance, this, textMessage.Chat.Id);
+            if (success)
+            {
+                return;
+            }
+        }
+
+        await Client.SendStickerAsync(textMessage.Chat.Id, DontUnderstandSticker);
     }
 }

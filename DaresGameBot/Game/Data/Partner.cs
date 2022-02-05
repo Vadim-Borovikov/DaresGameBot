@@ -1,30 +1,24 @@
 ﻿using System;
 
-namespace DaresGameBot.Game.Data
+namespace DaresGameBot.Game.Data;
+
+internal sealed class Partner : IComparable<Partner>
 {
-    internal sealed class Partner : IComparable<Partner>
+    private readonly ushort? _number;
+
+    public Partner(ushort partnerNumber) => _number = partnerNumber;
+
+    public Partner() => _number = null;
+
+    public int CompareTo(Partner? other)
     {
-        private readonly ushort? _number;
-
-        public Partner(ushort partnerNumber) => _number = partnerNumber;
-
-        public Partner() => _number = null;
-
-        public int CompareTo(Partner other)
+        if (other?._number is null)
         {
-            if (!_number.HasValue)
-            {
-                return 1;
-            }
-
-            if (!other._number.HasValue)
-            {
-                return -1;
-            }
-
-            return _number.Value.CompareTo(other._number.Value);
+            return _number.HasValue ? -1 : 0;
         }
 
-        public override string ToString() => _number?.ToString() ?? "🤩";
+        return _number?.CompareTo(other._number.Value) ?? 1;
     }
+
+    public override string ToString() => _number?.ToString() ?? "🤩";
 }

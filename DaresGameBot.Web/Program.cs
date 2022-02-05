@@ -1,33 +1,27 @@
-﻿using System;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Logging;
+﻿namespace DaresGameBot.Web;
 
-namespace DaresGameBot.Web
+internal static class Program
 {
-    internal static class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        try
         {
-            try
-            {
-                CreateWebHostBuilder(args).Build().Run();
-            }
-            catch (Exception ex)
-            {
-                Utils.LogException(ex);
-            }
+            CreateHostBuilder(args).Build().Run();
         }
+        catch (Exception ex)
+        {
+            Utils.LogException(ex);
+        }
+    }
 
-        private static IWebHostBuilder CreateWebHostBuilder(string[] args)
-        {
-            return WebHost.CreateDefaultBuilder(args)
-                .ConfigureLogging((ctx, builder) =>
-                {
-                    builder.AddConfiguration(ctx.Configuration.GetSection("Logging"));
-                    builder.AddFile(o => o.RootPath = ctx.HostingEnvironment.ContentRootPath);
-                })
-                .UseStartup<Startup>();
-        }
+    private static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        return Host.CreateDefaultBuilder(args)
+                   .ConfigureLogging((context, builder) =>
+                   {
+                       builder.AddConfiguration(context.Configuration.GetSection("Logging"));
+                       builder.AddFile(o => o.RootPath = context.HostingEnvironment.ContentRootPath);
+                   })
+                   .ConfigureWebHostDefaults(builder => builder.UseStartup<Startup>());
     }
 }

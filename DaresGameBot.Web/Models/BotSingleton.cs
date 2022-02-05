@@ -1,26 +1,28 @@
-using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
-namespace DaresGameBot.Web.Models
+namespace DaresGameBot.Web.Models;
+
+public sealed class BotSingleton : IDisposable
 {
-    public sealed class BotSingleton : IDisposable
+    internal readonly Bot.Bot Bot;
+
+    public BotSingleton(IOptions<Config> options)
     {
-        internal readonly Bot.Bot Bot;
+        Config config = options.Value;
 
-        public BotSingleton(IOptions<Config> options)
+        if (config.GoogleCredential is null || (config.GoogleCredential.Count == 0))
         {
-            Config config = options.Value;
-
-            if ((config.GoogleCredential == null) || (config.GoogleCredential.Count == 0))
+            if (string.IsNullOrWhiteSpace(config.GoogleCredentialJson))
             {
-                config.GoogleCredential =
-                    JsonConvert.DeserializeObject<Dictionary<string, string>>(config.GoogleCredentialJson);
+                throw new NullReferenceException(nameof(config.GoogleCredentialJson));
             }
-            Bot = new Bot.Bot(config);
-        }
 
-        public void Dispose() => Bot.Dispose();
+            config.GoogleCredential =
+                JsonConvert.DeserializeObject<Dictionary<string, string>>(config.GoogleCredentialJson);
+        }
+        Bot = new Bot.Bot(config);
     }
+
+    public void Dispose() => Bot.Dispose();
 }
