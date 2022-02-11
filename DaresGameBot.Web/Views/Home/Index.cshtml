@@ -5,13 +5,6 @@
 }
 
 <div class="text-center">
-    @if (Model is not null)
-    {
-        <h1 class="display-4">@Model.FirstName</h1>
-        <p><a href="https://t.me/@Model.Username">@@@Model.Username</a> проснулся!</p>
-    }
-    else
-    {
-        <p>Данные бота недоступны!</p>
-    }
+    <h1 class="display-4">@Model.FirstName</h1>
+    <p><a href="https://t.me/@Model.Username">@@@(Model.Username)</a> проснулся!</p>
 </div>
