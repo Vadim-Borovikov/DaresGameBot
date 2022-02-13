@@ -30,12 +30,12 @@ internal sealed class Game
         Deck<Card> questionsDeck = await Manager.GetQuestionsDeckAsync(_bot);
         await _bot.Client.FinalizeStatusMessageAsync(statusMessage);
 
-        if (!_bot.Config.InitialPlayersAmount.HasValue)
+        if (_bot.Config.InitialPlayersAmount is null)
         {
             throw new NullReferenceException(nameof(_bot.Config.InitialPlayersAmount));
         }
 
-        if (!_bot.Config.InitialChoiceChance.HasValue)
+        if (_bot.Config.InitialChoiceChance is null)
         {
             throw new NullReferenceException(nameof(_bot.Config.InitialChoiceChance));
         }
