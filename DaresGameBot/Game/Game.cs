@@ -30,18 +30,15 @@ internal sealed class Game
         Deck<Card> questionsDeck = await Manager.GetQuestionsDeckAsync(_bot);
         await _bot.Client.FinalizeStatusMessageAsync(statusMessage);
 
-        if (_bot.Config.InitialPlayersAmount is null)
-        {
-            throw new NullReferenceException(nameof(_bot.Config.InitialPlayersAmount));
-        }
+        ushort players = playersAmount
+                         ?? _bot.Config.InitialPlayersAmount
+                         ?? throw new NullReferenceException(nameof(_bot.Config.InitialPlayersAmount));
 
-        if (_bot.Config.InitialChoiceChance is null)
-        {
-            throw new NullReferenceException(nameof(_bot.Config.InitialChoiceChance));
-        }
+        float chance = choiceChance
+                       ?? _bot.Config.InitialChoiceChance
+                       ?? throw new NullReferenceException(nameof(_bot.Config.InitialChoiceChance));
 
-        _game = new Data.Game(playersAmount ?? _bot.Config.InitialPlayersAmount.Value,
-            choiceChance ?? _bot.Config.InitialChoiceChance.Value, actionDecks, questionsDeck);
+        _game = new Data.Game(players, chance, actionDecks, questionsDeck);
 
         StringBuilder stringBuilder = new();
         stringBuilder.AppendLine("🔥 Начинаем новую игру!");

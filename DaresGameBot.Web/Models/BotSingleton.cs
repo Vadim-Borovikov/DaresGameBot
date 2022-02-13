@@ -13,13 +13,10 @@ public sealed class BotSingleton : IDisposable
 
         if (config.GoogleCredential is null || (config.GoogleCredential.Count == 0))
         {
-            if (string.IsNullOrWhiteSpace(config.GoogleCredentialJson))
-            {
-                throw new NullReferenceException(nameof(config.GoogleCredentialJson));
-            }
+            string json = config.GoogleCredentialJson
+                          ?? throw new NullReferenceException(nameof(config.GoogleCredentialJson));
 
-            config.GoogleCredential =
-                JsonConvert.DeserializeObject<Dictionary<string, string>>(config.GoogleCredentialJson);
+            config.GoogleCredential = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
         }
         Bot = new Bot.Bot(config);
     }

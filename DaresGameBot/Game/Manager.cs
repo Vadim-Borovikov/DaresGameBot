@@ -40,12 +40,9 @@ internal static class Manager
 
     public static async Task<List<Deck<CardAction>>> GetActionDecksAsync(Bot.Bot bot)
     {
-        if (bot.Config.ActionsGoogleRange is null)
-        {
-            throw new NullReferenceException(nameof(bot.Config.ActionsGoogleRange));
-        }
-        IList<CardAction> cards =
-            await DataManager.GetValuesAsync<CardAction>(bot.GoogleSheetsProvider, bot.Config.ActionsGoogleRange);
+        string range = bot.Config.ActionsGoogleRange
+                       ?? throw new NullReferenceException(nameof(bot.Config.ActionsGoogleRange));
+        IList<CardAction> cards = await DataManager.GetValuesAsync<CardAction>(bot.GoogleSheetsProvider, range);
         return cards.GroupBy(c => c.Tag)
                     .Select(g => CreateActionDeck(g.Key, g.ToList()))
                     .ToList();
@@ -53,12 +50,9 @@ internal static class Manager
 
     public static async Task<Deck<Card>> GetQuestionsDeckAsync(Bot.Bot bot)
     {
-        if (bot.Config.QuestionsGoogleRange is null)
-        {
-            throw new NullReferenceException(nameof(bot.Config.QuestionsGoogleRange));
-        }
-        IList<Card> cards =
-            await DataManager.GetValuesAsync<Card>(bot.GoogleSheetsProvider, bot.Config.QuestionsGoogleRange);
+        string range = bot.Config.QuestionsGoogleRange
+                       ?? throw new NullReferenceException(nameof(bot.Config.QuestionsGoogleRange));
+        IList<Card> cards = await DataManager.GetValuesAsync<Card>(bot.GoogleSheetsProvider, range);
         return new Deck<Card>("❓") { Cards = cards.ToList() };
     }
 
