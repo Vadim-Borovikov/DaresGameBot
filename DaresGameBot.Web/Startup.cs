@@ -1,4 +1,5 @@
 ﻿using DaresGameBot.Web.Models;
+using GoogleSheetsManager;
 
 namespace DaresGameBot.Web;
 
@@ -26,7 +27,7 @@ public sealed class Startup
         app.UseCors();
 
         Config botConfig = _config.Get<Config>();
-        string token = botConfig.Token ?? throw new NullReferenceException(nameof(botConfig.Token));
+        string token = botConfig.Token.GetValue(nameof(botConfig.Token));
         object defaults = new
         {
             controller = "Update",

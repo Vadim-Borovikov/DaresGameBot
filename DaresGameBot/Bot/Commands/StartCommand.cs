@@ -1,7 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using AbstractBot;
 using DaresGameBot.Game;
+using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -17,13 +17,8 @@ internal sealed class StartCommand : CommandBase<Bot, BotConfig>
 
     public override async Task ExecuteAsync(Message message, bool fromChat, string? payload)
     {
-        if (message.From is null)
-        {
-            throw new NullReferenceException(nameof(message.From));
-        }
-        await Bot.Client.SendTextMessageAsync(message.Chat.Id, Bot.GetDescriptionFor(message.From.Id),
-            ParseMode.MarkdownV2);
-
+        User user = message.From.GetValue(nameof(message.From));
+        await Bot.Client.SendTextMessageAsync(message.Chat.Id, Bot.GetDescriptionFor(user.Id), ParseMode.MarkdownV2);
         if (!Manager.IsGameManagerValid(message.Chat.Id))
         {
             await Manager.StartNewGameAsync(Bot, message.Chat.Id);

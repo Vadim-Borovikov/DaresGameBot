@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using AbstractBot;
 using DaresGameBot.Game.Data;
+using GoogleSheetsManager;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -31,12 +31,10 @@ internal sealed class Game
         await _bot.Client.FinalizeStatusMessageAsync(statusMessage);
 
         ushort players = playersAmount
-                         ?? _bot.Config.InitialPlayersAmount
-                         ?? throw new NullReferenceException(nameof(_bot.Config.InitialPlayersAmount));
+                         ?? _bot.Config.InitialPlayersAmount.GetValue(nameof(_bot.Config.InitialPlayersAmount));
 
         float chance = choiceChance
-                       ?? _bot.Config.InitialChoiceChance
-                       ?? throw new NullReferenceException(nameof(_bot.Config.InitialChoiceChance));
+                       ?? _bot.Config.InitialChoiceChance.GetValue(nameof(_bot.Config.InitialChoiceChance));
 
         _game = new Data.Game(players, chance, actionDecks, questionsDeck);
 
