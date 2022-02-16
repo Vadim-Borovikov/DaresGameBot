@@ -14,6 +14,7 @@ internal sealed class CardAction : Card
     {
         Players = valueSet[PlayersTitle].ToUshort().GetValue("Empty players");
         PartnersToAssign = valueSet[PartnersToAssignTitle].ToUshort().GetValue("Empty players to assign");
+
         string? tag = valueSet[TagTitle]?.ToString();
         Tag = tag.GetValue("Empty card tag");
 
