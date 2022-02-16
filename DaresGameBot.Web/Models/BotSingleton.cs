@@ -15,7 +15,7 @@ public sealed class BotSingleton : IDisposable
         if (config.GoogleCredential is null || (config.GoogleCredential.Count == 0))
         {
             string json = config.GoogleCredentialJson.GetValue(nameof(config.GoogleCredentialJson));
-            config.GoogleCredential = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+            config.GoogleCredential = JsonConvert.DeserializeObject<Dictionary<string, string?>>(json);
         }
         Bot = new Bot.Bot(config);
     }
