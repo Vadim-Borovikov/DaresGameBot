@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using AbstractBot;
 using DaresGameBot.Bot.Commands;
@@ -10,12 +11,16 @@ namespace DaresGameBot.Bot;
 
 public sealed class Bot : BotBaseGoogleSheets<Bot, BotConfig>
 {
-    public Bot(BotConfig config) : base(config)
+    public Bot(BotConfig config) : base(config) { }
+
+    public override Task StartAsync(CancellationToken cancellationToken)
     {
         Commands.Add(new StartCommand(this));
         Commands.Add(new NewCommand(this));
         Commands.Add(new DrawActionCommand(this));
         Commands.Add(new DrawQuestionCommand(this));
+
+        return base.StartAsync(cancellationToken);
     }
 
     protected override async Task ProcessTextMessageAsync(Message textMessage, bool fromChat,
