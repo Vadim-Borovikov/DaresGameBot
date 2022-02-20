@@ -2,16 +2,16 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using AbstractBot;
-using DaresGameBot.Bot.Commands;
+using DaresGameBot.Commands;
 using DaresGameBot.Game;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace DaresGameBot.Bot;
+namespace DaresGameBot;
 
-public sealed class Bot : BotBaseGoogleSheets<Bot, BotConfig>
+public sealed class Bot : BotBaseGoogleSheets<Bot, Config>
 {
-    public Bot(BotConfig config) : base(config) { }
+    public Bot(Config config) : base(config) { }
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
@@ -23,8 +23,8 @@ public sealed class Bot : BotBaseGoogleSheets<Bot, BotConfig>
         return base.StartAsync(cancellationToken);
     }
 
-    protected override async Task ProcessTextMessageAsync(Message textMessage, bool fromChat,
-        CommandBase<Bot, BotConfig>? command = null, string? payload = null)
+    protected override async Task ProcessTextMessageAsync(Message textMessage, bool fromChat, 
+        CommandBase<Bot, Config>? command = null, string? payload = null)
     {
         if (command is not null)
         {

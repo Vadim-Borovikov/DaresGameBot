@@ -11,7 +11,7 @@ public sealed class Startup
     {
         services.AddSingleton<BotSingleton>();
         services.AddHostedService<BotService>();
-        services.Configure<Config>(_config);
+        services.Configure<ConfigJson>(_config);
 
         services.AddControllersWithViews().AddNewtonsoftJson();
     }
@@ -26,7 +26,7 @@ public sealed class Startup
         app.UseRouting();
         app.UseCors();
 
-        Config botConfig = _config.Get<Config>();
+        ConfigJson botConfig = _config.Get<ConfigJson>();
         string token = botConfig.Token.GetValue(nameof(botConfig.Token));
         object defaults = new
         {

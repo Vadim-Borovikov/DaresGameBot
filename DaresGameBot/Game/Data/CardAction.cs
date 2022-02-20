@@ -5,20 +5,28 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class CardAction : Card
 {
-    public ushort Players { get; private set; }
-    public ushort PartnersToAssign { get; private set; }
+    public readonly ushort Players;
+    public readonly ushort PartnersToAssign;
+    public readonly string Tag;
 
-    public string Tag { get; private set; } = "";
-
-    public override void Load(IDictionary<string, object?> valueSet)
+    private CardAction(string description, ushort players, ushort partnersToAssign, string tag) : base(description)
     {
-        Players = valueSet[PlayersTitle].ToUshort().GetValue("Empty players");
-        PartnersToAssign = valueSet[PartnersToAssignTitle].ToUshort().GetValue("Empty players to assign");
+        Players = players;
+        PartnersToAssign = partnersToAssign;
+        Tag = tag;
+    }
+
+    public new static CardAction Load(IDictionary<string, object?> valueSet)
+    {
+        string description = GetDescription(valueSet);
+
+        ushort players = valueSet[PlayersTitle].ToUshort().GetValue("Empty players");
+        ushort partnersToAssign = valueSet[PartnersToAssignTitle].ToUshort().GetValue("Empty players to assign");
 
         string? tag = valueSet[TagTitle]?.ToString();
-        Tag = tag.GetValue("Empty card tag");
+        string tagValue = tag.GetValue("Empty card tag");
 
-        base.Load(valueSet);
+        return new CardAction(description, players, partnersToAssign, tagValue);
     }
 
     private const string PlayersTitle = "Минимум";

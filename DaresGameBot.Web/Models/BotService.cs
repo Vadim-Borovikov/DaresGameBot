@@ -8,5 +8,5 @@ internal sealed class BotService : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken) => _bot.StopAsync(cancellationToken);
 
-    private readonly Bot.Bot _bot;
+    private readonly Bot _bot;
 }

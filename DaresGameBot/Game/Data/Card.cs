@@ -3,13 +3,22 @@ using GoogleSheetsManager;
 
 namespace DaresGameBot.Game.Data;
 
-internal class Card : ILoadable
+internal class Card
 {
-    public string? Description { get; private set; }
+    public readonly string Description;
 
-    public virtual void Load(IDictionary<string, object?> valueSet)
+    protected Card(string description) => Description = description;
+
+    public static Card Load(IDictionary<string, object?> valueSet)
     {
-        Description = valueSet[DescriptionTitle]?.ToString();
+        string description = GetDescription(valueSet);
+        return new Card(description);
+    }
+
+    protected static string GetDescription(IDictionary<string, object?> valueSet)
+    {
+        string? description = valueSet[DescriptionTitle]?.ToString();
+        return description.GetValue(nameof(description));
     }
 
     private const string DescriptionTitle = "Текст";

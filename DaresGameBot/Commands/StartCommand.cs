@@ -6,9 +6,9 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace DaresGameBot.Bot.Commands;
+namespace DaresGameBot.Commands;
 
-internal sealed class StartCommand : CommandBase<Bot, BotConfig>
+internal sealed class StartCommand : CommandBase<Bot, Config>
 {
     protected override string Name => "start";
     protected override string Description => "инструкции и команды";

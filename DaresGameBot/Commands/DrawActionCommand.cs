@@ -3,9 +3,9 @@ using AbstractBot;
 using DaresGameBot.Game;
 using Telegram.Bot.Types;
 
-namespace DaresGameBot.Bot.Commands;
+namespace DaresGameBot.Commands;
 
-internal sealed class DrawActionCommand : CommandBase<Bot, BotConfig>
+internal sealed class DrawActionCommand : CommandBase<Bot, Config>
 {
     protected override string Name => "action";
     protected override string Description => Alias.ToLowerInvariant();

@@ -9,25 +9,25 @@ namespace DaresGameBot.Game;
 
 internal static class Manager
 {
-    public static Task StartNewGameAsync(Bot.Bot bot, long id)
+    public static Task StartNewGameAsync(Bot bot, long id)
     {
         Game manager = GetOrAddGameManager(bot, id);
         return manager.StartNewGameAsync();
     }
 
-    public static Task<bool> ChangePlayersAmountAsync(ushort playersAmount, Bot.Bot bot, long id)
+    public static Task<bool> ChangePlayersAmountAsync(ushort playersAmount, Bot bot, long id)
     {
         Game manager = GetOrAddGameManager(bot, id);
         return manager.ChangePlayersAmountAsync(playersAmount);
     }
 
-    public static Task<bool> ChangeChoiceChanceAsync(float choiceChance, Bot.Bot bot, long id)
+    public static Task<bool> ChangeChoiceChanceAsync(float choiceChance, Bot bot, long id)
     {
         Game manager = GetOrAddGameManager(bot, id);
         return manager.ChangeChoiceChanceAsync(choiceChance);
     }
 
-    public static Task DrawAsync(Bot.Bot bot, long id, int replyToMessageId, bool action = true)
+    public static Task DrawAsync(Bot bot, long id, int replyToMessageId, bool action = true)
     {
         Game manager = GetOrAddGameManager(bot, id);
         return manager.DrawAsync(replyToMessageId, action);
@@ -35,19 +35,19 @@ internal static class Manager
 
     public static bool IsGameManagerValid(long id) => GameManagers.ContainsKey(id);
 
-    private static Game GetOrAddGameManager(Bot.Bot bot, long id) => GameManagers.GetOrAdd(id, i => new Game(bot, i));
+    private static Game GetOrAddGameManager(Bot bot, long id) => GameManagers.GetOrAdd(id, i => new Game(bot, i));
 
-    public static async Task<List<Deck<CardAction>>> GetActionDecksAsync(Bot.Bot bot)
+    public static async Task<List<Deck<CardAction>>> GetActionDecksAsync(Bot bot)
     {
         string range = bot.Config.ActionsGoogleRange.GetValue(nameof(bot.Config.ActionsGoogleRange));
-        IList<CardAction> cards = await DataManager.GetValuesAsync<CardAction>(bot.GoogleSheetsProvider, range);
+        IList<CardAction> cards = await DataManager.GetValuesAsync(bot.GoogleSheetsProvider, CardAction.Load, range);
         return cards.GroupBy(c => c.Tag).Select(g => CreateActionDeck(g.Key, g.ToList())).ToList();
     }
 
-    public static async Task<Deck<Card>> GetQuestionsDeckAsync(Bot.Bot bot)
+    public static async Task<Deck<Card>> GetQuestionsDeckAsync(Bot bot)
     {
         string range = bot.Config.QuestionsGoogleRange.GetValue(nameof(bot.Config.QuestionsGoogleRange));
-        IList<Card> cards = await DataManager.GetValuesAsync<Card>(bot.GoogleSheetsProvider, range);
+        IList<Card> cards = await DataManager.GetValuesAsync(bot.GoogleSheetsProvider, Card.Load, range);
         return new Deck<Card>("❓") { Cards = cards.ToList() };
     }
 

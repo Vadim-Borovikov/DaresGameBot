@@ -16,7 +16,7 @@ internal sealed class Game
     public const string DrawQuestionCaption = "Вытянуть вопрос";
     public const string NewGameCaption = "Новая игра";
 
-    public Game(Bot.Bot bot, ChatId chatId)
+    public Game(Bot bot, ChatId chatId)
     {
         _bot = bot;
         _chatId = chatId;
@@ -112,6 +112,6 @@ internal sealed class Game
 
     private Data.Game? _game;
 
-    private readonly Bot.Bot _bot;
+    private readonly Bot _bot;
     private readonly ChatId _chatId;
 }
