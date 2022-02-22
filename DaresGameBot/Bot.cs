@@ -23,7 +23,7 @@ public sealed class Bot : BotBaseGoogleSheets<Bot, Config>
         return base.StartAsync(cancellationToken);
     }
 
-    protected override async Task ProcessTextMessageAsync(Message textMessage, bool fromChat, 
+    protected override async Task ProcessTextMessageAsync(Message textMessage, bool fromChat,
         CommandBase<Bot, Config>? command = null, string? payload = null)
     {
         if (command is not null)

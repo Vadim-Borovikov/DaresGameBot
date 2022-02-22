@@ -3,7 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AbstractBot;
 using DaresGameBot.Game.Data;
-using GoogleSheetsManager;
+using GryphonUtilities;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
