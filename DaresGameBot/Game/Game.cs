@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using AbstractBot;
 using DaresGameBot.Game.Data;
 using GryphonUtilities;
 using Telegram.Bot;
@@ -28,7 +27,7 @@ internal sealed class Game
             ParseMode.MarkdownV2, disableNotification: true);
         List<Deck<CardAction>> actionDecks = await Manager.GetActionDecksAsync(_bot);
         Deck<Card> questionsDeck = await Manager.GetQuestionsDeckAsync(_bot);
-        await _bot.Client.FinalizeStatusMessageAsync(statusMessage);
+        await _bot.FinalizeStatusMessageAsync(statusMessage);
 
         ushort players = playersAmount
                          ?? _bot.Config.InitialPlayersAmount.GetValue(nameof(_bot.Config.InitialPlayersAmount));

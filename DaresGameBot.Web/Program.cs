@@ -6,18 +6,22 @@ internal static class Program
 {
     public static async Task Main(string[] args)
     {
-        Utils.DeleteExceptionLog();
+        Utils.LogManager.SetTimeZone(SystemTimeZoneId);
+        Utils.LogManager.LogMessage();
+
+        Utils.LogManager.LogTimedMessage("Startup");
+        Utils.LogManager.DeleteExceptionLog();
         try
         {
-            await CreateHostBuilder(args).Build().RunAsync();
+            await CreateWebHostBuilder(args).Build().RunAsync();
         }
         catch (Exception ex)
         {
-            await Utils.LogExceptionAsync(ex);
+            Utils.LogManager.LogException(ex);
         }
     }
 
-    private static IHostBuilder CreateHostBuilder(string[] args)
+    private static IHostBuilder CreateWebHostBuilder(string[] args)
     {
         return Host.CreateDefaultBuilder(args)
                    .ConfigureLogging((context, builder) =>
@@ -27,4 +31,6 @@ internal static class Program
                    })
                    .ConfigureWebHostDefaults(builder => builder.UseStartup<Startup>());
     }
+
+    private const string SystemTimeZoneId = "Arabian Standard Time";
 }
