@@ -16,6 +16,6 @@ internal sealed class NewCommand : CommandBase<Bot, Config>
 
     public override Task ExecuteAsync(Message message, bool fromChat, string? payload)
     {
-        return Manager.StartNewGameAsync(Bot, message.Chat.Id);
+        return Manager.StartNewGameAsync(Bot, message.Chat);
     }
 }

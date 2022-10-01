@@ -17,6 +17,6 @@ internal sealed class DrawActionCommand : CommandBase<Bot, Config>
     public override Task ExecuteAsync(Message message, bool fromChat, string? payload)
     {
         int replyToMessageId = fromChat ? message.MessageId : 0;
-        return Manager.DrawAsync(Bot, message.Chat.Id, replyToMessageId);
+        return Manager.DrawAsync(Bot, message.Chat, replyToMessageId);
     }
 }

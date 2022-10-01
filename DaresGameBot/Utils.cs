@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
@@ -30,16 +29,16 @@ internal static class Utils
 
     private static Queue<T> ToQueue<T>(this IEnumerable<T> items) => new(items);
 
-    public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
-        string buttonCaption, int replyToMessageId = 0)
+    public static Task<Message> SendTextMessageAsync(this Bot bot, Chat chat, string text, string buttonCaption,
+        int replyToMessageId = 0)
     {
         string[] buttonCaptions = { buttonCaption };
-        return SendTextMessageAsync(client, chatId, text, buttonCaptions, replyToMessageId);
+        return bot.SendTextMessageAsync(chat, text, buttonCaptions, replyToMessageId);
     }
-    public static Task<Message> SendTextMessageAsync(this ITelegramBotClient client, ChatId chatId, string text,
+    public static Task<Message> SendTextMessageAsync(this Bot bot, Chat chat, string text,
         IEnumerable<string> buttonCaptions, int replyToMessageId = 0)
     {
         ReplyKeyboardMarkup markup = new(buttonCaptions.Select(c => new KeyboardButton(c)));
-        return client.SendTextMessageAsync(chatId, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
+        return bot.SendTextMessageAsync(chat, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
     }
 }

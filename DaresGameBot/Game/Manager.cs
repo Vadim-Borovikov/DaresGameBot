@@ -5,38 +5,42 @@ using System.Threading.Tasks;
 using DaresGameBot.Game.Data;
 using GoogleSheetsManager;
 using GryphonUtilities;
+using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game;
 
 internal static class Manager
 {
-    public static Task StartNewGameAsync(Bot bot, long id)
+    public static Task StartNewGameAsync(Bot bot, Chat chat)
     {
-        Game manager = GetOrAddGameManager(bot, id);
+        Game manager = GetOrAddGameManager(bot, chat);
         return manager.StartNewGameAsync();
     }
 
-    public static Task<bool> ChangePlayersAmountAsync(ushort playersAmount, Bot bot, long id)
+    public static Task<bool> ChangePlayersAmountAsync(ushort playersAmount, Bot bot, Chat chat)
     {
-        Game manager = GetOrAddGameManager(bot, id);
+        Game manager = GetOrAddGameManager(bot, chat);
         return manager.ChangePlayersAmountAsync(playersAmount);
     }
 
-    public static Task<bool> ChangeChoiceChanceAsync(float choiceChance, Bot bot, long id)
+    public static Task<bool> ChangeChoiceChanceAsync(float choiceChance, Bot bot, Chat chat)
     {
-        Game manager = GetOrAddGameManager(bot, id);
+        Game manager = GetOrAddGameManager(bot, chat);
         return manager.ChangeChoiceChanceAsync(choiceChance);
     }
 
-    public static Task DrawAsync(Bot bot, long id, int replyToMessageId, bool action = true)
+    public static Task DrawAsync(Bot bot, Chat chat, int replyToMessageId, bool action = true)
     {
-        Game manager = GetOrAddGameManager(bot, id);
+        Game manager = GetOrAddGameManager(bot, chat);
         return manager.DrawAsync(replyToMessageId, action);
     }
 
-    public static bool IsGameManagerValid(long id) => GameManagers.ContainsKey(id);
+    public static bool IsGameManagerValid(Chat chat) => GameManagers.ContainsKey(chat.Id);
 
-    private static Game GetOrAddGameManager(Bot bot, long id) => GameManagers.GetOrAdd(id, i => new Game(bot, i));
+    private static Game GetOrAddGameManager(Bot bot, Chat chat)
+    {
+        return GameManagers.GetOrAdd(chat.Id, _ => new Game(bot, chat));
+    }
 
     public static async Task<List<Deck<CardAction>>> GetActionDecksAsync(Bot bot)
     {

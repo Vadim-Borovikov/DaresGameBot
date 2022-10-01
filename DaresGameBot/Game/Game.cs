@@ -3,7 +3,6 @@ using System.Text;
 using System.Threading.Tasks;
 using DaresGameBot.Game.Data;
 using GryphonUtilities;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -15,15 +14,15 @@ internal sealed class Game
     public const string DrawQuestionCaption = "Вытянуть вопрос";
     public const string NewGameCaption = "Новая игра";
 
-    public Game(Bot bot, ChatId chatId)
+    public Game(Bot bot, Chat chat)
     {
         _bot = bot;
-        _chatId = chatId;
+        _chat = chat;
     }
 
     public async Task StartNewGameAsync(ushort? playersAmount = null, float? choiceChance = null)
     {
-        Message statusMessage = await _bot.Client.SendTextMessageAsync(_chatId, "_Читаю колоды…_",
+        Message statusMessage = await _bot.SendTextMessageAsync(_chat, "_Читаю колоды…_",
             ParseMode.MarkdownV2, disableNotification: true);
         List<Deck<CardAction>> actionDecks = await Manager.GetActionDecksAsync(_bot);
         Deck<Card> questionsDeck = await Manager.GetQuestionsDeckAsync(_bot);
@@ -41,7 +40,7 @@ internal sealed class Game
         stringBuilder.AppendLine("🔥 Начинаем новую игру!");
         stringBuilder.AppendLine(_game.Players);
         stringBuilder.AppendLine(_game.Chance);
-        await _bot.Client.SendTextMessageAsync(_chatId, stringBuilder.ToString(), Captions);
+        await _bot.SendTextMessageAsync(_chat, stringBuilder.ToString(), Captions);
     }
 
     public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount)
@@ -59,7 +58,7 @@ internal sealed class Game
         {
             _game.PlayersAmount = playersAmount;
 
-            await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Players}", Captions);
+            await _bot.SendTextMessageAsync(_chat, $"Принято! {_game.Players}", Captions);
         }
         return true;
     }
@@ -79,7 +78,7 @@ internal sealed class Game
         {
             _game.ChoiceChance = choiceChance;
 
-            await _bot.Client.SendTextMessageAsync(_chatId, $"Принято! {_game.Chance}", Captions);
+            await _bot.SendTextMessageAsync(_chat, $"Принято! {_game.Chance}", Captions);
         }
 
         return true;
@@ -98,9 +97,9 @@ internal sealed class Game
         if (_game.Empty)
         {
             _game = null;
-            return _bot.Client.SendTextMessageAsync(_chatId, text, NewGameCaption, replyToMessageId);
+            return _bot.SendTextMessageAsync(_chat, text, NewGameCaption, replyToMessageId);
         }
-        return _bot.Client.SendTextMessageAsync(_chatId, text, Captions, replyToMessageId);
+        return _bot.SendTextMessageAsync(_chat, text, Captions, replyToMessageId);
     }
 
     private static readonly IEnumerable<string> Captions = new[]
@@ -112,5 +111,5 @@ internal sealed class Game
     private Data.Game? _game;
 
     private readonly Bot _bot;
-    private readonly ChatId _chatId;
+    private readonly Chat _chat;
 }

@@ -2,7 +2,6 @@
 using AbstractBot;
 using DaresGameBot.Game;
 using GryphonUtilities;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -18,10 +17,10 @@ internal sealed class StartCommand : CommandBase<Bot, Config>
     public override async Task ExecuteAsync(Message message, bool fromChat, string? payload)
     {
         User user = message.From.GetValue(nameof(message.From));
-        await Bot.Client.SendTextMessageAsync(message.Chat.Id, Bot.GetDescriptionFor(user.Id), ParseMode.MarkdownV2);
-        if (!Manager.IsGameManagerValid(message.Chat.Id))
+        await Bot.SendTextMessageAsync(message.Chat, Bot.GetDescriptionFor(user.Id), ParseMode.MarkdownV2);
+        if (!Manager.IsGameManagerValid(message.Chat))
         {
-            await Manager.StartNewGameAsync(Bot, message.Chat.Id);
+            await Manager.StartNewGameAsync(Bot, message.Chat);
         }
     }
 }

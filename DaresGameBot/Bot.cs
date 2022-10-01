@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using AbstractBot;
 using DaresGameBot.Commands;
 using DaresGameBot.Game;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot;
@@ -34,7 +33,7 @@ public sealed class Bot : BotBaseGoogleSheets<Bot, Config>
 
         if (ushort.TryParse(textMessage.Text, out ushort playersAmount))
         {
-            bool success = await Manager.ChangePlayersAmountAsync(playersAmount, this, textMessage.Chat.Id);
+            bool success = await Manager.ChangePlayersAmountAsync(playersAmount, this, textMessage.Chat);
             if (success)
             {
                 return;
@@ -43,13 +42,13 @@ public sealed class Bot : BotBaseGoogleSheets<Bot, Config>
 
         if (float.TryParse(textMessage.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance))
         {
-            bool success = await Manager.ChangeChoiceChanceAsync(choiceChance, this, textMessage.Chat.Id);
+            bool success = await Manager.ChangeChoiceChanceAsync(choiceChance, this, textMessage.Chat);
             if (success)
             {
                 return;
             }
         }
 
-        await Client.SendStickerAsync(textMessage.Chat.Id, DontUnderstandSticker);
+        await SendStickerAsync(textMessage.Chat, DontUnderstandSticker);
     }
 }
