@@ -1,4 +1,5 @@
-﻿using DaresGameBot.Web.Models;
+﻿using System.Threading.Tasks;
+using DaresGameBot.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
 
