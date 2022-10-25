@@ -1,36 +1,25 @@
-using System.Collections.Generic;
 using GoogleSheetsManager;
-using GryphonUtilities;
+using JetBrains.Annotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace DaresGameBot.Game.Data;
 
+// ReSharper disable NullableWarningSuppressionIsUsed
+
 internal sealed class CardAction : Card
 {
-    public readonly ushort Players;
-    public readonly ushort PartnersToAssign;
-    public readonly string Tag;
+    [UsedImplicitly]
+    [Required]
+    [SheetField("Минимум")]
+    public ushort Players;
 
-    private CardAction(string description, ushort players, ushort partnersToAssign, string tag) : base(description)
-    {
-        Players = players;
-        PartnersToAssign = partnersToAssign;
-        Tag = tag;
-    }
+    [UsedImplicitly]
+    [Required]
+    [SheetField("Назначить")]
+    public ushort PartnersToAssign;
 
-    public new static CardAction Load(IDictionary<string, object?> valueSet)
-    {
-        string description = GetDescription(valueSet);
-
-        ushort players = valueSet[PlayersTitle].ToUshort().GetValue("Empty players");
-        ushort partnersToAssign = valueSet[PartnersToAssignTitle].ToUshort().GetValue("Empty players to assign");
-
-        string? tag = valueSet[TagTitle]?.ToString();
-        string tagValue = tag.GetValue("Empty card tag");
-
-        return new CardAction(description, players, partnersToAssign, tagValue);
-    }
-
-    private const string PlayersTitle = "Минимум";
-    private const string PartnersToAssignTitle = "Назначить";
-    private const string TagTitle = "Символ";
+    [UsedImplicitly]
+    [Required]
+    [SheetField("Символ")]
+    public string Tag = null!;
 }

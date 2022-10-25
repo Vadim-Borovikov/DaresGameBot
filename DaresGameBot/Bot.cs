@@ -19,6 +19,9 @@ public sealed class Bot : BotBaseGoogleSheets<Bot, Config>
         Commands.Add(new DrawActionCommand(this));
         Commands.Add(new DrawQuestionCommand(this));
 
+        GoogleSheetsManager.Utils.Converters[typeof(ushort)] = o => Utils.ToUshort(o);
+        GoogleSheetsManager.Utils.Converters[typeof(ushort?)] = o => Utils.ToUshort(o);
+
         return base.StartAsync(cancellationToken);
     }
 

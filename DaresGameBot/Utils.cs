@@ -41,4 +41,13 @@ internal static class Utils
         ReplyKeyboardMarkup markup = new(buttonCaptions.Select(c => new KeyboardButton(c)));
         return bot.SendTextMessageAsync(chat, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
     }
+
+    public static ushort? ToUshort(object? o)
+    {
+        if (o is ushort u)
+        {
+            return u;
+        }
+        return ushort.TryParse(o?.ToString(), out u) ? u : null;
+    }
 }

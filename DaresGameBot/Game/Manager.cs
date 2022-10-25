@@ -45,15 +45,15 @@ internal static class Manager
     public static async Task<List<Deck<CardAction>>> GetActionDecksAsync(Bot bot)
     {
         string range = bot.Config.ActionsGoogleRange.GetValue(nameof(bot.Config.ActionsGoogleRange));
-        IList<CardAction> cards = await DataManager.GetValuesAsync(bot.GoogleSheetsProvider, CardAction.Load, range);
-        return cards.GroupBy(c => c.Tag).Select(g => CreateActionDeck(g.Key, g.ToList())).ToList();
+        SheetData<CardAction> cards = await DataManager.GetValuesAsync<CardAction>(bot.GoogleSheetsProvider, range);
+        return cards.Instances.GroupBy(c => c.Tag).Select(g => CreateActionDeck(g.Key, g.ToList())).ToList();
     }
 
     public static async Task<Deck<Card>> GetQuestionsDeckAsync(Bot bot)
     {
         string range = bot.Config.QuestionsGoogleRange.GetValue(nameof(bot.Config.QuestionsGoogleRange));
-        IList<Card> cards = await DataManager.GetValuesAsync(bot.GoogleSheetsProvider, Card.Load, range);
-        return new Deck<Card>("❓") { Cards = cards.ToList() };
+        SheetData<Card> cards = await DataManager.GetValuesAsync<Card>(bot.GoogleSheetsProvider, range);
+        return new Deck<Card>("❓") { Cards = cards.Instances.ToList() };
     }
 
     private static Deck<CardAction> CreateActionDeck(string tag, IEnumerable<CardAction> cards)

@@ -1,26 +1,25 @@
 using AbstractBot;
-using System;
+using System.ComponentModel.DataAnnotations;
+
+// ReSharper disable NullableWarningSuppressionIsUsed
 
 namespace DaresGameBot;
 
-public sealed class Config : ConfigGoogleSheets
+public class Config : ConfigGoogleSheets
 {
-    public readonly ushort InitialPlayersAmount;
-    public readonly float InitialChoiceChance;
-    public readonly string ActionsGoogleRange;
-    public readonly string QuestionsGoogleRange;
+    [Required]
+    [Range(1, ushort.MaxValue)]
+    public ushort InitialPlayersAmount { get; init; }
 
-    public Config(string token, string systemTimeZoneId, string dontUnderstandStickerFileId,
-        string forbiddenStickerFileId, TimeSpan sendMessageDelayPrivate, TimeSpan sendMessageDelayGroup,
-        TimeSpan sendMessageDelayGlobal, string googleCredentialJson, string applicationName, string googleSheetId,
-        ushort initialPlayersAmount, float initialChoiceChance, string actionsGoogleRange,
-        string questionsGoogleRange)
-        : base(token, systemTimeZoneId, dontUnderstandStickerFileId, forbiddenStickerFileId, sendMessageDelayPrivate,
-            sendMessageDelayGroup, sendMessageDelayGlobal, googleCredentialJson, applicationName, googleSheetId)
-    {
-        InitialPlayersAmount = initialPlayersAmount;
-        InitialChoiceChance = initialChoiceChance;
-        ActionsGoogleRange = actionsGoogleRange;
-        QuestionsGoogleRange = questionsGoogleRange;
-    }
+    [Required]
+    [Range(0.0f, 1.0f)]
+    public float InitialChoiceChance { get; init; }
+
+    [Required]
+    [MinLength(1)]
+    public string ActionsGoogleRange { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public string QuestionsGoogleRange { get; init; } = null!;
 }
