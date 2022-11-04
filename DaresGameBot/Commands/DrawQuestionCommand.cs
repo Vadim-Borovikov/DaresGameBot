@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using AbstractBot;
+using AbstractBot.Commands;
 using DaresGameBot.Game;
 using Telegram.Bot.Types;
 
@@ -7,12 +7,9 @@ namespace DaresGameBot.Commands;
 
 internal sealed class DrawQuestionCommand : CommandBase<Bot, Config>
 {
-    protected override string Name => "question";
-    protected override string Description => Alias.ToLowerInvariant();
-
     protected override string Alias => Game.Game.DrawQuestionCaption;
 
-    public DrawQuestionCommand(Bot bot) : base(bot) { }
+    public DrawQuestionCommand(Bot bot) : base(bot, "question", Game.Game.DrawQuestionCaption.ToLowerInvariant()) { }
 
     public override Task ExecuteAsync(Message message, bool fromChat, string? payload)
     {

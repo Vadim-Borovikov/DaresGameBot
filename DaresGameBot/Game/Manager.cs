@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,8 +36,6 @@ internal static class Manager
         return manager.DrawAsync(replyToMessageId, action);
     }
 
-    public static bool IsGameManagerValid(Chat chat) => GameManagers.ContainsKey(chat.Id);
-
     private static Game GetOrAddGameManager(Bot bot, Chat chat)
     {
         return GameManagers.GetOrAdd(chat.Id, _ => new Game(bot, chat));
@@ -45,14 +44,15 @@ internal static class Manager
     public static async Task<List<Deck<CardAction>>> GetActionDecksAsync(Bot bot)
     {
         string range = bot.Config.ActionsGoogleRange.GetValue(nameof(bot.Config.ActionsGoogleRange));
-        SheetData<CardAction> cards = await DataManager.GetValuesAsync<CardAction>(bot.GoogleSheetsProvider, range);
+        SheetData<CardAction> cards = await DataManager<CardAction>.LoadAsync(bot.GoogleSheetsProvider, range,
+            additionalConverters: AdditionalConverters);
         return cards.Instances.GroupBy(c => c.Tag).Select(g => CreateActionDeck(g.Key, g.ToList())).ToList();
     }
 
     public static async Task<Deck<Card>> GetQuestionsDeckAsync(Bot bot)
     {
         string range = bot.Config.QuestionsGoogleRange.GetValue(nameof(bot.Config.QuestionsGoogleRange));
-        SheetData<Card> cards = await DataManager.GetValuesAsync<Card>(bot.GoogleSheetsProvider, range);
+        SheetData<Card> cards = await DataManager<Card>.LoadAsync(bot.GoogleSheetsProvider, range);
         return new Deck<Card>("❓") { Cards = cards.Instances.ToList() };
     }
 
@@ -62,4 +62,10 @@ internal static class Manager
     }
 
     private static readonly ConcurrentDictionary<long, Game> GameManagers = new();
+
+    private static readonly Dictionary<Type, Func<object?, object?>> AdditionalConverters = new()
+    {
+        { typeof(ushort), o => Utils.ToUshort(o) },
+        { typeof(ushort?), o => Utils.ToUshort(o) },
+    };
 }

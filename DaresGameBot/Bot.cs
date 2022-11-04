@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using AbstractBot;
+using AbstractBot.Commands;
 using DaresGameBot.Commands;
 using DaresGameBot.Game;
 using Telegram.Bot.Types;
@@ -14,13 +15,9 @@ public sealed class Bot : BotBaseGoogleSheets<Bot, Config>
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
-        Commands.Add(new StartCommand(this));
         Commands.Add(new NewCommand(this));
         Commands.Add(new DrawActionCommand(this));
         Commands.Add(new DrawQuestionCommand(this));
-
-        GoogleSheetsManager.Utils.Converters[typeof(ushort)] = o => Utils.ToUshort(o);
-        GoogleSheetsManager.Utils.Converters[typeof(ushort?)] = o => Utils.ToUshort(o);
 
         return base.StartAsync(cancellationToken);
     }
