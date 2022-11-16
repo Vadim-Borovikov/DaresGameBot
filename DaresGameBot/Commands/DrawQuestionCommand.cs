@@ -5,7 +5,7 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Commands;
 
-internal sealed class DrawQuestionCommand : CommandBase<Bot, Config>
+internal sealed class DrawQuestionCommand : CommandBaseCustom<Bot, Config>
 {
     protected override string Alias => Game.Game.DrawQuestionCaption;
 
