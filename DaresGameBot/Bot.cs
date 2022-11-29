@@ -3,15 +3,22 @@ using System.Threading;
 using System.Threading.Tasks;
 using AbstractBot;
 using AbstractBot.Commands;
+using AbstractBot.GoogleSheets;
 using DaresGameBot.Commands;
 using DaresGameBot.Game;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot;
 
-public sealed class Bot : BotBaseGoogleSheets<Bot, Config>
+public sealed class Bot : BotBaseCustom<Config>, IBotGoogleSheets
 {
-    public Bot(Config config) : base(config) { }
+    public GoogleSheetsComponent GoogleSheetsComponent { get; init; }
+
+    public Bot(Config config) : base(config)
+    {
+        GoogleSheetsComponent =
+            new GoogleSheetsComponent(config, JsonSerializerOptionsProvider.PascalCaseOptions, TimeManager);
+    }
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
@@ -22,12 +29,14 @@ public sealed class Bot : BotBaseGoogleSheets<Bot, Config>
         return base.StartAsync(cancellationToken);
     }
 
-    protected override async Task ProcessTextMessageAsync(Message textMessage, bool fromChat,
+    public void Dispose() => GoogleSheetsComponent.Dispose();
+
+    protected override async Task ProcessTextMessageAsync(Message textMessage, Chat senderChat,
         CommandBase? command = null, string? payload = null)
     {
         if (command is not null)
         {
-            await command.ExecuteAsync(textMessage, fromChat, payload);
+            await command.ExecuteAsync(textMessage, payload);
             return;
         }
 

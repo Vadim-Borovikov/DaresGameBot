@@ -1,18 +1,17 @@
 ﻿using System.Threading.Tasks;
-using AbstractBot.Commands;
 using DaresGameBot.Game;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Commands;
 
-internal sealed class NewCommand : CommandBaseCustom<Bot, Config>
+internal sealed class NewCommand : CommandWithAlias
 {
     protected override string Alias => Game.Game.NewGameCaption;
 
     public NewCommand(Bot bot) : base(bot, "new", Game.Game.NewGameCaption.ToLowerInvariant()) { }
 
-    public override Task ExecuteAsync(Message message, bool fromChat, string? payload)
+    public override Task ExecuteAsync(Message message, Chat chat, string? payload)
     {
-        return Manager.StartNewGameAsync(Bot, message.Chat);
+        return Manager.StartNewGameAsync(Bot, chat);
     }
 }
