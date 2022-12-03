@@ -1,23 +1,24 @@
+using System;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using AbstractBot;
 using AbstractBot.Commands;
-using AbstractBot.GoogleSheets;
+using GoogleSheetsManager.Providers;
 using DaresGameBot.Commands;
 using DaresGameBot.Game;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DaresGameBot;
 
-public sealed class Bot : BotBaseCustom<Config>, IBotGoogleSheets
+public sealed class Bot : BotBaseCustom<Config>, IDisposable
 {
-    public GoogleSheetsComponent GoogleSheetsComponent { get; init; }
+    internal readonly SheetsProvider GoogleSheetsProvider;
 
     public Bot(Config config) : base(config)
     {
-        GoogleSheetsComponent =
-            new GoogleSheetsComponent(config, JsonSerializerOptionsProvider.PascalCaseOptions, TimeManager);
+        GoogleSheetsProvider = new SheetsProvider(config, config.GoogleSheetId);
     }
 
     public override Task StartAsync(CancellationToken cancellationToken)
@@ -29,7 +30,7 @@ public sealed class Bot : BotBaseCustom<Config>, IBotGoogleSheets
         return base.StartAsync(cancellationToken);
     }
 
-    public void Dispose() => GoogleSheetsComponent.Dispose();
+    public void Dispose() => GoogleSheetsProvider.Dispose();
 
     protected override async Task ProcessTextMessageAsync(Message textMessage, Chat senderChat,
         CommandBase? command = null, string? payload = null)
@@ -59,5 +60,10 @@ public sealed class Bot : BotBaseCustom<Config>, IBotGoogleSheets
         }
 
         await SendStickerAsync(textMessage.Chat, DontUnderstandSticker);
+    }
+
+    protected override IReplyMarkup GetDefaultKeyboard(Chat chat)
+    {
+        return Manager.CheckGame(this, chat) ? Utils.GameKeyboard : Utils.NewGameKeyboard;
     }
 }

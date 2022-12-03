@@ -1,15 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Telegram.Bot.Types;
+using GryphonUtilities;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DaresGameBot;
 
 internal static class Utils
 {
+    public static readonly ReplyKeyboardMarkup NewGameKeyboard = GetKeyboard(Game.Game.NewGameCaption.Yield());
+    public static readonly ReplyKeyboardMarkup GameKeyboard = GetKeyboard(Game.Game.GameCaptions);
+
     public static readonly Random Random = new();
+
+    public static ushort? ToUshort(object? o)
+    {
+        if (o is ushort u)
+        {
+            return u;
+        }
+        return ushort.TryParse(o?.ToString(), out u) ? u : null;
+    }
 
     public static IList<T> Shuffle<T>(this IList<T> list)
     {
@@ -29,25 +40,8 @@ internal static class Utils
 
     private static Queue<T> ToQueue<T>(this IEnumerable<T> items) => new(items);
 
-    public static Task<Message> SendTextMessageAsync(this Bot bot, Chat chat, string text, string buttonCaption,
-        int replyToMessageId = 0)
+    private static ReplyKeyboardMarkup GetKeyboard(IEnumerable<string> buttonCaptions)
     {
-        string[] buttonCaptions = { buttonCaption };
-        return bot.SendTextMessageAsync(chat, text, buttonCaptions, replyToMessageId);
-    }
-    public static Task<Message> SendTextMessageAsync(this Bot bot, Chat chat, string text,
-        IEnumerable<string> buttonCaptions, int replyToMessageId = 0)
-    {
-        ReplyKeyboardMarkup markup = new(buttonCaptions.Select(c => new KeyboardButton(c)));
-        return bot.SendTextMessageAsync(chat, text, replyToMessageId: replyToMessageId, replyMarkup: markup);
-    }
-
-    public static ushort? ToUshort(object? o)
-    {
-        if (o is ushort u)
-        {
-            return u;
-        }
-        return ushort.TryParse(o?.ToString(), out u) ? u : null;
+        return new ReplyKeyboardMarkup(buttonCaptions.Select(c => new KeyboardButton(c)));
     }
 }
