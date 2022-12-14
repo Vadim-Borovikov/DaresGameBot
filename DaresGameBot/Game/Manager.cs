@@ -51,7 +51,7 @@ internal static class Manager
         SheetData<CardAction> cards =
             await DataManager<CardAction>.LoadAsync(bot.GoogleSheetsProvider, bot.Config.ActionsGoogleRange,
                 additionalConverters: AdditionalConverters);
-        return cards.Instances.Take(3).GroupBy(c => c.Tag).Select(g => CreateActionDeck(g.Key, g.ToList())).ToList();
+        return cards.Instances.GroupBy(c => c.Tag).Select(g => CreateActionDeck(g.Key, g.ToList())).ToList();
     }
 
     public static async Task<Deck<Card>> GetQuestionsDeckAsync(Bot bot)
