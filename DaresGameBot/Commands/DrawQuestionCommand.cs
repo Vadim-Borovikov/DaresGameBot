@@ -4,15 +4,16 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Commands;
 
-internal sealed class DrawQuestionCommand : CommandWithAlias
+internal sealed class DrawQuestionCommand : DaresGameCommand
 {
+    protected override int Priority => 4;
+
     protected override string Alias => Game.Game.DrawQuestionCaption;
 
     public DrawQuestionCommand(Bot bot) : base(bot, "question", Game.Game.DrawQuestionCaption.ToLowerInvariant()) { }
 
-    public override Task ExecuteAsync(Message message, Chat chat, string? payload)
+    protected override Task ExecuteAsync(Chat chat, int replyToMessageId)
     {
-        int replyToMessageId = AbstractBot.Utils.IsGroup(chat) ? message.MessageId : 0;
         return Manager.DrawAsync(Bot, chat, replyToMessageId, false);
     }
 }

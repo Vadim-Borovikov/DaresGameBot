@@ -47,7 +47,7 @@ internal sealed class Game
         await _bot.SendTextMessageAsync(_chat, stringBuilder.ToString());
     }
 
-    public async Task<bool> ChangePlayersAmountAsync(ushort playersAmount)
+    public async Task<bool> UpdatePlayersAmountAsync(ushort playersAmount)
     {
         if (playersAmount <= 1)
         {
@@ -67,7 +67,7 @@ internal sealed class Game
         return true;
     }
 
-    public async Task<bool> ChangeChoiceChanceAsync(float choiceChance)
+    public async Task<bool> UpdateChoiceChanceAsync(float choiceChance)
     {
         if (choiceChance is < 0.0f or > 1.0f)
         {

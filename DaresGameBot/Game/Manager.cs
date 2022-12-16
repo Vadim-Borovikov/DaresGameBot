@@ -23,16 +23,16 @@ internal static class Manager
         return manager.StartNewGameAsync();
     }
 
-    public static Task<bool> ChangePlayersAmountAsync(ushort playersAmount, Bot bot, Chat chat)
+    public static Task<bool> UpdatePlayersAmountAsync(ushort playersAmount, Bot bot, Chat chat)
     {
         Game manager = GetOrAddGameManager(bot, chat);
-        return manager.ChangePlayersAmountAsync(playersAmount);
+        return manager.UpdatePlayersAmountAsync(playersAmount);
     }
 
-    public static Task<bool> ChangeChoiceChanceAsync(float choiceChance, Bot bot, Chat chat)
+    public static Task<bool> UpdateChoiceChanceAsync(float choiceChance, Bot bot, Chat chat)
     {
         Game manager = GetOrAddGameManager(bot, chat);
-        return manager.ChangeChoiceChanceAsync(choiceChance);
+        return manager.UpdateChoiceChanceAsync(choiceChance);
     }
 
     public static Task DrawAsync(Bot bot, Chat chat, int replyToMessageId, bool action = true)
