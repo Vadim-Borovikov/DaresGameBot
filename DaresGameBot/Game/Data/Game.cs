@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DaresGameBot.Game.Data;
@@ -19,7 +20,8 @@ internal sealed class Game
         PlayersAmount = playersAmount;
         ChoiceChance = choiceChance;
 
-        _actionDecks = new Queue<Deck<CardAction>>(actionDecks.Select(Deck<CardAction>.GetShuffledCopy));
+        _actionDecks =
+            new Queue<Deck<CardAction>>(actionDecks.Select(d => Deck<CardAction>.GetShuffledCopy(d, _shuffler)));
         _questionsDeckFull = questionsDeck;
         _questionsDeckCurrent = new Deck<Card>(_questionsDeckFull.Tag);
     }
@@ -34,7 +36,7 @@ internal sealed class Game
     {
         if (_questionsDeckCurrent.Empty)
         {
-            _questionsDeckCurrent = Deck<Card>.GetShuffledCopy(_questionsDeckFull);
+            _questionsDeckCurrent = Deck<Card>.GetShuffledCopy(_questionsDeckFull, _shuffler);
         }
 
         Card card = _questionsDeckCurrent.Draw();
@@ -78,14 +80,14 @@ internal sealed class Game
 
     private Turn CreateActionTurn(CardAction card, string deckTag)
     {
-        Queue<ushort> partnersQueue = Enumerable.Range(1, PlayersAmount - 1)
-                                                .Select(i => (ushort) i)
-                                                .ToShuffeledQueue();
+        IEnumerable<ushort> players = Enumerable.Range(1, PlayersAmount - 1).Select(i => (ushort) i);
+        List<ushort> shuffled = _shuffler.Shuffle(players);
+        Queue<ushort> partnersQueue = new(shuffled);
 
         List<Partner> partners = new(card.PartnersToAssign);
         for (ushort i = 0; i < card.PartnersToAssign; ++i)
         {
-            bool byChoice = Utils.Random.NextDouble() < ChoiceChance;
+            bool byChoice = _random.NextDouble() < ChoiceChance;
             Partner partner = byChoice ? new Partner() : new Partner(partnersQueue.Dequeue());
             partners.Add(partner);
         }
@@ -100,4 +102,7 @@ internal sealed class Game
     private readonly Deck<Card> _questionsDeckFull;
 
     private Deck<Card> _questionsDeckCurrent;
+
+    private readonly Shuffler _shuffler = new();
+    private readonly Random _random = new();
 }

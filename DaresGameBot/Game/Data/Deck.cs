@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 
 namespace DaresGameBot.Game.Data;
 
@@ -15,7 +14,7 @@ internal sealed class Deck<T> where T : Card
 
     public void Add(IEnumerable<T> cards) => Cards.AddRange(cards);
 
-    public static Deck<T> GetShuffledCopy(Deck<T> deck) => deck.GetShuffledCopy();
+    public static Deck<T> GetShuffledCopy(Deck<T> deck, Shuffler shuffler) => deck.GetShuffledCopy(shuffler);
 
     public T Draw()
     {
@@ -24,9 +23,9 @@ internal sealed class Deck<T> where T : Card
         return card;
     }
 
-    private Deck<T> GetShuffledCopy()
+    private Deck<T> GetShuffledCopy(Shuffler shuffler)
     {
         List<T> cards = new(Cards);
-        return new Deck<T>(Tag) { Cards = cards.Shuffle().ToList() };
+        return new Deck<T>(Tag) { Cards = shuffler.Shuffle(cards) };
     }
 }

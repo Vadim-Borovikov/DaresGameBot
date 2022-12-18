@@ -1,12 +1,11 @@
 ﻿using System.Threading.Tasks;
-using DaresGameBot.Game;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Commands;
 
 internal sealed class DrawQuestionCommand : DaresGameCommand
 {
-    protected override int Priority => 4;
+    protected override byte MenuOrder => 4;
 
     protected override string Alias => Game.Game.DrawQuestionCaption;
 
@@ -14,6 +13,6 @@ internal sealed class DrawQuestionCommand : DaresGameCommand
 
     protected override Task ExecuteAsync(Chat chat, int replyToMessageId)
     {
-        return Manager.DrawAsync(Bot, chat, replyToMessageId, false);
+        return GameManager.DrawAsync(chat, replyToMessageId, false);
     }
 }

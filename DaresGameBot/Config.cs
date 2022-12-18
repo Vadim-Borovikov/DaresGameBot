@@ -1,5 +1,5 @@
-using AbstractBot;
 using System.ComponentModel.DataAnnotations;
+using AbstractBot.Configs;
 using JetBrains.Annotations;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
@@ -26,10 +26,20 @@ public class Config : ConfigGoogleSheets
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string ActionsGoogleRange { get; init; } = null!;
+    public string ActionsTitle { get; init; } = null!;
 
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string QuestionsGoogleRange { get; init; } = null!;
+    public string QuestionsTitle { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string ActionsRange { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string QuestionsRange { get; init; } = null!;
 }

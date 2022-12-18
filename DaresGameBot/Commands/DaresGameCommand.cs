@@ -1,5 +1,6 @@
 ﻿using AbstractBot.Operations;
 using System.Threading.Tasks;
+using AbstractBot.Extensions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -11,23 +12,22 @@ internal abstract class DaresGameCommand : CommandOperation
 
     protected DaresGameCommand(Bot bot, string command, string description) : base(bot, command, description)
     {
-        Bot = bot;
+        GameManager = bot.GameManager;
     }
 
-    protected override bool IsInvokingBy(Message message, Chat sender, out string? payload)
+    protected override bool IsInvokingBy(Message message, out string? payload)
     {
-        return base.IsInvokingBy(message, sender, out payload)
+        return base.IsInvokingBy(message, out payload)
                || ((message.Chat.Type == ChatType.Private) && (message.Text == Alias));
     }
 
-    protected override Task ExecuteAsync(Message message, Chat sender, string? _)
+    protected override Task ExecuteAsync(Message message, long senderId, string? _)
     {
-        Chat chat = BotBase.GetReplyChatFor(message, sender);
-        int replyToMessageId = AbstractBot.Utils.IsGroup(chat) ? message.MessageId : 0;
-        return ExecuteAsync(chat, replyToMessageId);
+        int replyToMessageId = message.Chat.IsGroup() ? message.MessageId : 0;
+        return ExecuteAsync(message.Chat, replyToMessageId);
     }
 
     protected abstract Task ExecuteAsync(Chat chat, int replyToMessageId);
 
-    protected readonly Bot Bot;
+    protected readonly Game.Manager GameManager;
 }

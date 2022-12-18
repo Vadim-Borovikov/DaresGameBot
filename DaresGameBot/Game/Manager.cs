@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,55 +8,51 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game;
 
-internal static class Manager
+internal sealed class Manager
 {
-    public static bool CheckGame(Bot bot, Chat chat)
+    public Manager(Bot bot) => _bot = bot;
+
+    public bool CheckGame(Chat chat)
     {
-        Game manager = GetOrAddGameManager(bot, chat);
+        Game manager = GetOrAddGameManager(chat);
         return manager.Active;
     }
 
-    public static Task StartNewGameAsync(Bot bot, Chat chat)
+    public Task StartNewGameAsync(Chat chat)
     {
-        Game manager = GetOrAddGameManager(bot, chat);
+        Game manager = GetOrAddGameManager(chat);
         return manager.StartNewGameAsync();
     }
 
-    public static Task<bool> UpdatePlayersAmountAsync(ushort playersAmount, Bot bot, Chat chat)
+    public Task<bool> UpdatePlayersAmountAsync(ushort playersAmount, Chat chat)
     {
-        Game manager = GetOrAddGameManager(bot, chat);
+        Game manager = GetOrAddGameManager(chat);
         return manager.UpdatePlayersAmountAsync(playersAmount);
     }
 
-    public static Task<bool> UpdateChoiceChanceAsync(float choiceChance, Bot bot, Chat chat)
+    public Task<bool> UpdateChoiceChanceAsync(float choiceChance, Chat chat)
     {
-        Game manager = GetOrAddGameManager(bot, chat);
+        Game manager = GetOrAddGameManager(chat);
         return manager.UpdateChoiceChanceAsync(choiceChance);
     }
 
-    public static Task DrawAsync(Bot bot, Chat chat, int replyToMessageId, bool action = true)
+    public Task DrawAsync(Chat chat, int replyToMessageId, bool action = true)
     {
-        Game manager = GetOrAddGameManager(bot, chat);
+        Game manager = GetOrAddGameManager(chat);
         return manager.DrawAsync(replyToMessageId, action);
     }
 
-    private static Game GetOrAddGameManager(Bot bot, Chat chat)
-    {
-        return GameManagers.GetOrAdd(chat.Id, _ => new Game(bot, chat));
-    }
+    private Game GetOrAddGameManager(Chat chat) => _gameManagers.GetOrAdd(chat.Id, _ => new Game(_bot, chat));
 
-    public static async Task<List<Deck<CardAction>>> GetActionDecksAsync(Bot bot)
+    public async Task<List<Deck<CardAction>>> GetActionDecksAsync()
     {
-        SheetData<CardAction> cards =
-            await DataManager<CardAction>.LoadAsync(bot.GoogleSheetsProvider, bot.Config.ActionsGoogleRange,
-                additionalConverters: AdditionalConverters);
+        SheetData<CardAction> cards = await _bot.Actions.LoadAsync<CardAction>(_bot.Config.ActionsRange);
         return cards.Instances.GroupBy(c => c.Tag).Select(g => CreateActionDeck(g.Key, g.ToList())).ToList();
     }
 
-    public static async Task<Deck<Card>> GetQuestionsDeckAsync(Bot bot)
+    public async Task<Deck<Card>> GetQuestionsDeckAsync()
     {
-        SheetData<Card> cards =
-            await DataManager<Card>.LoadAsync(bot.GoogleSheetsProvider, bot.Config.QuestionsGoogleRange);
+        SheetData<Card> cards = await _bot.Questions.LoadAsync<Card>(_bot.Config.QuestionsRange);
         return new Deck<Card>("❓") { Cards = cards.Instances.ToList() };
     }
 
@@ -66,11 +61,6 @@ internal static class Manager
         return new Deck<CardAction>(tag) { Cards = cards.ToList() };
     }
 
-    private static readonly ConcurrentDictionary<long, Game> GameManagers = new();
-
-    private static readonly Dictionary<Type, Func<object?, object?>> AdditionalConverters = new()
-    {
-        { typeof(ushort), o => Utils.ToUshort(o) },
-        { typeof(ushort?), o => Utils.ToUshort(o) },
-    };
+    private readonly ConcurrentDictionary<long, Game> _gameManagers = new();
+    private readonly Bot _bot;
 }

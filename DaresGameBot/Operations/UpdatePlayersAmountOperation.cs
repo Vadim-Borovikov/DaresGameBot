@@ -1,38 +1,41 @@
 ﻿using System.Threading.Tasks;
-using AbstractBot;
 using AbstractBot.Operations;
-using DaresGameBot.Game;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class UpdatePlayersAmountOperation : Operation, IBotProvider<Bot>
+internal sealed class UpdatePlayersAmountOperation : Operation
 {
-    protected override int Priority => 5;
+    protected override byte MenuOrder => 5;
 
-    protected override string Title => "целое число";
-
-    protected override string Description => "изменить количество игроков";
-
-    public UpdatePlayersAmountOperation(Bot bot) : base(bot) => Bot = bot;
-
-    protected override async Task<bool> TryExecuteAsync(Message message, Chat sender)
+    public UpdatePlayersAmountOperation(Bot bot) : base(bot)
     {
-        if (!IsAccessSuffice(sender.Id) || (message.Type != MessageType.Text))
+        MenuDescription = "*целое число* – изменить количество игроков";
+        _bot = bot;
+    }
+
+    protected override async Task<ExecutionResult> TryExecuteAsync(Message message, long senderId)
+    {
+        if (message.Type != MessageType.Text)
         {
-            return false;
+            return ExecutionResult.UnsuitableOperation;
         }
 
         bool parsed = ushort.TryParse(message.Text, out ushort playersAmount);
         if (!parsed)
         {
-            return false;
+            return ExecutionResult.UnsuitableOperation;
         }
 
-        Chat chat = BotBase.GetReplyChatFor(message, sender);
-        return await Manager.UpdatePlayersAmountAsync(playersAmount, Bot, chat);
+        if (!IsAccessSuffice(senderId))
+        {
+            return ExecutionResult.InsufficentAccess;
+        }
+
+        bool success = await _bot.GameManager.UpdatePlayersAmountAsync(playersAmount, message.Chat);
+        return success ? ExecutionResult.UnsuitableOperation : ExecutionResult.Success;
     }
 
-    public Bot Bot { get; }
+    private readonly Bot _bot;
 }

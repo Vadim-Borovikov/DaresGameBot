@@ -1,39 +1,44 @@
 ﻿using System.Globalization;
 using System.Threading.Tasks;
-using AbstractBot;
 using AbstractBot.Operations;
-using DaresGameBot.Game;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class UpdateChoiceChanceOperation : Operation, IBotProvider<Bot>
+internal sealed class UpdateChoiceChanceOperation : Operation
 {
-    protected override int Priority => 6;
+    protected override byte MenuOrder => 6;
 
-    protected override string Title => "дробное число от 0.0 до 1.0";
-
-    protected override string Description => "изменить шанс на 🤩";
-
-    public UpdateChoiceChanceOperation(Bot bot) : base(bot) => Bot = bot;
-
-    protected override async Task<bool> TryExecuteAsync(Message message, Chat sender)
+    public UpdateChoiceChanceOperation(Bot bot) : base(bot)
     {
-        if (!IsAccessSuffice(sender.Id) || (message.Type != MessageType.Text))
+        MenuDescription =
+            $"*{AbstractBot.Bots.Bot.EscapeCharacters("дробное число от 0.0 до 1.0")}* – изменить шанс на 🤩";
+        _bot = bot;
+    }
+
+    protected override async Task<ExecutionResult> TryExecuteAsync(Message message, long senderId)
+    {
+        if (message.Type != MessageType.Text)
         {
-            return false;
+            return ExecutionResult.UnsuitableOperation;
         }
 
         bool parsed =
             float.TryParse(message.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float choiceChance);
         if (!parsed)
         {
-            return false;
+            return ExecutionResult.UnsuitableOperation;
         }
-        Chat chat = BotBase.GetReplyChatFor(message, sender);
-        return await Manager.UpdateChoiceChanceAsync(choiceChance, Bot, chat);
+
+        if (!IsAccessSuffice(senderId))
+        {
+            return ExecutionResult.InsufficentAccess;
+        }
+
+        bool success = await _bot.GameManager.UpdateChoiceChanceAsync(choiceChance, message.Chat);
+        return success ? ExecutionResult.UnsuitableOperation : ExecutionResult.Success;
     }
 
-    public Bot Bot { get; }
+    private readonly Bot _bot;
 }
