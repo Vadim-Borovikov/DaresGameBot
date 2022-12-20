@@ -15,7 +15,7 @@ internal sealed class Manager
     public bool CheckGame(Chat chat)
     {
         Game manager = GetOrAddGameManager(chat);
-        return manager.Active;
+        return manager.IsActive();
     }
 
     public Task StartNewGameAsync(Chat chat)

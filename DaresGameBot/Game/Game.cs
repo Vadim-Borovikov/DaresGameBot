@@ -18,7 +18,7 @@ internal sealed class Game
         DrawQuestionCaption
     };
 
-    public bool Active => _game is not null && !_game.Empty;
+    public bool IsActive() => _game is not null && _game.IsActive();
 
     public Game(Bot bot, Chat chat)
     {
@@ -90,17 +90,33 @@ internal sealed class Game
 
     public async Task DrawAsync(int replyToMessageId, bool action = true)
     {
-        if (_game is null)
+        if (!IsActive())
         {
             await StartNewGameAsync();
             return;
         }
 
-        Turn turn = action ? _game.DrawAction() : _game.DrawQuestion();
+        Turn? turn;
+        if (action)
+        {
+            // ReSharper disable NullableWarningSuppressionIsUsed
+            turn = _game!.DrawAction();
+            if (turn is null)
+            {
+                await StartNewGameAsync();
+                return;
+            }
+        }
+        else
+        {
+            turn = _game!.DrawQuestion();
+            // ReSharper restore NullableWarningSuppressionIsUsed
+        }
+
         string text = turn.GetMessage(_game.PlayersAmount);
 
         await _bot.SendTextMessageAsync(_chat, text, replyToMessageId: replyToMessageId);
-        if (_game.Empty)
+        if (!IsActive())
         {
             _game = null;
             await _bot.SendTextMessageAsync(_chat, "Игра закончена!");

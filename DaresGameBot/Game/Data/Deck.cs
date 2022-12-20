@@ -1,31 +1,40 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DaresGameBot.Game.Data;
 
 internal sealed class Deck<T> where T : Card
 {
-    internal readonly string Tag;
+    public readonly string Tag;
 
-    internal Deck(string tag) => Tag = tag;
+    public bool Discarded;
+
+    public Deck(string tag) => Tag = tag;
 
     public List<T> Cards { private get; init; } = new();
 
-    public bool Empty => Cards.Count == 0;
-
-    public void Add(IEnumerable<T> cards) => Cards.AddRange(cards);
+    public bool IsOkayFor(ushort playersAmount) => !Discarded && Cards.Any(c => c.IsOkayFor(playersAmount));
 
     public static Deck<T> GetShuffledCopy(Deck<T> deck, Shuffler shuffler) => deck.GetShuffledCopy(shuffler);
 
-    public T Draw()
+    public T? DrawFor(ushort playersAmount)
     {
-        T card = Cards[0];
-        Cards.RemoveAt(0);
+        T? card = Cards.FirstOrDefault(c => c.IsOkayFor(playersAmount));
+        if (card is null)
+        {
+            return null;
+        }
+        card.Discarded = true;
         return card;
     }
 
     private Deck<T> GetShuffledCopy(Shuffler shuffler)
     {
         List<T> cards = new(Cards);
+        foreach (T card in Cards)
+        {
+            card.Discarded = false;
+        }
         return new Deck<T>(Tag) { Cards = shuffler.Shuffle(cards) };
     }
 }

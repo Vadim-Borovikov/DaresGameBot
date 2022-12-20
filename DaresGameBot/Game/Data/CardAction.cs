@@ -22,4 +22,9 @@ internal sealed class CardAction : Card
     [Required]
     [SheetField("Символ")]
     public string Tag = null!;
+
+    public override bool IsOkayFor(ushort playersAmount)
+    {
+        return (playersAmount >= Players) && base.IsOkayFor(playersAmount);
+    }
 }

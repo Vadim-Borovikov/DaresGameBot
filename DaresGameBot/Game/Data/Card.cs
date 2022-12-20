@@ -12,4 +12,8 @@ internal class Card
     [Required]
     [SheetField("Текст")]
     public string Description = null!;
+
+    public bool Discarded;
+
+    public virtual bool IsOkayFor(ushort playersAmount) => !Discarded;
 }
