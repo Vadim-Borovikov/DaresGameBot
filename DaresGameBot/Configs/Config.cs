@@ -4,9 +4,9 @@ using JetBrains.Annotations;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
 
-namespace DaresGameBot;
+namespace DaresGameBot.Configs;
 
-public class Config : ConfigGoogleSheets
+public class Config : ConfigWithSheets<Texts>
 {
     [UsedImplicitly]
     [Required]
@@ -15,23 +15,13 @@ public class Config : ConfigGoogleSheets
 
     [UsedImplicitly]
     [Required]
-    [Range(1, ushort.MaxValue)]
-    public ushort InitialPlayersAmount { get; init; }
+    [Range(2, byte.MaxValue)]
+    public byte InitialPlayersAmount { get; init; }
 
     [UsedImplicitly]
     [Required]
-    [Range(0.0f, 1.0f)]
-    public float InitialChoiceChance { get; init; }
-
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public string ActionsTitle { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public string QuestionsTitle { get; init; } = null!;
+    [Range(0.0, 1.0)]
+    public decimal InitialChoiceChance { get; init; }
 
     [UsedImplicitly]
     [Required]

@@ -1,40 +1,45 @@
 ﻿using System.Threading.Tasks;
+using AbstractBot.Configs.MessageTemplates;
 using AbstractBot.Operations;
+using DaresGameBot.Operations.Info;
+using GoogleSheetsManager.Extensions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class UpdatePlayersAmountOperation : Operation
+internal sealed class UpdatePlayersAmountOperation : Operation<PlayersAmountInfo>
 {
-    protected override byte MenuOrder => 5;
+    protected override byte Order => 6;
 
-    public UpdatePlayersAmountOperation(Bot bot) : base(bot)
+    public UpdatePlayersAmountOperation(Bot bot)
+        : base(bot, new MessageTemplateText("*целое число* – изменить количество игроков", true))
     {
-        MenuDescription = "*целое число* – изменить количество игроков";
         _bot = bot;
     }
 
-    protected override async Task<ExecutionResult> TryExecuteAsync(Message message, long senderId)
+    protected override bool IsInvokingBy(Message message, User sender, out PlayersAmountInfo? data)
     {
+        data = null;
         if (message.Type != MessageType.Text)
         {
-            return ExecutionResult.UnsuitableOperation;
+            return false;
         }
 
-        bool parsed = ushort.TryParse(message.Text, out ushort playersAmount);
-        if (!parsed)
+        byte? amount = message.Text.ToByte();
+        switch (amount)
         {
-            return ExecutionResult.UnsuitableOperation;
+            case null:
+            case < 2: return false;
+            default:
+                data = new PlayersAmountInfo(amount.Value);
+                return true;
         }
+    }
 
-        if (!IsAccessSuffice(senderId))
-        {
-            return ExecutionResult.InsufficentAccess;
-        }
-
-        bool success = await _bot.GameManager.UpdatePlayersAmountAsync(playersAmount, message.Chat);
-        return success ? ExecutionResult.UnsuitableOperation : ExecutionResult.Success;
+    protected override Task ExecuteAsync(PlayersAmountInfo data, Message message, User sender)
+    {
+        return _bot.GameManager.UpdatePlayersAmountAsync(data.Amount, message.Chat);
     }
 
     private readonly Bot _bot;

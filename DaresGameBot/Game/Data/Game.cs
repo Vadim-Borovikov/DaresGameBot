@@ -7,13 +7,13 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class Game
 {
-    public ushort PlayersAmount;
-    public float ChoiceChance;
+    public byte PlayersAmount;
+    public decimal ChoiceChance;
 
     public string Players => $"Игроков: {PlayersAmount}";
     public string Chance => $"Шанс на 🤩: {ChoiceChance:P0}";
 
-    public Game(ushort playersAmount, float choiceChance, IEnumerable<Deck<CardAction>> actionDecks,
+    public Game(byte playersAmount, decimal choiceChance, IEnumerable<Deck<CardAction>> actionDecks,
         Deck<Card> questionsDeck)
     {
         PlayersAmount = playersAmount;
@@ -39,7 +39,7 @@ internal sealed class Game
         if (card is null)
         {
             _questionsDeckCurrent = Deck<Card>.GetShuffledCopy(_questionsDeckFull, _shuffler);
-            card = _questionsDeckCurrent.DrawFor(PlayersAmount).GetValue();
+            card = _questionsDeckCurrent.DrawFor(PlayersAmount)!;
         }
         return CreateQuestionTurn(card, _questionsDeckCurrent.Tag);
     }
@@ -51,7 +51,7 @@ internal sealed class Game
             if (deck.IsOkayFor(PlayersAmount))
             {
                 deckTag = deck.Tag;
-                return deck.DrawFor(PlayersAmount).GetValue("There should be cards in this deck");
+                return deck.DrawFor(PlayersAmount).Denull("There should be cards in this deck");
             }
 
             deck.Discarded = true;
@@ -70,7 +70,7 @@ internal sealed class Game
         List<Partner> partners = new(card.PartnersToAssign);
         for (ushort i = 0; i < card.PartnersToAssign; ++i)
         {
-            bool byChoice = _random.NextDouble() < ChoiceChance;
+            bool byChoice = (decimal)_random.NextSingle() < ChoiceChance;
             Partner partner = byChoice ? new Partner() : new Partner(partnersQueue.Dequeue());
             partners.Add(partner);
         }

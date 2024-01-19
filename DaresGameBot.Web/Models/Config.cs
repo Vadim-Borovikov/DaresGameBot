@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DaresGameBot.Web.Models;
 
-public sealed class Config : DaresGameBot.Config
+public sealed class Config : Configs.Config
 {
     [Required]
     [MinLength(1)]

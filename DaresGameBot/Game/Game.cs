@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading.Tasks;
 using AbstractBot;
+using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Game.Data;
 using Telegram.Bot.Types;
 
@@ -26,18 +27,18 @@ internal sealed class Game
         _chat = chat;
     }
 
-    public async Task StartNewGameAsync(ushort? playersAmount = null, float? choiceChance = null)
+    public async Task StartNewGameAsync(byte? playersAmount = null, decimal? choiceChance = null)
     {
         List<Deck<CardAction>> actionDecks;
         Deck<Card> questionsDeck;
-        await using (await StatusMessage.CreateAsync(_bot, _chat, "Читаю колоды"))
+        await using (await StatusMessage.CreateAsync(_bot, _chat, new MessageTemplateText("Читаю колоды")))
         {
             actionDecks = await _bot.GameManager.GetActionDecksAsync();
             questionsDeck = await _bot.GameManager.GetQuestionsDeckAsync();
         }
 
-        ushort players = playersAmount ?? _bot.Config.InitialPlayersAmount;
-        float chance = choiceChance ?? _bot.Config.InitialChoiceChance;
+        byte players = playersAmount ?? _bot.Config.InitialPlayersAmount;
+        decimal chance = choiceChance ?? _bot.Config.InitialChoiceChance;
         _game = new Data.Game(players, chance, actionDecks, questionsDeck);
 
         StringBuilder stringBuilder = new();
@@ -47,45 +48,27 @@ internal sealed class Game
         await _bot.SendTextMessageAsync(_chat, stringBuilder.ToString());
     }
 
-    public async Task<bool> UpdatePlayersAmountAsync(ushort playersAmount)
+    public Task UpdatePlayersAmountAsync(byte playersAmount)
     {
-        if (playersAmount <= 1)
-        {
-            return false;
-        }
-
         if (_game is null)
         {
-            await StartNewGameAsync(playersAmount);
+            return StartNewGameAsync(playersAmount);
         }
-        else
-        {
-            _game.PlayersAmount = playersAmount;
 
-            await _bot.SendTextMessageAsync(_chat, $"Принято! {_game.Players}");
-        }
-        return true;
+        _game.PlayersAmount = playersAmount;
+
+        return _bot.SendTextMessageAsync(_chat, $"Принято! {_game.Players}");
     }
 
-    public async Task<bool> UpdateChoiceChanceAsync(float choiceChance)
+    public Task UpdateChoiceChanceAsync(decimal choiceChance)
     {
-        if (choiceChance is < 0.0f or > 1.0f)
-        {
-            return false;
-        }
-
         if (_game is null)
         {
-            await StartNewGameAsync(choiceChance: choiceChance);
-        }
-        else
-        {
-            _game.ChoiceChance = choiceChance;
-
-            await _bot.SendTextMessageAsync(_chat, $"Принято! {_game.Chance}");
+            return StartNewGameAsync(choiceChance: choiceChance);
         }
 
-        return true;
+        _game.ChoiceChance = choiceChance;
+        return _bot.SendTextMessageAsync(_chat, $"Принято! {_game.Chance}");
     }
 
     public async Task DrawAsync(int replyToMessageId, bool action = true)

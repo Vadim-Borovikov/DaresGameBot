@@ -361,7 +361,8 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-/DaresGameBot.Web/appsettings.Development.json
+/DaresGameBot.Web/appsettings.*.json
+/DaresGameBot.Web/save.json
 /DaresGameBot.Web/.config/dotnet-tools.json
 /DaresGameBot.Web/Properties/ServiceDependencies/Dares-Game-Bot - Web Deploy/profile.arm.json
 /DaresGameBot.Web/Properties/launchSettings.json

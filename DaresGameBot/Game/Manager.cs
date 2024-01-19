@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DaresGameBot.Game.Data;
-using GoogleSheetsManager;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game;
@@ -24,13 +23,13 @@ internal sealed class Manager
         return manager.StartNewGameAsync();
     }
 
-    public Task<bool> UpdatePlayersAmountAsync(ushort playersAmount, Chat chat)
+    public Task UpdatePlayersAmountAsync(byte playersAmount, Chat chat)
     {
         Game manager = GetOrAddGameManager(chat);
         return manager.UpdatePlayersAmountAsync(playersAmount);
     }
 
-    public Task<bool> UpdateChoiceChanceAsync(float choiceChance, Chat chat)
+    public Task UpdateChoiceChanceAsync(decimal choiceChance, Chat chat)
     {
         Game manager = GetOrAddGameManager(chat);
         return manager.UpdateChoiceChanceAsync(choiceChance);
@@ -46,14 +45,14 @@ internal sealed class Manager
 
     public async Task<List<Deck<CardAction>>> GetActionDecksAsync()
     {
-        SheetData<CardAction> cards = await _bot.Actions.LoadAsync<CardAction>(_bot.Config.ActionsRange);
-        return cards.Instances.GroupBy(c => c.Tag).Select(g => CreateActionDeck(g.Key, g.ToList())).ToList();
+        List<CardAction> cards = await _bot.Actions.LoadAsync<CardAction>(_bot.Config.ActionsRange);
+        return cards.GroupBy(c => c.Tag).Select(g => CreateActionDeck(g.Key, g.ToList())).ToList();
     }
 
     public async Task<Deck<Card>> GetQuestionsDeckAsync()
     {
-        SheetData<Card> cards = await _bot.Questions.LoadAsync<Card>(_bot.Config.QuestionsRange);
-        return new Deck<Card>("❓") { Cards = cards.Instances.ToList() };
+        List<Card> cards = await _bot.Questions.LoadAsync<Card>(_bot.Config.QuestionsRange);
+        return new Deck<Card>("❓") { Cards = cards };
     }
 
     private static Deck<CardAction> CreateActionDeck(string tag, IEnumerable<CardAction> cards)

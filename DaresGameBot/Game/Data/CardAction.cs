@@ -11,12 +11,12 @@ internal sealed class CardAction : Card
     [UsedImplicitly]
     [Required]
     [SheetField("Минимум")]
-    public ushort Players;
+    public byte Players;
 
     [UsedImplicitly]
     [Required]
     [SheetField("Назначить")]
-    public ushort PartnersToAssign;
+    public byte PartnersToAssign;
 
     [UsedImplicitly]
     [Required]

@@ -1,11 +1,11 @@
 ﻿using System.Threading.Tasks;
 using Telegram.Bot.Types;
 
-namespace DaresGameBot.Commands;
+namespace DaresGameBot.Operations.Commands;
 
 internal sealed class DrawActionCommand : DaresGameCommand
 {
-    protected override byte MenuOrder => 3;
+    protected override byte Order => 3;
 
     protected override string Alias => Game.Game.DrawActionCaption;
 
