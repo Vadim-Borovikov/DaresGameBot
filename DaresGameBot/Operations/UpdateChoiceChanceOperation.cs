@@ -38,7 +38,7 @@ internal sealed class UpdateChoiceChanceOperation : Operation<ChoiceChanceInfo>
 
     protected override Task ExecuteAsync(ChoiceChanceInfo data, Message message, User sender)
     {
-        return _bot.Repository.UpdateChoiceChanceAsync(data.Chance, message.Chat);
+        return _bot.Repository.UpdateChoiceChanceAsync(message.Chat, data.Chance);
     }
 
     private readonly Bot _bot;

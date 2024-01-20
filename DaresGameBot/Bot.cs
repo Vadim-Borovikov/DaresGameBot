@@ -3,6 +3,8 @@ using GoogleSheetsManager.Documents;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using AbstractBot;
 using AbstractBot.Bots;
 using AbstractBot.Operations.Data;
@@ -15,14 +17,15 @@ namespace DaresGameBot;
 
 public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple>
 {
-    internal readonly Repository Repository;
-
     internal readonly Sheet Actions;
     internal readonly Sheet Questions;
 
+    internal readonly Repository Repository;
+
     public Bot(Config config) : base(config)
     {
-        Repository = new Repository(this);
+        _manager = new Game.Manager(this);
+        Repository = new Repository(_manager);
 
         GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(config.GoogleSheetId);
 
@@ -44,6 +47,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Turn.PartnersSeparator = Config.Texts.PartnersSeparator;
     }
 
+    public override async Task StartAsync(CancellationToken cancellationToken)
+    {
+        await base.StartAsync(cancellationToken);
+        await _manager.StartAsync();
+    }
+
     protected override KeyboardProvider GetDefaultKeyboardProvider(Chat chat)
     {
         return Repository.CheckGame(chat)
@@ -55,4 +64,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         return new ReplyKeyboardMarkup(buttonCaptions.Select(c => new KeyboardButton(c)));
     }
+
+    private readonly Game.Manager _manager;
 }

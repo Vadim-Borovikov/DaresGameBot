@@ -1,65 +1,57 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using DaresGameBot.Game.Data;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game;
 
 internal sealed class Repository
 {
-    public Repository(Bot bot) => _bot = bot;
+    public Repository(Manager manager) => _manager = manager;
 
-    public bool CheckGame(Chat chat)
-    {
-        Manager manager = GetOrAddGameManager(chat);
-        return manager.IsActive();
-    }
+    public bool CheckGame(Chat chat) => _games.ContainsKey(chat.Id) && _games[chat.Id].IsActive();
 
     public Task StartNewGameAsync(Chat chat)
     {
-        Manager manager = GetOrAddGameManager(chat);
-        return manager.StartNewGameAsync();
+        _games[chat.Id] = _manager.StartNewGame();
+        return _manager.RepotNewGameAsync(chat, _games[chat.Id]);
     }
 
-    public Task UpdatePlayersAmountAsync(byte playersAmount, Chat chat)
+    public async Task UpdatePlayersAmountAsync(Chat chat, byte playersAmount)
     {
-        Manager manager = GetOrAddGameManager(chat);
-        return manager.UpdatePlayersAmountAsync(playersAmount);
+        Data.Game game = await GetOrAddGameAsync(chat);
+        await _manager.UpdatePlayersAmountAsync(chat, game, playersAmount);
     }
 
-    public Task UpdateChoiceChanceAsync(decimal choiceChance, Chat chat)
+    public async Task UpdateChoiceChanceAsync(Chat chat, decimal choiceChance)
     {
-        Manager manager = GetOrAddGameManager(chat);
-        return manager.UpdateChoiceChanceAsync(choiceChance);
+        Data.Game game = await GetOrAddGameAsync(chat);
+        await _manager.UpdateChoiceChanceAsync(chat, game, choiceChance);
     }
 
-    public Task DrawAsync(Chat chat, int replyToMessageId, bool action = true)
+    public async Task DrawAsync(Chat chat, int replyToMessageId, bool action = true)
     {
-        Manager manager = GetOrAddGameManager(chat);
-        return manager.DrawAsync(replyToMessageId, action);
+        Data.Game game = await GetOrAddGameAsync(chat);
+        Data.Turn? turn = _manager.Draw(game, action);
+        if (turn is null)
+        {
+            await StartNewGameAsync(chat);
+        }
+        else
+        {
+            await _manager.RepotTurnAsync(chat, game, turn, replyToMessageId);
+        }
     }
 
-    private Manager GetOrAddGameManager(Chat chat) => _gameManagers.GetOrAdd(chat.Id, _ => new Manager(_bot, chat));
-
-    public async Task<List<Deck<CardAction>>> GetActionDecksAsync()
+    private async Task<Data.Game> GetOrAddGameAsync(Chat chat)
     {
-        List<CardAction> cards = await _bot.Actions.LoadAsync<CardAction>(_bot.Config.ActionsRange);
-        return cards.GroupBy(c => c.Tag).Select(g => CreateActionDeck(g.Key, g.ToList())).ToList();
+        if (!_games.ContainsKey(chat.Id))
+        {
+            await StartNewGameAsync(chat);
+        }
+
+        return _games[chat.Id];
     }
 
-    public async Task<Deck<Card>> GetQuestionsDeckAsync()
-    {
-        List<Card> cards = await _bot.Questions.LoadAsync<Card>(_bot.Config.QuestionsRange);
-        return new Deck<Card>(_bot.Config.Texts.QuestionsTag) { Cards = cards };
-    }
-
-    private static Deck<CardAction> CreateActionDeck(string tag, IEnumerable<CardAction> cards)
-    {
-        return new Deck<CardAction>(tag) { Cards = cards.ToList() };
-    }
-
-    private readonly ConcurrentDictionary<long, Manager> _gameManagers = new();
-    private readonly Bot _bot;
+    private readonly ConcurrentDictionary<long, Data.Game> _games = new();
+    private readonly Manager _manager;
 }

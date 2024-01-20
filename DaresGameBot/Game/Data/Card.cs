@@ -13,9 +13,7 @@ internal class Card
     [SheetField(DescriptionTitle)]
     public string Description = null!;
 
-    public bool Discarded;
-
-    public virtual bool IsOkayFor(byte playersAmount) => !Discarded;
+    public virtual bool IsOkayFor(byte playersAmount) => true;
 
     private const string DescriptionTitle = "Текст";
 }

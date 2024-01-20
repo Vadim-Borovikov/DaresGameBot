@@ -8,35 +8,30 @@ internal sealed class Deck<T> where T : Card
 {
     public readonly string Tag;
 
-    public bool Discarded;
+    public Deck(string tag, IReadOnlyList<T> allCards, IList<ushort> indexes)
+    {
+        Tag = tag;
+        _allCards = allCards;
+        _indexes = indexes;
+    }
 
-    public Deck(string tag) => Tag = tag;
-
-    public IList<T> Cards { private get; init; } = Array.Empty<T>();
-
-    public bool IsOkayFor(byte playersAmount) => !Discarded && Cards.Any(c => c.IsOkayFor(playersAmount));
+    public bool IsOkayFor(byte playersAmount) => _indexes.Any(i => _allCards[i].IsOkayFor(playersAmount));
 
     public T? DrawFor(byte playersAmount)
     {
-        T? card = Cards.FirstOrDefault(c => c.IsOkayFor(playersAmount));
-        if (card is null)
+        List<ushort> options = _indexes.Where(i => _allCards[i].IsOkayFor(playersAmount)).ToList();
+        if (options.Count == 0)
         {
             return null;
         }
-        card.Discarded = true;
-        return card;
+
+        int optionIndex = _random.Next(options.Count);
+        ushort option = options[optionIndex];
+        _indexes.Remove(option);
+        return _allCards[option];
     }
 
-    public Deck<T> GetShuffledCopy()
-    {
-        T[] cards = Cards.ToArray();
-        foreach (T card in Cards)
-        {
-            card.Discarded = false;
-        }
-        _random.Shuffle(cards);
-        return new Deck<T>(Tag) { Cards = cards };
-    }
-
+    private readonly IList<ushort> _indexes;
+    private readonly IReadOnlyList<T> _allCards;
     private readonly Random _random = new();
 }

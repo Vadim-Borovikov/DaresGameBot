@@ -32,4 +32,8 @@ public class Config : ConfigWithSheets<Texts>
     [Required]
     [MinLength(1)]
     public string QuestionsRange { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public long LogsChatId { get; init; }
 }

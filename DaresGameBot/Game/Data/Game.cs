@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Game.Data;
 
@@ -10,54 +9,48 @@ internal sealed class Game
     public byte PlayersAmount;
     public decimal ChoiceChance;
 
-    public Game(byte playersAmount, decimal choiceChance, IEnumerable<Deck<CardAction>> actionDecks,
+    public Game(byte playersAmount, decimal choiceChance, IList<Deck<CardAction>> actionDecks,
         Deck<Card> questionsDeck)
     {
         PlayersAmount = playersAmount;
         ChoiceChance = choiceChance;
-
-        _actionDecks = new List<Deck<CardAction>>(actionDecks.Select(d => d.GetShuffledCopy()));
-        _questionsDeckFull = questionsDeck;
-        _questionsDeckCurrent = new Deck<Card>(_questionsDeckFull.Tag);
+        _actionDecks = actionDecks;
+        _questionsDeck = questionsDeck;
     }
 
     public bool IsActive() => _actionDecks.Any(d => d.IsOkayFor(PlayersAmount));
 
     public Turn? DrawAction()
     {
-        CardAction? card = DrawActionCard(out string deckTag);
-        return card is null ? null : CreateActionTurn(card, deckTag);
+        CardAction? card = DrawActionCard();
+        return card is null ? null : CreateActionTurn(card);
     }
 
-    public Turn DrawQuestion()
+    public void SetQuestions(Deck<Card> questionsDeck) => _questionsDeck = questionsDeck;
+
+    public Turn? DrawQuestion()
     {
-        Card? card = _questionsDeckCurrent.DrawFor(PlayersAmount);
-        if (card is null)
-        {
-            _questionsDeckCurrent = _questionsDeckFull.GetShuffledCopy();
-            card = _questionsDeckCurrent.DrawFor(PlayersAmount)!;
-        }
-        return CreateQuestionTurn(card, _questionsDeckCurrent.Tag);
+        Card? card = _questionsDeck.DrawFor(PlayersAmount);
+        return card is null ? null : CreateQuestionTurn(card, _questionsDeck.Tag);
     }
 
-    private CardAction? DrawActionCard(out string deckTag)
+    private CardAction? DrawActionCard()
     {
-        foreach (Deck<CardAction> deck in _actionDecks)
+        while (_actionDecks.Any())
         {
-            if (deck.IsOkayFor(PlayersAmount))
+            CardAction? card = _actionDecks.First().DrawFor(PlayersAmount);
+            if (card is not null)
             {
-                deckTag = deck.Tag;
-                return deck.DrawFor(PlayersAmount).Denull("There should be cards in this deck");
+                return card;
             }
 
-            deck.Discarded = true;
+            _actionDecks.RemoveAt(0);
         }
 
-        deckTag = "";
         return null;
     }
 
-    private Turn CreateActionTurn(CardAction card, string deckTag)
+    private Turn CreateActionTurn(CardAction card)
     {
         byte[] players = Enumerable.Range(1, PlayersAmount - 1).Select(i => (byte) i).ToArray();
         _random.Shuffle(players);
@@ -72,15 +65,12 @@ internal sealed class Game
         }
         partners.Sort();
 
-        return new Turn($"{deckTag} {card.Description}", partners);
+        return new Turn($"{card.Tag} {card.Description}", partners);
     }
 
     private static Turn CreateQuestionTurn(Card card, string deckTag) => new($"{deckTag} {card.Description}");
 
-    private readonly List<Deck<CardAction>> _actionDecks;
-    private readonly Deck<Card> _questionsDeckFull;
-
-    private Deck<Card> _questionsDeckCurrent;
-
     private readonly Random _random = new();
+    private readonly IList<Deck<CardAction>> _actionDecks;
+    private Deck<Card> _questionsDeck;
 }
