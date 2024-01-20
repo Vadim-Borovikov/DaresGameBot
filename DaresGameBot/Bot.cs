@@ -11,23 +11,15 @@ using AbstractBot.Operations.Data;
 using DaresGameBot.Operations.Commands;
 using DaresGameBot.Configs;
 using DaresGameBot.Game.Data;
+using System.Collections.Generic;
+using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot;
 
 public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple>
 {
-    internal readonly Sheet Actions;
-    internal readonly Sheet Questions;
-
     public Bot(Config config) : base(config)
     {
-        _manager = new Game.Manager(this);
-
-        GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(config.GoogleSheetId);
-
-        Actions = document.GetOrAddSheet(config.Texts.ActionsTitle);
-        Questions = document.GetOrAddSheet(config.Texts.QuestionsTitle);
-
         Operations.Add(new NewCommand(this));
         Operations.Add(new DrawActionCommand(this));
         Operations.Add(new DrawQuestionCommand(this));
@@ -46,12 +38,30 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
         await base.StartAsync(cancellationToken);
-        await _manager.StartAsync();
+
+        Chat chat = new()
+        {
+            Id = Config.LogsChatId,
+            Type = ChatType.Private
+        };
+
+        await using (await StatusMessage.CreateAsync(this, chat, Config.Texts.ReadingDecks))
+        {
+            GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
+
+            Sheet actionsSheet = document.GetOrAddSheet(Config.Texts.ActionsTitle);
+            Sheet questionsSheet = document.GetOrAddSheet(Config.Texts.QuestionsTitle);
+
+            List<CardAction> actions = await actionsSheet.LoadAsync<CardAction>(Config.ActionsRange);
+            List<Card> questions = await questionsSheet.LoadAsync<Card>(Config.QuestionsRange);
+
+            _manager = new Game.Manager(this, actions, questions);
+        }
     }
 
     internal async Task<Game.Data.Game> StartNewGameAsync(Chat chat)
     {
-        Game.Data.Game game = _manager.StartNewGame();
+        Game.Data.Game game = _manager!.StartNewGame();
         Contexts[chat.Id] = game;
         await _manager.RepotNewGameAsync(chat, game);
         return game;
@@ -60,19 +70,19 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     internal async Task UpdatePlayersAmountAsync(Chat chat, byte playersAmount)
     {
         Game.Data.Game game = await GetOrAddGameAsync(chat);
-        await _manager.UpdatePlayersAmountAsync(chat, game, playersAmount);
+        await _manager!.UpdatePlayersAmountAsync(chat, game, playersAmount);
     }
 
     internal async Task UpdateChoiceChanceAsync(Chat chat, decimal choiceChance)
     {
         Game.Data.Game game = await GetOrAddGameAsync(chat);
-        await _manager.UpdateChoiceChanceAsync(chat, game, choiceChance);
+        await _manager!.UpdateChoiceChanceAsync(chat, game, choiceChance);
     }
 
     internal async Task DrawAsync(Chat chat, int replyToMessageId, bool action = true)
     {
         Game.Data.Game game = await GetOrAddGameAsync(chat);
-        Turn? turn = _manager.Draw(game, action);
+        Turn? turn = _manager!.Draw(game, action);
         if (turn is null)
         {
             await StartNewGameAsync(chat);
@@ -101,5 +111,5 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return TryGetContext<Game.Data.Game>(chat.Id) ?? await StartNewGameAsync(chat);
     }
 
-    private readonly Game.Manager _manager;
+    private Game.Manager? _manager;
 }

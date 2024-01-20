@@ -3,34 +3,19 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using AbstractBot;
 using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Game.Data;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Game;
 
 internal sealed class Manager
 {
-    public Manager(Bot bot) => _bot = bot;
-
-    public async Task StartAsync()
+    public Manager(Bot bot, List<CardAction> actions, List<Card> questions)
     {
-        Chat chat = new()
-        {
-            Id = _bot.Config.LogsChatId,
-            Type = ChatType.Private
-        };
-
-        _actions.Clear();
-        _questions.Clear();
-
-        await using (await StatusMessage.CreateAsync(_bot, chat, _bot.Config.Texts.ReadingDecks))
-        {
-            _actions.AddRange(await _bot.Actions.LoadAsync<CardAction>(_bot.Config.ActionsRange));
-            _questions.AddRange(await _bot.Questions.LoadAsync<Card>(_bot.Config.QuestionsRange));
-        }
+        _bot = bot;
+        _actions = actions;
+        _questions = questions;
     }
 
     public Data.Game StartNewGame(byte? playersAmount = null, decimal? choiceChance = null)
@@ -132,8 +117,7 @@ internal sealed class Manager
         return _bot.Config.Texts.ChanceFormat.Format(_bot.Config.Texts.Choosable, formatted);
     }
 
-    private readonly List<CardAction> _actions = new();
-    private readonly List<Card> _questions = new();
-
     private readonly Bot _bot;
+    private readonly List<CardAction> _actions;
+    private readonly List<Card> _questions;
 }
