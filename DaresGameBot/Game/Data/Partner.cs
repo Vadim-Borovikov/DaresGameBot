@@ -20,5 +20,5 @@ internal sealed class Partner : IComparable<Partner>
 
     public override string ToString() => _number?.ToString() ?? Choosable;
 
-    private readonly ushort? _number;
+    private readonly byte? _number;
 }

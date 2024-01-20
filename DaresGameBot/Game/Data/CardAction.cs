@@ -23,7 +23,7 @@ internal sealed class CardAction : Card
     [SheetField(TagTitle)]
     public string Tag = null!;
 
-    public override bool IsOkayFor(ushort playersAmount)
+    public override bool IsOkayFor(byte playersAmount)
     {
         return (playersAmount >= Players) && base.IsOkayFor(playersAmount);
     }

@@ -15,7 +15,7 @@ internal class Card
 
     public bool Discarded;
 
-    public virtual bool IsOkayFor(ushort playersAmount) => !Discarded;
+    public virtual bool IsOkayFor(byte playersAmount) => !Discarded;
 
     private const string DescriptionTitle = "Текст";
 }

@@ -64,7 +64,7 @@ internal sealed class Game
         Queue<byte> partnersQueue = new(players);
 
         List<Partner> partners = new(card.PartnersToAssign);
-        for (ushort i = 0; i < card.PartnersToAssign; ++i)
+        for (byte i = 0; i < card.PartnersToAssign; ++i)
         {
             bool byChoice = (decimal)_random.NextSingle() < ChoiceChance;
             Partner partner = byChoice ? new Partner() : new Partner(partnersQueue.Dequeue());

@@ -14,9 +14,9 @@ internal sealed class Deck<T> where T : Card
 
     public IList<T> Cards { private get; init; } = Array.Empty<T>();
 
-    public bool IsOkayFor(ushort playersAmount) => !Discarded && Cards.Any(c => c.IsOkayFor(playersAmount));
+    public bool IsOkayFor(byte playersAmount) => !Discarded && Cards.Any(c => c.IsOkayFor(playersAmount));
 
-    public T? DrawFor(ushort playersAmount)
+    public T? DrawFor(byte playersAmount)
     {
         T? card = Cards.FirstOrDefault(c => c.IsOkayFor(playersAmount));
         if (card is null)

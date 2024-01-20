@@ -18,7 +18,7 @@ internal sealed class Turn
         _partners = partners;
     }
 
-    public MessageTemplateText GetMessage(ushort playersAmount)
+    public MessageTemplateText GetMessage(byte playersAmount)
     {
         if (_partners is null || (_partners.Count == 0) || (_partners.Count == (playersAmount - 1)))
         {
