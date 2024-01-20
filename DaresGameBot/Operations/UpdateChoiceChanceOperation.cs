@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using AbstractBot.Configs.MessageTemplates;
 using AbstractBot.Operations;
 using DaresGameBot.Operations.Info;
 using GoogleSheetsManager.Extensions;
@@ -13,7 +12,7 @@ internal sealed class UpdateChoiceChanceOperation : Operation<ChoiceChanceInfo>
     protected override byte Order => 6;
 
     public UpdateChoiceChanceOperation(Bot bot)
-        : base(bot, new MessageTemplateText("*дробное число от 0.0 до 1.0* – изменить шанс на 🤩", true))
+        : base(bot, bot.Config.Texts.UpdateChoiceChanceOperationDescriptionFormat.Format(bot.Config.Texts.Choosable))
     {
         _bot = bot;
     }

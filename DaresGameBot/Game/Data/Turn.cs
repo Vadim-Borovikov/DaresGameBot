@@ -1,35 +1,35 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using AbstractBot.Configs.MessageTemplates;
+using AbstractBot.Extensions;
 
 namespace DaresGameBot.Game.Data;
 
 internal sealed class Turn
 {
-    private readonly string _text;
-    private readonly List<Partner>? _partners;
+    public static MessageTemplateText TurnFormat = new();
+    public static string Partner = "";
+    public static string Partners = "";
+    public static string PartnersSeparator = "";
 
     public Turn(string text, List<Partner>? partners = null)
     {
-        _text = text;
+        _messageTemplate = new MessageTemplateText(text);
         _partners = partners;
     }
 
-    public string GetMessage(ushort playersAmount)
+    public MessageTemplateText GetMessage(ushort playersAmount)
     {
         if (_partners is null || (_partners.Count == 0) || (_partners.Count == (playersAmount - 1)))
         {
-            return _text;
+            return _messageTemplate;
         }
 
-        StringBuilder builder = new(_text);
-
-        builder.AppendLine();
-        builder.AppendLine();
-        builder.Append(_partners.Count > 1 ? "Партнёры: " : "Партнёр: ");
-        IEnumerable<string> parnters = _partners.Select(p => $"{p}");
-        builder.Append(string.Join(", ", parnters));
-
-        return builder.ToString();
+        string partnersPrefix = _partners.Count > 1 ? Partners : Partner;
+        string parnters = string.Join(PartnersSeparator, _partners.Select(p => p.ToString()));
+        return TurnFormat.Format(_messageTemplate, partnersPrefix.Escape(), parnters.Escape());
     }
+
+    private readonly MessageTemplateText _messageTemplate;
+    private readonly List<Partner>? _partners;
 }

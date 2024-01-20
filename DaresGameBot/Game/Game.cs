@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using AbstractBot;
 using AbstractBot.Configs.MessageTemplates;
@@ -10,15 +9,6 @@ namespace DaresGameBot.Game;
 
 internal sealed class Game
 {
-    public const string DrawActionCaption = "Вытянуть действие";
-    public const string DrawQuestionCaption = "Вытянуть вопрос";
-    public const string NewGameCaption = "Новая игра";
-    public static readonly IEnumerable<string> GameCaptions = new[]
-    {
-        DrawActionCaption,
-        DrawQuestionCaption
-    };
-
     public bool IsActive() => _game is not null && _game.IsActive();
 
     public Game(Bot bot, Chat chat)
@@ -31,7 +21,7 @@ internal sealed class Game
     {
         List<Deck<CardAction>> actionDecks;
         Deck<Card> questionsDeck;
-        await using (await StatusMessage.CreateAsync(_bot, _chat, new MessageTemplateText("Читаю колоды")))
+        await using (await StatusMessage.CreateAsync(_bot, _chat, _bot.Config.Texts.ReadingDecks))
         {
             actionDecks = await _bot.GameManager.GetActionDecksAsync();
             questionsDeck = await _bot.GameManager.GetQuestionsDeckAsync();
@@ -41,11 +31,9 @@ internal sealed class Game
         decimal chance = choiceChance ?? _bot.Config.InitialChoiceChance;
         _game = new Data.Game(players, chance, actionDecks, questionsDeck);
 
-        StringBuilder stringBuilder = new();
-        stringBuilder.AppendLine("🔥 Начинаем новую игру!");
-        stringBuilder.AppendLine(_game.Players);
-        stringBuilder.AppendLine(_game.Chance);
-        await _bot.SendTextMessageAsync(_chat, stringBuilder.ToString());
+        MessageTemplateText playersText = _bot.Config.Texts.PlayersFormat.Format(players);
+        MessageTemplateText startText = _bot.Config.Texts.NewGameFormat.Format(playersText, GetChanceText(chance));
+        await startText.SendAsync(_bot, _chat);
     }
 
     public Task UpdatePlayersAmountAsync(byte playersAmount)
@@ -57,7 +45,9 @@ internal sealed class Game
 
         _game.PlayersAmount = playersAmount;
 
-        return _bot.SendTextMessageAsync(_chat, $"Принято! {_game.Players}");
+        MessageTemplateText playersText = _bot.Config.Texts.PlayersFormat.Format(_game.PlayersAmount);
+        MessageTemplateText messageText = _bot.Config.Texts.AcceptedFormat.Format(playersText);
+        return messageText.SendAsync(_bot, _chat);
     }
 
     public Task UpdateChoiceChanceAsync(decimal choiceChance)
@@ -68,7 +58,9 @@ internal sealed class Game
         }
 
         _game.ChoiceChance = choiceChance;
-        return _bot.SendTextMessageAsync(_chat, $"Принято! {_game.Chance}");
+        MessageTemplateText chanceText = GetChanceText(_game.ChoiceChance);
+        MessageTemplateText messageText = _bot.Config.Texts.AcceptedFormat.Format(chanceText);
+        return messageText.SendAsync(_bot, _chat);
     }
 
     public async Task DrawAsync(int replyToMessageId, bool action = true)
@@ -82,7 +74,6 @@ internal sealed class Game
         Turn? turn;
         if (action)
         {
-            // ReSharper disable NullableWarningSuppressionIsUsed
             turn = _game!.DrawAction();
             if (turn is null)
             {
@@ -93,17 +84,22 @@ internal sealed class Game
         else
         {
             turn = _game!.DrawQuestion();
-            // ReSharper restore NullableWarningSuppressionIsUsed
         }
 
-        string text = turn.GetMessage(_game.PlayersAmount);
-
-        await _bot.SendTextMessageAsync(_chat, text, replyToMessageId: replyToMessageId);
+        MessageTemplateText message = turn.GetMessage(_game.PlayersAmount);
+        message.ReplyToMessageId = replyToMessageId;
+        await message.SendAsync(_bot, _chat);
         if (!IsActive())
         {
             _game = null;
-            await _bot.SendTextMessageAsync(_chat, "Игра закончена!");
+            await _bot.Config.Texts.GameOver.SendAsync(_bot, _chat);
         }
+    }
+
+    private MessageTemplateText GetChanceText(decimal chance)
+    {
+        string formatted = chance.ToString(_bot.Config.Texts.PercentFormat);
+        return _bot.Config.Texts.ChanceFormat.Format(_bot.Config.Texts.Choosable, formatted);
     }
 
     private Data.Game? _game;

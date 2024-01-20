@@ -10,21 +10,25 @@ internal sealed class CardAction : Card
 {
     [UsedImplicitly]
     [Required]
-    [SheetField("Минимум")]
+    [SheetField(PlayersTitle)]
     public byte Players;
 
     [UsedImplicitly]
     [Required]
-    [SheetField("Назначить")]
+    [SheetField(PartnersToAssignTitle)]
     public byte PartnersToAssign;
 
     [UsedImplicitly]
     [Required]
-    [SheetField("Символ")]
+    [SheetField(TagTitle)]
     public string Tag = null!;
 
     public override bool IsOkayFor(ushort playersAmount)
     {
         return (playersAmount >= Players) && base.IsOkayFor(playersAmount);
     }
+
+    private const string PlayersTitle = "Минимум";
+    private const string PartnersToAssignTitle = "Назначить";
+    private const string TagTitle = "Символ";
 }

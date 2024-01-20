@@ -10,9 +10,6 @@ internal sealed class Game
     public byte PlayersAmount;
     public decimal ChoiceChance;
 
-    public string Players => $"Игроков: {PlayersAmount}";
-    public string Chance => $"Шанс на 🤩: {ChoiceChance:P0}";
-
     public Game(byte playersAmount, decimal choiceChance, IEnumerable<Deck<CardAction>> actionDecks,
         Deck<Card> questionsDeck)
     {
@@ -63,9 +60,9 @@ internal sealed class Game
 
     private Turn CreateActionTurn(CardAction card, string deckTag)
     {
-        IEnumerable<ushort> players = Enumerable.Range(1, PlayersAmount - 1).Select(i => (ushort) i);
-        List<ushort> shuffled = _shuffler.Shuffle(players);
-        Queue<ushort> partnersQueue = new(shuffled);
+        IEnumerable<byte> players = Enumerable.Range(1, PlayersAmount - 1).Select(i => (byte) i);
+        List<byte> shuffled = _shuffler.Shuffle(players);
+        Queue<byte> partnersQueue = new(shuffled);
 
         List<Partner> partners = new(card.PartnersToAssign);
         for (ushort i = 0; i < card.PartnersToAssign; ++i)

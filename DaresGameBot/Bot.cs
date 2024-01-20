@@ -1,15 +1,14 @@
 using DaresGameBot.Operations;
 using GoogleSheetsManager.Documents;
-using System.Collections.Generic;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
-using GryphonUtilities.Extensions;
 using System.Linq;
 using AbstractBot;
 using AbstractBot.Bots;
 using AbstractBot.Operations.Data;
 using DaresGameBot.Operations.Commands;
 using DaresGameBot.Configs;
+using DaresGameBot.Game.Data;
 
 namespace DaresGameBot;
 
@@ -34,18 +33,25 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Operations.Add(new DrawQuestionCommand(this));
         Operations.Add(new UpdatePlayersAmountOperation(this));
         Operations.Add(new UpdateChoiceChanceOperation(this));
+
+        Help.SetArgs(Config.Texts.Choosable);
+        Partner.Choosable = Config.Texts.Choosable;
+
+        Turn.TurnFormat = Config.Texts.TurnFormat;
+        Turn.Partner = Config.Texts.Partner;
+        Turn.Partners = Config.Texts.Partners;
+        Turn.PartnersSeparator = Config.Texts.PartnersSeparator;
     }
 
     protected override KeyboardProvider GetDefaultKeyboardProvider(Chat chat)
     {
-        return GameManager.CheckGame(chat) ? GameKeyboard : NewGameKeyboard;
+        return GameManager.CheckGame(chat)
+            ? GetKeyboard(Config.Texts.DrawActionCaption, Config.Texts.DrawQuestionCaption)
+            : GetKeyboard(Config.Texts.NewGameCaption);
     }
 
-    private static ReplyKeyboardMarkup GetKeyboard(IEnumerable<string> buttonCaptions)
+    private static ReplyKeyboardMarkup GetKeyboard(params string[] buttonCaptions)
     {
         return new ReplyKeyboardMarkup(buttonCaptions.Select(c => new KeyboardButton(c)));
     }
-
-    private static readonly ReplyKeyboardMarkup GameKeyboard = GetKeyboard(Game.Game.GameCaptions);
-    private static readonly ReplyKeyboardMarkup NewGameKeyboard = GetKeyboard(Game.Game.NewGameCaption.Yield());
 }

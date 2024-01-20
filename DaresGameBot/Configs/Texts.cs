@@ -1,5 +1,6 @@
 using JetBrains.Annotations;
 using System.ComponentModel.DataAnnotations;
+using AbstractBot.Configs.MessageTemplates;
 
 namespace DaresGameBot.Configs;
 
@@ -15,108 +16,77 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string QuestionsTitle { get; init; } = null!;
-    /*[Required]
-    [MinLength(1)]
-    public string ExercisesCommandDescription { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public List<Uri> ExerciseUris { get; init; } = null!;
 
+    [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string FeedbackCommandDescription { get; init; } = null!;
-    [Required]
-    public Link FeedbackLink { get; init; } = null!;
+    public string PercentFormat { get; init; } = null!;
 
+    [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string IntroCommandDescription { get; init; } = null!;
-    [Required]
-    public MessageTemplateText PracticeIntroduction { get; init; } = null!;
-
+    public MessageTemplateText PlayersFormat { get; init; } = null!;
+    [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string LinksCommandDescription { get; init; } = null!;
+    public MessageTemplateText ChanceFormat { get; init; } = null!;
+    [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public List<Link> Links { get; init; } = null!;
-
+    public MessageTemplateText NewGameFormat { get; init; } = null!;
+    [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string ScheduleCommandDescription { get; init; } = null!;
-    [Required]
-    public MessageTemplateText PracticeSchedule { get; init; } = null!;
+    public MessageTemplateText AcceptedFormat { get; init; } = null!;
 
+    [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string SpamCommandDescription { get; init; } = null!;
+    public string Choosable { get; init; } = null!;
 
+    [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string WarningCommandDescription { get; init; } = null!;
+    public MessageTemplateText TurnFormat { get; init; } = null!;
 
-    [Required]
-    public Uri ChatGuidelinesUri { get; init; } = null!;
-
+    [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string DaysFormat { get; init; } = null!;
-
-    [Required]
-    public Noun Day { get; init; } = null!;
-
+    public string Partner { get; init; } = null!;
+    [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string RestrictionWarningPartFormat { get; init; } = null!;
-
+    public string Partners { get; init; } = null!;
+    [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string RestrictionPartFormat { get; init; } = null!;
+    public string PartnersSeparator { get; init; } = null!;
 
+    [UsedImplicitly]
     [Required]
-    public MessageTemplateText RestrictionMessageFormat { get; init; } = null!;
+    [MinLength(1)]
+    public string DrawActionCaption { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string DrawQuestionCaption { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string NewGameCaption { get; init; } = null!;
 
+    [UsedImplicitly]
     [Required]
-    public MessageTemplateText CheckingEmail { get; init; } = null!;
-    [Required]
-    public MessageTemplateText EmailFoundFormat { get; init; } = null!;
-    [Required]
-    public MessageTemplateText EmailNotFoundFormat { get; init; } = null!;
-    [Required]
-    public MessageTemplateText EmailNotFoundHelp { get; init; } = null!;
+    public MessageTemplateText ReadingDecks { get; init; } = null!;
 
+    [UsedImplicitly]
     [Required]
-    public MessageTemplateText PaymentConfirmationFormat { get; init; } = null!;
-
-    [Required]
-    public MessageTemplateText ListItemFormat { get; init; } = null!;
+    public MessageTemplateText GameOver { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
-    public string ProductSoldNoteFormat { get; init; } = null!;
-
+    public MessageTemplateText UpdateChoiceChanceOperationDescriptionFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]
-    public string PaymentSlipButtonCaption { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PaymentSlipButtonFormat { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PaymentConfirmationButton { get; init; } = null!;
-
-    [Required]
-    public MessageTemplateText AddingPurchases { get; init; } = null!;
-
-    [Required]
-    public MessageTemplateText MessageForClientFormat { get; init; } = null!;
-    [Required]
-    public MessageTemplateText CopyableFormat { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
-    public Dictionary<byte, MessageTemplateFile> ProductMessages { get; init; } = null!;
-
-    [Required]
-    public MessageTemplateText ThankYou { get; init; } = null!;*/
+    public MessageTemplateText UpdatePlayersAmountOperationDescription { get; init; } = null!;
 }

@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using AbstractBot.Configs.MessageTemplates;
 using AbstractBot.Operations;
 using DaresGameBot.Operations.Info;
 using GoogleSheetsManager.Extensions;
@@ -12,8 +11,7 @@ internal sealed class UpdatePlayersAmountOperation : Operation<PlayersAmountInfo
 {
     protected override byte Order => 6;
 
-    public UpdatePlayersAmountOperation(Bot bot)
-        : base(bot, new MessageTemplateText("*целое число* – изменить количество игроков", true))
+    public UpdatePlayersAmountOperation(Bot bot) : base(bot, bot.Config.Texts.UpdatePlayersAmountOperationDescription)
     {
         _bot = bot;
     }

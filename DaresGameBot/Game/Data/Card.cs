@@ -10,10 +10,12 @@ internal class Card
 {
     [UsedImplicitly]
     [Required]
-    [SheetField("Текст")]
+    [SheetField(DescriptionTitle)]
     public string Description = null!;
 
     public bool Discarded;
 
     public virtual bool IsOkayFor(ushort playersAmount) => !Discarded;
+
+    private const string DescriptionTitle = "Текст";
 }
