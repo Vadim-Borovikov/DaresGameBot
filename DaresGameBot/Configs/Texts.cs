@@ -43,6 +43,9 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string Choosable { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string QuestionsTag { get; init; } = null!;
 
     [UsedImplicitly]
     [Required]

@@ -52,7 +52,7 @@ internal sealed class Manager
     public async Task<Deck<Card>> GetQuestionsDeckAsync()
     {
         List<Card> cards = await _bot.Questions.LoadAsync<Card>(_bot.Config.QuestionsRange);
-        return new Deck<Card>("❓") { Cards = cards };
+        return new Deck<Card>(_bot.Config.Texts.QuestionsTag) { Cards = cards };
     }
 
     private static Deck<CardAction> CreateActionDeck(string tag, IEnumerable<CardAction> cards)
