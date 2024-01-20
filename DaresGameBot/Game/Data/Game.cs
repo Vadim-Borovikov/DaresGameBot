@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AbstractBot;
 
 namespace DaresGameBot.Game.Data;
 
-internal sealed class Game
+internal sealed class Game : Context
 {
     public byte PlayersAmount;
     public decimal ChoiceChance;
