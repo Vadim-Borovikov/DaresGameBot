@@ -7,11 +7,11 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game;
 
-internal sealed class Game
+internal sealed class Manager
 {
     public bool IsActive() => _game is not null && _game.IsActive();
 
-    public Game(Bot bot, Chat chat)
+    public Manager(Bot bot, Chat chat)
     {
         _bot = bot;
         _chat = chat;

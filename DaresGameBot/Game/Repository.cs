@@ -13,35 +13,35 @@ internal sealed class Repository
 
     public bool CheckGame(Chat chat)
     {
-        Game manager = GetOrAddGameManager(chat);
+        Manager manager = GetOrAddGameManager(chat);
         return manager.IsActive();
     }
 
     public Task StartNewGameAsync(Chat chat)
     {
-        Game manager = GetOrAddGameManager(chat);
+        Manager manager = GetOrAddGameManager(chat);
         return manager.StartNewGameAsync();
     }
 
     public Task UpdatePlayersAmountAsync(byte playersAmount, Chat chat)
     {
-        Game manager = GetOrAddGameManager(chat);
+        Manager manager = GetOrAddGameManager(chat);
         return manager.UpdatePlayersAmountAsync(playersAmount);
     }
 
     public Task UpdateChoiceChanceAsync(decimal choiceChance, Chat chat)
     {
-        Game manager = GetOrAddGameManager(chat);
+        Manager manager = GetOrAddGameManager(chat);
         return manager.UpdateChoiceChanceAsync(choiceChance);
     }
 
     public Task DrawAsync(Chat chat, int replyToMessageId, bool action = true)
     {
-        Game manager = GetOrAddGameManager(chat);
+        Manager manager = GetOrAddGameManager(chat);
         return manager.DrawAsync(replyToMessageId, action);
     }
 
-    private Game GetOrAddGameManager(Chat chat) => _gameManagers.GetOrAdd(chat.Id, _ => new Game(_bot, chat));
+    private Manager GetOrAddGameManager(Chat chat) => _gameManagers.GetOrAdd(chat.Id, _ => new Manager(_bot, chat));
 
     public async Task<List<Deck<CardAction>>> GetActionDecksAsync()
     {
@@ -60,6 +60,6 @@ internal sealed class Repository
         return new Deck<CardAction>(tag) { Cards = cards.ToList() };
     }
 
-    private readonly ConcurrentDictionary<long, Game> _gameManagers = new();
+    private readonly ConcurrentDictionary<long, Manager> _gameManagers = new();
     private readonly Bot _bot;
 }
