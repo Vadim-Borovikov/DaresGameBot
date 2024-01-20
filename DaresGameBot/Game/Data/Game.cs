@@ -16,8 +16,7 @@ internal sealed class Game
         PlayersAmount = playersAmount;
         ChoiceChance = choiceChance;
 
-        _actionDecks =
-            new List<Deck<CardAction>>(actionDecks.Select(d => Deck<CardAction>.GetShuffledCopy(d, _shuffler)));
+        _actionDecks = new List<Deck<CardAction>>(actionDecks.Select(d => d.GetShuffledCopy()));
         _questionsDeckFull = questionsDeck;
         _questionsDeckCurrent = new Deck<Card>(_questionsDeckFull.Tag);
     }
@@ -35,7 +34,7 @@ internal sealed class Game
         Card? card = _questionsDeckCurrent.DrawFor(PlayersAmount);
         if (card is null)
         {
-            _questionsDeckCurrent = Deck<Card>.GetShuffledCopy(_questionsDeckFull, _shuffler);
+            _questionsDeckCurrent = _questionsDeckFull.GetShuffledCopy();
             card = _questionsDeckCurrent.DrawFor(PlayersAmount)!;
         }
         return CreateQuestionTurn(card, _questionsDeckCurrent.Tag);
@@ -60,9 +59,9 @@ internal sealed class Game
 
     private Turn CreateActionTurn(CardAction card, string deckTag)
     {
-        IEnumerable<byte> players = Enumerable.Range(1, PlayersAmount - 1).Select(i => (byte) i);
-        List<byte> shuffled = _shuffler.Shuffle(players);
-        Queue<byte> partnersQueue = new(shuffled);
+        byte[] players = Enumerable.Range(1, PlayersAmount - 1).Select(i => (byte) i).ToArray();
+        _random.Shuffle(players);
+        Queue<byte> partnersQueue = new(players);
 
         List<Partner> partners = new(card.PartnersToAssign);
         for (ushort i = 0; i < card.PartnersToAssign; ++i)
@@ -83,6 +82,5 @@ internal sealed class Game
 
     private Deck<Card> _questionsDeckCurrent;
 
-    private readonly Shuffler _shuffler = new();
     private readonly Random _random = new();
 }

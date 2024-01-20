@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,11 +12,9 @@ internal sealed class Deck<T> where T : Card
 
     public Deck(string tag) => Tag = tag;
 
-    public List<T> Cards { private get; init; } = new();
+    public IList<T> Cards { private get; init; } = Array.Empty<T>();
 
     public bool IsOkayFor(ushort playersAmount) => !Discarded && Cards.Any(c => c.IsOkayFor(playersAmount));
-
-    public static Deck<T> GetShuffledCopy(Deck<T> deck, Shuffler shuffler) => deck.GetShuffledCopy(shuffler);
 
     public T? DrawFor(ushort playersAmount)
     {
@@ -28,13 +27,16 @@ internal sealed class Deck<T> where T : Card
         return card;
     }
 
-    private Deck<T> GetShuffledCopy(Shuffler shuffler)
+    public Deck<T> GetShuffledCopy()
     {
-        List<T> cards = new(Cards);
+        T[] cards = Cards.ToArray();
         foreach (T card in Cards)
         {
             card.Discarded = false;
         }
-        return new Deck<T>(Tag) { Cards = shuffler.Shuffle(cards) };
+        _random.Shuffle(cards);
+        return new Deck<T>(Tag) { Cards = cards };
     }
+
+    private readonly Random _random = new();
 }
