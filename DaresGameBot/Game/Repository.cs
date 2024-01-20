@@ -7,9 +7,9 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game;
 
-internal sealed class Manager
+internal sealed class Repository
 {
-    public Manager(Bot bot) => _bot = bot;
+    public Repository(Bot bot) => _bot = bot;
 
     public bool CheckGame(Chat chat)
     {

@@ -8,20 +8,21 @@ using AbstractBot.Bots;
 using AbstractBot.Operations.Data;
 using DaresGameBot.Operations.Commands;
 using DaresGameBot.Configs;
+using DaresGameBot.Game;
 using DaresGameBot.Game.Data;
 
 namespace DaresGameBot;
 
 public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple>
 {
-    internal readonly Game.Manager GameManager;
+    internal readonly Repository Repository;
 
     internal readonly Sheet Actions;
     internal readonly Sheet Questions;
 
     public Bot(Config config) : base(config)
     {
-        GameManager = new Game.Manager(this);
+        Repository = new Repository(this);
 
         GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(config.GoogleSheetId);
 
@@ -45,7 +46,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     protected override KeyboardProvider GetDefaultKeyboardProvider(Chat chat)
     {
-        return GameManager.CheckGame(chat)
+        return Repository.CheckGame(chat)
             ? GetKeyboard(Config.Texts.DrawActionCaption, Config.Texts.DrawQuestionCaption)
             : GetKeyboard(Config.Texts.NewGameCaption);
     }

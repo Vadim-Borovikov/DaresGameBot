@@ -23,8 +23,8 @@ internal sealed class Game
         Deck<Card> questionsDeck;
         await using (await StatusMessage.CreateAsync(_bot, _chat, _bot.Config.Texts.ReadingDecks))
         {
-            actionDecks = await _bot.GameManager.GetActionDecksAsync();
-            questionsDeck = await _bot.GameManager.GetQuestionsDeckAsync();
+            actionDecks = await _bot.Repository.GetActionDecksAsync();
+            questionsDeck = await _bot.Repository.GetQuestionsDeckAsync();
         }
 
         byte players = playersAmount ?? _bot.Config.InitialPlayersAmount;

@@ -37,7 +37,7 @@ internal sealed class UpdatePlayersAmountOperation : Operation<PlayersAmountInfo
 
     protected override Task ExecuteAsync(PlayersAmountInfo data, Message message, User sender)
     {
-        return _bot.GameManager.UpdatePlayersAmountAsync(data.Amount, message.Chat);
+        return _bot.Repository.UpdatePlayersAmountAsync(data.Amount, message.Chat);
     }
 
     private readonly Bot _bot;

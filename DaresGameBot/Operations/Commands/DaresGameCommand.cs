@@ -13,7 +13,7 @@ internal abstract class DaresGameCommand : CommandSimple
 
     protected DaresGameCommand(Bot bot, string command, string description) : base(bot, command, description)
     {
-        GameManager = bot.GameManager;
+        Repository = bot.Repository;
     }
 
     protected override bool IsInvokingBy(Message message, User sender, out CommandDataSimple? data)
@@ -30,5 +30,5 @@ internal abstract class DaresGameCommand : CommandSimple
 
     protected abstract Task ExecuteAsync(Chat chat, int replyToMessageId);
 
-    protected readonly Game.Manager GameManager;
+    protected readonly Game.Repository Repository;
 }

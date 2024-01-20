@@ -11,7 +11,7 @@ internal sealed class NewCommand : DaresGameCommand
 
     public NewCommand(Bot bot) : base(bot, "new", bot.Config.Texts.NewGameCaption.ToLowerInvariant()) => _bot = bot;
 
-    protected override Task ExecuteAsync(Chat chat, int _) => GameManager.StartNewGameAsync(chat);
+    protected override Task ExecuteAsync(Chat chat, int _) => Repository.StartNewGameAsync(chat);
 
     private readonly Bot _bot;
 }
