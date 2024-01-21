@@ -88,7 +88,7 @@ internal sealed class Game : Context, ICardChecker<Card>, ICardChecker<CardActio
 
     private void TryPrepareNextActionTurn()
     {
-        int nextPlayerIndex = (_currentPlayerIndex + 1) % _players.Count;
+        int nextPlayerIndex = Fresh ? 0 : (_currentPlayerIndex + 1) % _players.Count;
         Player nextPlayer = _players[nextPlayerIndex];
         while (_actionDecks.Any())
         {
