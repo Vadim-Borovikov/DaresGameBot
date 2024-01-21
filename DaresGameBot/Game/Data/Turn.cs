@@ -12,7 +12,7 @@ internal sealed class Turn
     public static string Partners = "";
     public static string PartnersSeparator = "";
 
-    public Turn(string text, Player player, List<Partner>? partners = null)
+    public Turn(string text, Player player, List<Player>? partners = null)
     {
         _messagePart = new MessageTemplateText(text);
         _player = player;
@@ -34,5 +34,5 @@ internal sealed class Turn
 
     private readonly MessageTemplateText _messagePart;
     private readonly Player _player;
-    private readonly List<Partner>? _partners;
+    private readonly List<Player>? _partners;
 }

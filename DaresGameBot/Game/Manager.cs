@@ -18,21 +18,18 @@ internal sealed class Manager
         _questions = questions;
     }
 
-    public Data.Game StartNewGame(IEnumerable<string> playerNames, decimal? choiceChance = null)
+    public Data.Game StartNewGame(List<Player> players)
     {
         IList<Deck<CardAction>> actionDecks = GetActionDecks();
         Deck<Card> questionsDeck = CreateQuestionsDeck();
-
-        decimal chance = choiceChance ?? _bot.Config.InitialChoiceChance;
-        return new Data.Game(playerNames, chance, actionDecks, questionsDeck);
+        return new Data.Game(players, actionDecks, questionsDeck);
     }
 
     public Task RepotNewGameAsync(Chat chat, Data.Game game)
     {
         MessageTemplateText playersText =
             _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
-        MessageTemplateText startText =
-            _bot.Config.Texts.NewGameFormat.Format(playersText, GetChanceText(game.ChoiceChance));
+        MessageTemplateText startText = _bot.Config.Texts.NewGameFormat.Format(playersText);
         return startText.SendAsync(_bot, chat);
     }
 
@@ -62,21 +59,13 @@ internal sealed class Manager
         return new Deck<Card>(_bot.Config.Texts.QuestionsTag, cards, indexes);
     }
 
-    public Task UpdatePlayersAsync(Chat chat, Data.Game game, IEnumerable<string> playerNames)
+    public Task UpdatePlayersAsync(Chat chat, Data.Game game, List<Player> players)
     {
-        game.UpdatePlayers(playerNames);
+        game.UpdatePlayers(players);
 
         MessageTemplateText playersText =
             _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
         MessageTemplateText messageText = _bot.Config.Texts.AcceptedFormat.Format(playersText);
-        return messageText.SendAsync(_bot, chat);
-    }
-
-    public Task UpdateChoiceChanceAsync(Chat chat, Data.Game game, decimal choiceChance)
-    {
-        game.ChoiceChance = choiceChance;
-        MessageTemplateText chanceText = GetChanceText(game.ChoiceChance);
-        MessageTemplateText messageText = _bot.Config.Texts.AcceptedFormat.Format(chanceText);
         return messageText.SendAsync(_bot, chat);
     }
 
@@ -118,12 +107,6 @@ internal sealed class Manager
         {
             await _bot.Config.Texts.GameOver.SendAsync(_bot, chat);
         }
-    }
-
-    private MessageTemplateText GetChanceText(decimal chance)
-    {
-        string formatted = chance.ToString(_bot.Config.Texts.PercentFormat);
-        return _bot.Config.Texts.ChanceFormat.Format(_bot.Config.Texts.Choosable, formatted);
     }
 
     private readonly Bot _bot;

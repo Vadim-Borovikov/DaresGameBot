@@ -30,14 +30,14 @@ internal sealed class UpdatePlayersOperation : Operation<PlayersInfo>
             case null:
             case < 2: return false;
             default:
-                data = new PlayersInfo(parts);
-                return true;
+                data = PlayersInfo.From(parts);
+                return data is not null;
         }
     }
 
     protected override Task ExecuteAsync(PlayersInfo data, Message message, User sender)
     {
-        return _bot.UpdatePlayersAsync(message.Chat, data.Names);
+        return _bot.UpdatePlayersAsync(message.Chat, data.Players);
     }
 
     private readonly Bot _bot;

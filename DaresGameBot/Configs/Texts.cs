@@ -29,10 +29,6 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public MessageTemplateText ChanceFormat { get; init; } = null!;
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
     public MessageTemplateText NewGame { get; init; } = null!;
     [UsedImplicitly]
     [Required]
@@ -43,10 +39,6 @@ public class Texts : AbstractBot.Configs.Texts
     [MinLength(1)]
     public MessageTemplateText AcceptedFormat { get; init; } = null!;
 
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public string Choosable { get; init; } = null!;
     [Required]
     [MinLength(1)]
     public string QuestionsTag { get; init; } = null!;

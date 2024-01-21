@@ -8,18 +8,16 @@ namespace DaresGameBot.Game.Data;
 internal sealed class Game : Context
 {
     public IEnumerable<string> PlayerNames => _players.Select(p => p.Name);
-    public decimal ChoiceChance;
     public bool Fresh;
 
-    public Game(IEnumerable<string> playerNames, decimal choiceChance, IList<Deck<CardAction>> actionDecks,
+    public Game(List<Player> players, IList<Deck<CardAction>> actionDecks,
         Deck<Card> questionsDeck)
     {
         Fresh = true;
-        ChoiceChance = choiceChance;
         _actionDecks = actionDecks;
         _questionsDeck = questionsDeck;
 
-        UpdatePlayers(playerNames);
+        UpdatePlayers(players);
     }
 
     public bool IsActive() => _actionDecks.Any(d => d.IsOkayFor(_players.Count));
@@ -38,10 +36,9 @@ internal sealed class Game : Context
         return card is null ? null : CreateQuestionTurn(card, _questionsDeck.Tag);
     }
 
-    public void UpdatePlayers(IEnumerable<string> playerNames)
+    public void UpdatePlayers(List<Player> players)
     {
-        _players.Clear();
-        _players.AddRange(playerNames.Select(n => new Player(n)));
+        _players = players;
         _currentPlayerIndex = 0;
     }
 
@@ -65,20 +62,16 @@ internal sealed class Game : Context
 
     private Turn CreateActionTurn(CardAction card)
     {
-        List<Partner> partners = new();
+        Player player = _players[_currentPlayerIndex];
+        List<Player> partners = new();
+
         if (card.PartnersToAssign > 0)
         {
-            Player[] choices = _players.Where((_, i) => i != _currentPlayerIndex).ToArray();
+            Player[] choices = _players.Where(p => Player.AreCompatable(p, player)).ToArray();
             _random.Shuffle(choices);
-            for (byte i = 0; i < card.PartnersToAssign; ++i)
-            {
-                bool byChoice = (decimal)_random.NextSingle() < ChoiceChance;
-                partners.Add(new Partner(byChoice ? null : choices[i]));
-            }
-            partners.Sort();
+            partners.AddRange(choices.Take(card.PartnersToAssign));
         }
 
-        Player player = _players[_currentPlayerIndex];
         return new Turn($"{card.Tag} {card.Description}", player, partners);
     }
 
@@ -91,6 +84,6 @@ internal sealed class Game : Context
     private readonly Random _random = new();
     private readonly IList<Deck<CardAction>> _actionDecks;
     private Deck<Card> _questionsDeck;
-    private readonly List<Player> _players = new();
+    private List<Player> _players = new();
     private int _currentPlayerIndex;
 }
