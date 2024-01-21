@@ -41,25 +41,25 @@ internal sealed class Manager
 
     private Deck<CardAction> CreateActionDeck(IReadOnlyList<CardAction> cards, string tag)
     {
-        List<int> indexes = new();
+        List<int> indices = new();
         for (int i = 0; i < cards.Count; i++)
         {
             if (cards[i].Tag.Equals(tag, StringComparison.OrdinalIgnoreCase))
             {
-                indexes.Add(i);
+                indices.Add(i);
             }
         }
 
-        int[] indexesArray = indexes.ToArray();
-        _random.Shuffle(indexesArray);
-        return new Deck<CardAction>(tag, cards, indexesArray.ToList());
+        int[] indexArray = indices.ToArray();
+        _random.Shuffle(indexArray);
+        return new Deck<CardAction>(tag, cards, indexArray.ToList());
     }
 
     private Deck<Card> CreateQuestionsDeck()
     {
         ReadOnlyCollection<Card> cards = _questions.AsReadOnly();
-        List<int> indexes = Enumerable.Range(0, cards.Count).ToList();
-        return new Deck<Card>(_bot.Config.Texts.QuestionsTag, cards, indexes);
+        List<int> indices = Enumerable.Range(0, cards.Count).ToList();
+        return new Deck<Card>(_bot.Config.Texts.QuestionsTag, cards, indices);
     }
 
     public Task UpdatePlayersAsync(Chat chat, Data.Game game, List<Player> players)
