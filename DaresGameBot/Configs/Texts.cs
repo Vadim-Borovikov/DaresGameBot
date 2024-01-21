@@ -55,10 +55,6 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public MessageTemplateText TurnFormat { get; init; } = null!;
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public MessageTemplateText TurnPartnerFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]
     public MessageTemplateText TurnPartnersFormat { get; init; } = null!;

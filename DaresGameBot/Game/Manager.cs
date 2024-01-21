@@ -89,6 +89,12 @@ internal sealed class Manager
 
         if (action)
         {
+            if (!game.Fresh)
+            {
+                game.SwitchPlayer();
+            }
+
+            game.Fresh = false;
             return game.DrawAction();
         }
 
@@ -98,6 +104,8 @@ internal sealed class Manager
             game.SetQuestions(CreateQuestionsDeck());
             turn = game.DrawQuestion()!;
         }
+
+        game.Fresh = false;
         return turn;
     }
 

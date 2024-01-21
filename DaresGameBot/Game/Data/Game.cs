@@ -9,10 +9,12 @@ internal sealed class Game : Context
 {
     public IEnumerable<string> PlayerNames => _players.Select(p => p.Name);
     public decimal ChoiceChance;
+    public bool Fresh;
 
     public Game(IEnumerable<string> playerNames, decimal choiceChance, IList<Deck<CardAction>> actionDecks,
         Deck<Card> questionsDeck)
     {
+        Fresh = true;
         ChoiceChance = choiceChance;
         _actionDecks = actionDecks;
         _questionsDeck = questionsDeck;
@@ -42,6 +44,8 @@ internal sealed class Game : Context
         _players.AddRange(playerNames.Select(n => new Player(n)));
         _currentPlayerIndex = 0;
     }
+
+    public void SwitchPlayer() => _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.Count;
 
     private CardAction? DrawActionCard()
     {
@@ -75,13 +79,14 @@ internal sealed class Game : Context
         }
 
         Player player = _players[_currentPlayerIndex];
-        SwitchPlayer();
         return new Turn($"{card.Tag} {card.Description}", player, partners);
     }
 
-    private static Turn CreateQuestionTurn(Card card, string deckTag) => new($"{deckTag} {card.Description}");
-
-    private void SwitchPlayer() => _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.Count;
+    private Turn CreateQuestionTurn(Card card, string deckTag)
+    {
+        Player player = _players[_currentPlayerIndex];
+        return new Turn($"{deckTag} {card.Description}", player);
+    }
 
     private readonly Random _random = new();
     private readonly IList<Deck<CardAction>> _actionDecks;

@@ -30,7 +30,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Partner.Choosable = Config.Texts.Choosable;
 
         Turn.Format = Config.Texts.TurnFormat;
-        Turn.PartnerFormat = Config.Texts.TurnPartnerFormat;
         Turn.PartnersFormat = Config.Texts.TurnPartnersFormat;
         Turn.Partner = Config.Texts.Partner;
         Turn.Partners = Config.Texts.Partners;
@@ -101,9 +100,18 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     protected override KeyboardProvider GetDefaultKeyboardProvider(Chat chat)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
-        return game is not null && game.IsActive()
-            ? GetKeyboard(Config.Texts.DrawActionCaption, Config.Texts.DrawQuestionCaption)
-            : GetKeyboard(Config.Texts.NewGameCaption);
+
+        if (game is null || !game.IsActive())
+        {
+            return GetKeyboard(Config.Texts.NewGameCaption);
+        }
+
+        if (game.Fresh)
+        {
+            return GetKeyboard(Config.Texts.DrawActionCaption);
+        }
+
+        return GetKeyboard(Config.Texts.DrawActionCaption, Config.Texts.DrawQuestionCaption);
     }
 
     private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, IEnumerable<string> playerNames)
