@@ -22,7 +22,7 @@ internal sealed class Manager
     {
         IList<Deck<CardAction>> actionDecks = GetActionDecks();
         Deck<Card> questionsDeck = CreateQuestionsDeck();
-        return new Data.Game(players, actionDecks, questionsDeck);
+        return new Data.Game(players, actionDecks, questionsDeck, _random);
     }
 
     public Task RepotNewGameAsync(Chat chat, Data.Game game)
@@ -39,23 +39,26 @@ internal sealed class Manager
         return _actions.GroupBy(c => c.Tag).Select(g => CreateActionDeck(cards, g.Key)).ToList();
     }
 
-    private static Deck<CardAction> CreateActionDeck(IReadOnlyList<CardAction> cards, string tag)
+    private Deck<CardAction> CreateActionDeck(IReadOnlyList<CardAction> cards, string tag)
     {
-        List<ushort> indexes = new();
+        List<int> indexes = new();
         for (int i = 0; i < cards.Count; i++)
         {
             if (cards[i].Tag.Equals(tag, StringComparison.OrdinalIgnoreCase))
             {
-                indexes.Add((ushort) i);
+                indexes.Add(i);
             }
         }
-        return new Deck<CardAction>(tag, cards, indexes);
+
+        int[] indexesArray = indexes.ToArray();
+        _random.Shuffle(indexesArray);
+        return new Deck<CardAction>(tag, cards, indexesArray.ToList());
     }
 
     private Deck<Card> CreateQuestionsDeck()
     {
         ReadOnlyCollection<Card> cards = _questions.AsReadOnly();
-        List<ushort> indexes = Enumerable.Range(0, cards.Count).Select(i => (ushort)i).ToList();
+        List<int> indexes = Enumerable.Range(0, cards.Count).ToList();
         return new Deck<Card>(_bot.Config.Texts.QuestionsTag, cards, indexes);
     }
 
@@ -71,11 +74,6 @@ internal sealed class Manager
 
     public Turn? Draw(Data.Game game, bool action = true)
     {
-        if (!game.IsActive())
-        {
-            return null;
-        }
-
         if (action)
         {
             if (!game.Fresh)
@@ -103,15 +101,12 @@ internal sealed class Manager
         MessageTemplateText message = turn.GetMessage(game.PlayerNames.Count());
         message.ReplyToMessageId = replyToMessageId;
         await message.SendAsync(_bot, chat);
-        if (!game.IsActive())
-        {
-            await _bot.Config.Texts.GameOver.SendAsync(_bot, chat);
-        }
     }
 
     private readonly Bot _bot;
     private readonly List<CardAction> _actions;
     private readonly List<Card> _questions;
+    private readonly Random _random = new();
 
     private const string PlayerSeparator = ", ";
 }

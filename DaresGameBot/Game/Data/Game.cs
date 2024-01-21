@@ -5,35 +5,77 @@ using AbstractBot;
 
 namespace DaresGameBot.Game.Data;
 
-internal sealed class Game : Context
+internal sealed class Game : Context, ICardChecker<Card>, ICardChecker<CardAction>
 {
     public IEnumerable<string> PlayerNames => _players.Select(p => p.Name);
     public bool Fresh;
 
+    public bool IsActive => _nextActionTurn is not null;
+
     public Game(List<Player> players, IList<Deck<CardAction>> actionDecks,
-        Deck<Card> questionsDeck)
+        Deck<Card> questionsDeck, Random random)
     {
         Fresh = true;
         _actionDecks = actionDecks;
         _questionsDeck = questionsDeck;
+        _random = random;
 
         UpdatePlayers(players);
+
+        TryPrepareNextActionTurn();
     }
 
-    public bool IsActive() => _actionDecks.Any(d => d.IsOkayFor(_players.Count));
+    public Turn TryGetTurn(Player player, Card card) => new($"{_questionsDeck.Tag} {card.Description}", player);
+
+    public Turn? TryGetTurn(Player player, CardAction card)
+    {
+        if (_players.Count < card.Players)
+        {
+            return null;
+        }
+
+        List<Player>? partners = null;
+
+        if (card.PartnersToAssign > 0)
+        {
+            Player[] choices = _players.Where(p => p.IsCompatableWith(player)).ToArray();
+            if (choices.Length < card.PartnersToAssign)
+            {
+                return null;
+            }
+
+            _random.Shuffle(choices);
+            if (card.CompatablePartners)
+            {
+                partners =
+                    EnumerateSubgroups(choices.ToList(), card.PartnersToAssign).FirstOrDefault(Player.AreCompatable);
+                if (partners is null)
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                partners = new List<Player>(choices.Take(card.PartnersToAssign));
+            }
+        }
+
+        return new Turn($"{card.Tag} {card.Description}", player, partners);
+    }
 
     public Turn? DrawAction()
     {
-        CardAction? card = DrawActionCard();
-        return card is null ? null : CreateActionTurn(card);
+        Turn? result = _nextActionTurn;
+        TryPrepareNextActionTurn();
+        return result;
     }
 
     public void SetQuestions(Deck<Card> questionsDeck) => _questionsDeck = questionsDeck;
 
     public Turn? DrawQuestion()
     {
-        Card? card = _questionsDeck.DrawFor(_players.Count);
-        return card is null ? null : CreateQuestionTurn(card, _questionsDeck.Tag);
+        Player player = _players[_currentPlayerIndex];
+        return _questionsDeck.TryGetTurn(player, this);
     }
 
     public void UpdatePlayers(List<Player> players)
@@ -44,46 +86,49 @@ internal sealed class Game : Context
 
     public void SwitchPlayer() => _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.Count;
 
-    private CardAction? DrawActionCard()
+    private void TryPrepareNextActionTurn()
     {
+        int nextPlayerIndex = (_currentPlayerIndex + 1) % _players.Count;
+        Player nextPlayer = _players[nextPlayerIndex];
         while (_actionDecks.Any())
         {
-            CardAction? card = _actionDecks.First().DrawFor(_players.Count);
-            if (card is not null)
+            Deck<CardAction> deck = _actionDecks.First();
+            Turn? turn = deck.TryGetTurn(nextPlayer, this);
+            if (turn is not null)
             {
-                return card;
+                _nextActionTurn = turn;
+                return;
             }
-
             _actionDecks.RemoveAt(0);
         }
 
-        return null;
+        _nextActionTurn = null;
     }
 
-    private Turn CreateActionTurn(CardAction card)
+    private static IEnumerable<List<Player>> EnumerateSubgroups(List<Player> choices, int size)
     {
-        Player player = _players[_currentPlayerIndex];
-        List<Player> partners = new();
-
-        if (card.PartnersToAssign > 0)
+        if (choices.Count == size)
         {
-            Player[] choices = _players.Where(p => Player.AreCompatable(p, player)).ToArray();
-            _random.Shuffle(choices);
-            partners.AddRange(choices.Take(card.PartnersToAssign));
+            yield return choices;
         }
-
-        return new Turn($"{card.Tag} {card.Description}", player, partners);
+        else if (choices.Count > size)
+        {
+            for (int i = 0; i < choices.Count; i++)
+            {
+                List<Player> subset = new(choices);
+                subset.RemoveAt(i);
+                foreach (List<Player> subsetOfSubset in EnumerateSubgroups(subset, size))
+                {
+                    yield return subsetOfSubset;
+                }
+            }
+        }
     }
 
-    private Turn CreateQuestionTurn(Card card, string deckTag)
-    {
-        Player player = _players[_currentPlayerIndex];
-        return new Turn($"{deckTag} {card.Description}", player);
-    }
-
-    private readonly Random _random = new();
+    private readonly Random _random;
     private readonly IList<Deck<CardAction>> _actionDecks;
     private Deck<Card> _questionsDeck;
     private List<Player> _players = new();
     private int _currentPlayerIndex;
+    private Turn? _nextActionTurn;
 }

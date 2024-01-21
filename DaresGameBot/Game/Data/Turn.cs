@@ -25,7 +25,7 @@ internal sealed class Turn
         if (_partners is not null && (_partners.Count != 0) && (_partners.Count != (playersAmount - 1)))
         {
             string partnersPrefix = _partners.Count > 1 ? Partners : Partner;
-            string parnters = string.Join(PartnersSeparator, _partners.Select(p => p.ToString()));
+            string parnters = string.Join(PartnersSeparator, _partners.Select(p => p.Name));
             partnersPart = PartnersFormat.Format(partnersPrefix, parnters);
         }
 

@@ -13,7 +13,5 @@ internal class Card
     [SheetField(DescriptionTitle)]
     public string Description = null!;
 
-    public virtual bool IsOkayFor(int playersAmount) => true;
-
     private const string DescriptionTitle = "Текст";
 }

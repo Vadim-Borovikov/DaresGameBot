@@ -20,12 +20,16 @@ internal sealed class CardAction : Card
 
     [UsedImplicitly]
     [Required]
+    [SheetField(CompatablePartnersTitle)]
+    public bool CompatablePartners;
+
+    [UsedImplicitly]
+    [Required]
     [SheetField(TagTitle)]
     public string Tag = null!;
 
-    public override bool IsOkayFor(int playersAmount) => playersAmount >= Players;
-
     private const string PlayersTitle = "Минимум";
     private const string PartnersToAssignTitle = "Назначить";
+    private const string CompatablePartnersTitle = "Партнёры должны совмещаться друг с другом";
     private const string TagTitle = "Символ";
 }

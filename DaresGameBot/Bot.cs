@@ -76,9 +76,14 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
 
         Turn? turn = _manager!.Draw(game, action);
-        if (turn is not null)
+        if (turn is null)
         {
-            await _manager.RepotTurnAsync(chat, game, turn, replyToMessageId);
+            Contexts.Remove(chat.Id);
+            await Config.Texts.GameOver.SendAsync(this, chat);
+        }
+        else
+        {
+            await _manager!.RepotTurnAsync(chat, game, turn, replyToMessageId);
         }
     }
 
@@ -86,7 +91,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
 
-        if (game is null || !game.IsActive())
+        if (game is null || !game.IsActive)
         {
             return GetKeyboard(Config.Texts.NewGameCaption);
         }

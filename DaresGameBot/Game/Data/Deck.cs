@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace DaresGameBot.Game.Data;
 
@@ -8,30 +6,29 @@ internal sealed class Deck<T> where T : Card
 {
     public readonly string Tag;
 
-    public Deck(string tag, IReadOnlyList<T> allCards, IList<ushort> indexes)
+    public Deck(string tag, IReadOnlyList<T> allCards, List<int> indexes)
     {
         Tag = tag;
         _allCards = allCards;
         _indexes = indexes;
     }
 
-    public bool IsOkayFor(int playersAmount) => _indexes.Any(i => _allCards[i].IsOkayFor(playersAmount));
-
-    public T? DrawFor(int playersAmount)
+    public Turn? TryGetTurn(Player player, ICardChecker<T> checker)
     {
-        List<ushort> options = _indexes.Where(i => _allCards[i].IsOkayFor(playersAmount)).ToList();
-        if (options.Count == 0)
+        foreach (int i in _indexes)
         {
-            return null;
+            T card = _allCards[i];
+            Turn? turn = checker.TryGetTurn(player, card);
+            if (turn is not null)
+            {
+                _indexes.Remove(i);
+                return turn;
+            }
         }
 
-        int optionIndex = _random.Next(options.Count);
-        ushort option = options[optionIndex];
-        _indexes.Remove(option);
-        return _allCards[option];
+        return null;
     }
 
-    private readonly IList<ushort> _indexes;
+    private readonly List<int> _indexes;
     private readonly IReadOnlyList<T> _allCards;
-    private readonly Random _random = new();
 }

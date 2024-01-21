@@ -22,11 +22,24 @@ internal sealed class Player
         _compatableGroups = new HashSet<string>(compatableGroups);
     }
 
-    public override string ToString() => Name;
-
-    public static bool AreCompatable(Player p1, Player p2)
+    public static bool AreCompatable(IReadOnlyList<Player> players)
     {
-        return (p1 != p2) && p1._compatableGroups.Contains(p2._group) && p2._compatableGroups.Contains(p1._group);
+        for (int i = 0; i < players.Count; i++)
+        {
+            for (int j = i + 1; j < players.Count; j++)
+            {
+                if (!players[i].IsCompatableWith(players[j]))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public bool IsCompatableWith(Player other)
+    {
+        return (other != this) && _compatableGroups.Contains(other._group) && other._compatableGroups.Contains(_group);
     }
 
     private readonly string _group;
