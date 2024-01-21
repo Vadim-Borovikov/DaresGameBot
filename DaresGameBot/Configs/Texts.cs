@@ -33,6 +33,10 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
+    public MessageTemplateText NewGame { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
     public MessageTemplateText NewGameFormat { get; init; } = null!;
     [UsedImplicitly]
     [Required]
@@ -51,6 +55,13 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public MessageTemplateText TurnFormat { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText TurnPartnerFormat { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText TurnPartnersFormat { get; init; } = null!;
 
     [UsedImplicitly]
     [Required]
@@ -91,5 +102,5 @@ public class Texts : AbstractBot.Configs.Texts
     public MessageTemplateText UpdateChoiceChanceOperationDescriptionFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]
-    public MessageTemplateText UpdatePlayersAmountOperationDescription { get; init; } = null!;
+    public MessageTemplateText UpdatePlayersOperationDescription { get; init; } = null!;
 }

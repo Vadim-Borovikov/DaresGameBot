@@ -23,7 +23,7 @@ internal sealed class CardAction : Card
     [SheetField(TagTitle)]
     public string Tag = null!;
 
-    public override bool IsOkayFor(byte playersAmount) => playersAmount >= Players;
+    public override bool IsOkayFor(int playersAmount) => playersAmount >= Players;
 
     private const string PlayersTitle = "Минимум";
     private const string PartnersToAssignTitle = "Назначить";

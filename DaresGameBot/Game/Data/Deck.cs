@@ -15,9 +15,9 @@ internal sealed class Deck<T> where T : Card
         _indexes = indexes;
     }
 
-    public bool IsOkayFor(byte playersAmount) => _indexes.Any(i => _allCards[i].IsOkayFor(playersAmount));
+    public bool IsOkayFor(int playersAmount) => _indexes.Any(i => _allCards[i].IsOkayFor(playersAmount));
 
-    public T? DrawFor(byte playersAmount)
+    public T? DrawFor(int playersAmount)
     {
         List<ushort> options = _indexes.Where(i => _allCards[i].IsOkayFor(playersAmount)).ToList();
         if (options.Count == 0)

@@ -6,19 +6,22 @@ internal sealed class Partner : IComparable<Partner>
 {
     public static string Choosable = "";
 
-    public Partner(byte? partnerNumber = null) => _number = partnerNumber;
+    public Partner(Player? player = null) => _player = player;
 
     public int CompareTo(Partner? other)
     {
-        if (other?._number is null)
+        if (_player is null && other?._player is not null)
         {
-            return _number.HasValue ? -1 : 0;
+            return 1;
         }
-
-        return _number?.CompareTo(other._number.Value) ?? 1;
+        if (_player is not null && other?._player is null)
+        {
+            return -1;
+        }
+        return 0;
     }
 
-    public override string ToString() => _number?.ToString() ?? Choosable;
+    public override string ToString() => _player?.Name ?? Choosable;
 
-    private readonly byte? _number;
+    private readonly Player? _player;
 }

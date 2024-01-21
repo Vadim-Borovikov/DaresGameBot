@@ -15,11 +15,6 @@ public class Config : ConfigWithSheets<Texts>
 
     [UsedImplicitly]
     [Required]
-    [Range(2, byte.MaxValue)]
-    public byte InitialPlayersAmount { get; init; }
-
-    [UsedImplicitly]
-    [Required]
     [Range(0.0, 1.0)]
     public decimal InitialChoiceChance { get; init; }
 

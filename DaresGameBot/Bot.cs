@@ -23,13 +23,15 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Operations.Add(new NewCommand(this));
         Operations.Add(new DrawActionCommand(this));
         Operations.Add(new DrawQuestionCommand(this));
-        Operations.Add(new UpdatePlayersAmountOperation(this));
+        Operations.Add(new UpdatePlayersOperation(this));
         Operations.Add(new UpdateChoiceChanceOperation(this));
 
         Help.SetArgs(Config.Texts.Choosable);
         Partner.Choosable = Config.Texts.Choosable;
 
-        Turn.TurnFormat = Config.Texts.TurnFormat;
+        Turn.Format = Config.Texts.TurnFormat;
+        Turn.PartnerFormat = Config.Texts.TurnPartnerFormat;
+        Turn.PartnersFormat = Config.Texts.TurnPartnersFormat;
         Turn.Partner = Config.Texts.Partner;
         Turn.Partners = Config.Texts.Partners;
         Turn.PartnersSeparator = Config.Texts.PartnersSeparator;
@@ -59,35 +61,38 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
     }
 
-    internal async Task<Game.Data.Game> StartNewGameAsync(Chat chat)
+    internal async Task UpdatePlayersAsync(Chat chat, IEnumerable<string> playerNames)
     {
-        Game.Data.Game game = _manager!.StartNewGame();
-        Contexts[chat.Id] = game;
-        await _manager.RepotNewGameAsync(chat, game);
-        return game;
-    }
-
-    internal async Task UpdatePlayersAmountAsync(Chat chat, byte playersAmount)
-    {
-        Game.Data.Game game = await GetOrAddGameAsync(chat);
-        await _manager!.UpdatePlayersAmountAsync(chat, game, playersAmount);
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
+        if (game is null)
+        {
+            Contexts[chat.Id] = await StartNewGameAsync(chat, playerNames);
+            return;
+        }
+        await _manager!.UpdatePlayersAsync(chat, game, playerNames);
     }
 
     internal async Task UpdateChoiceChanceAsync(Chat chat, decimal choiceChance)
     {
-        Game.Data.Game game = await GetOrAddGameAsync(chat);
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
+        if (game is null)
+        {
+            return;
+        }
+
         await _manager!.UpdateChoiceChanceAsync(chat, game, choiceChance);
     }
 
     internal async Task DrawAsync(Chat chat, int replyToMessageId, bool action = true)
     {
-        Game.Data.Game game = await GetOrAddGameAsync(chat);
-        Turn? turn = _manager!.Draw(game, action);
-        if (turn is null)
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
+        if (game is null)
         {
-            await StartNewGameAsync(chat);
+            return;
         }
-        else
+
+        Turn? turn = _manager!.Draw(game, action);
+        if (turn is not null)
         {
             await _manager.RepotTurnAsync(chat, game, turn, replyToMessageId);
         }
@@ -101,14 +106,17 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             : GetKeyboard(Config.Texts.NewGameCaption);
     }
 
+    private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, IEnumerable<string> playerNames)
+    {
+        Game.Data.Game game = _manager!.StartNewGame(playerNames);
+        Contexts[chat.Id] = game;
+        await _manager.RepotNewGameAsync(chat, game);
+        return game;
+    }
+
     private static ReplyKeyboardMarkup GetKeyboard(params string[] buttonCaptions)
     {
         return new ReplyKeyboardMarkup(buttonCaptions.Select(c => new KeyboardButton(c)));
-    }
-
-    private async Task<Game.Data.Game> GetOrAddGameAsync(Chat chat)
-    {
-        return TryGetContext<Game.Data.Game>(chat.Id) ?? await StartNewGameAsync(chat);
     }
 
     private Game.Manager? _manager;

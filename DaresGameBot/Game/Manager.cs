@@ -18,19 +18,19 @@ internal sealed class Manager
         _questions = questions;
     }
 
-    public Data.Game StartNewGame(byte? playersAmount = null, decimal? choiceChance = null)
+    public Data.Game StartNewGame(IEnumerable<string> playerNames, decimal? choiceChance = null)
     {
         IList<Deck<CardAction>> actionDecks = GetActionDecks();
         Deck<Card> questionsDeck = CreateQuestionsDeck();
 
-        byte players = playersAmount ?? _bot.Config.InitialPlayersAmount;
         decimal chance = choiceChance ?? _bot.Config.InitialChoiceChance;
-        return new Data.Game(players, chance, actionDecks, questionsDeck);
+        return new Data.Game(playerNames, chance, actionDecks, questionsDeck);
     }
 
     public Task RepotNewGameAsync(Chat chat, Data.Game game)
     {
-        MessageTemplateText playersText = _bot.Config.Texts.PlayersFormat.Format(game.PlayersAmount);
+        MessageTemplateText playersText =
+            _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
         MessageTemplateText startText =
             _bot.Config.Texts.NewGameFormat.Format(playersText, GetChanceText(game.ChoiceChance));
         return startText.SendAsync(_bot, chat);
@@ -62,11 +62,12 @@ internal sealed class Manager
         return new Deck<Card>(_bot.Config.Texts.QuestionsTag, cards, indexes);
     }
 
-    public Task UpdatePlayersAmountAsync(Chat chat, Data.Game game, byte playersAmount)
+    public Task UpdatePlayersAsync(Chat chat, Data.Game game, IEnumerable<string> playerNames)
     {
-        game.PlayersAmount = playersAmount;
+        game.UpdatePlayers(playerNames);
 
-        MessageTemplateText playersText = _bot.Config.Texts.PlayersFormat.Format(game.PlayersAmount);
+        MessageTemplateText playersText =
+            _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
         MessageTemplateText messageText = _bot.Config.Texts.AcceptedFormat.Format(playersText);
         return messageText.SendAsync(_bot, chat);
     }
@@ -102,7 +103,7 @@ internal sealed class Manager
 
     public async Task RepotTurnAsync(Chat chat, Data.Game game, Turn turn, int replyToMessageId)
     {
-        MessageTemplateText message = turn.GetMessage(game.PlayersAmount);
+        MessageTemplateText message = turn.GetMessage(game.PlayerNames.Count());
         message.ReplyToMessageId = replyToMessageId;
         await message.SendAsync(_bot, chat);
         if (!game.IsActive())
@@ -120,4 +121,6 @@ internal sealed class Manager
     private readonly Bot _bot;
     private readonly List<CardAction> _actions;
     private readonly List<Card> _questions;
+
+    private const string PlayerSeparator = ", ";
 }
