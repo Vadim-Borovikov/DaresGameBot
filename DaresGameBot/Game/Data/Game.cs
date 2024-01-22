@@ -64,7 +64,7 @@ internal sealed class Game : Context
 
     private Turn TryCreateQuestionTurn(Player player, Card card)
     {
-        return new Turn($"{_questionsDeck.Tag} {card.Description}", player);
+        return new Turn(_questionsDeck.Tag, card.Description, player);
     }
 
     private Turn? TryCreateActionTurn(Player player, CardAction card)
@@ -118,7 +118,7 @@ internal sealed class Game : Context
             partners = null;
         }
 
-        return new Turn($"{card.Tag} {card.Description}", player, partners, helpers);
+        return new Turn(card.Tag, card.Description, player, partners, helpers);
     }
 
     private void TryPrepareNextActionTurn()

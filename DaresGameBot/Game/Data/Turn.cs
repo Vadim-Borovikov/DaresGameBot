@@ -14,9 +14,10 @@ internal sealed class Turn
     public static string Helpers = "";
     public static string PartnersSeparator = "";
 
-    public Turn(string text, Player player, List<Player>? partners = null, List<Player>? helpers = null)
+    public Turn(string tag, string descriprion, Player player, List<Player>? partners = null, List<Player>? helpers = null)
     {
-        _messagePart = new MessageTemplateText(text);
+        _tagPart = new MessageTemplateText(tag);
+        _descriprionPart = new MessageTemplateText(descriprion);
         _player = player;
         _partners = partners;
         _helpers = helpers;
@@ -40,10 +41,11 @@ internal sealed class Turn
             helpersPart = PartnersFormat.Format(helpersPrefix, helpers);
         }
 
-        return Format.Format(_player.Name, _messagePart, partnersPart, helpersPart);
+        return Format.Format(_player.Name, _tagPart, _descriprionPart, partnersPart, helpersPart);
     }
 
-    private readonly MessageTemplateText _messagePart;
+    private readonly MessageTemplateText _tagPart;
+    private readonly MessageTemplateText _descriprionPart;
     private readonly Player _player;
     private readonly List<Player>? _partners;
     private readonly List<Player>? _helpers;
