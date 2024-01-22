@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace DaresGameBot.Game.Data;
@@ -13,12 +14,12 @@ internal sealed class Deck<T> where T : Card
         _indices = indices;
     }
 
-    public Turn? TryGetTurn(Player player, ICardChecker<T> checker)
+    public Turn? TryGetTurn(Player player, Func<Player, T, Turn?> creator)
     {
         foreach (int i in _indices)
         {
             T card = _allCards[i];
-            Turn? turn = checker.TryGetTurn(player, card);
+            Turn? turn = creator(player, card);
             if (turn is not null)
             {
                 _indices.Remove(i);

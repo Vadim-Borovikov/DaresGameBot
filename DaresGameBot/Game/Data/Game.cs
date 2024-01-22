@@ -5,15 +5,14 @@ using AbstractBot;
 
 namespace DaresGameBot.Game.Data;
 
-internal sealed class Game : Context, ICardChecker<Card>, ICardChecker<CardAction>
+internal sealed class Game : Context
 {
     public IEnumerable<string> PlayerNames => _players.Select(p => p.Name);
     public bool Fresh;
 
     public bool IsActive => _nextActionTurn is not null;
 
-    public Game(List<Player> players, IList<Deck<CardAction>> actionDecks,
-        Deck<Card> questionsDeck, Random random)
+    public Game(List<Player> players, IList<Deck<CardAction>> actionDecks, Deck<Card> questionsDeck, Random random)
     {
         Fresh = true;
         _actionDecks = actionDecks;
@@ -25,9 +24,50 @@ internal sealed class Game : Context, ICardChecker<Card>, ICardChecker<CardActio
         TryPrepareNextActionTurn();
     }
 
-    public Turn TryGetTurn(Player player, Card card) => new($"{_questionsDeck.Tag} {card.Description}", player);
+    public Turn? Draw(Func<Deck<Card>> questionsDeckCreator, bool action = true)
+    {
+        if (action)
+        {
+            if (!Fresh)
+            {
+                _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.Count;
+            }
 
-    public Turn? TryGetTurn(Player player, CardAction card)
+            Fresh = false;
+            Turn? result = _nextActionTurn;
+            TryPrepareNextActionTurn();
+            return result;
+        }
+
+        Turn? turn = DrawQuestion();
+        if (turn is null)
+        {
+            _questionsDeck = questionsDeckCreator();
+            turn = DrawQuestion()!;
+        }
+
+        Fresh = false;
+        return turn;
+    }
+
+    public void UpdatePlayers(List<Player> players)
+    {
+        _players = players;
+        _currentPlayerIndex = 0;
+    }
+
+    private Turn? DrawQuestion()
+    {
+        Player player = _players[_currentPlayerIndex];
+        return _questionsDeck.TryGetTurn(player, TryCreateQuestionTurn);
+    }
+
+    private Turn TryCreateQuestionTurn(Player player, Card card)
+    {
+        return new Turn($"{_questionsDeck.Tag} {card.Description}", player);
+    }
+
+    private Turn? TryCreateActionTurn(Player player, CardAction card)
     {
         if (_players.Count < card.Players)
         {
@@ -63,29 +103,6 @@ internal sealed class Game : Context, ICardChecker<Card>, ICardChecker<CardActio
         return new Turn($"{card.Tag} {card.Description}", player, partners);
     }
 
-    public Turn? DrawAction()
-    {
-        Turn? result = _nextActionTurn;
-        TryPrepareNextActionTurn();
-        return result;
-    }
-
-    public void SetQuestions(Deck<Card> questionsDeck) => _questionsDeck = questionsDeck;
-
-    public Turn? DrawQuestion()
-    {
-        Player player = _players[_currentPlayerIndex];
-        return _questionsDeck.TryGetTurn(player, this);
-    }
-
-    public void UpdatePlayers(List<Player> players)
-    {
-        _players = players;
-        _currentPlayerIndex = 0;
-    }
-
-    public void SwitchPlayer() => _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.Count;
-
     private void TryPrepareNextActionTurn()
     {
         int nextPlayerIndex = Fresh ? 0 : (_currentPlayerIndex + 1) % _players.Count;
@@ -93,7 +110,7 @@ internal sealed class Game : Context, ICardChecker<Card>, ICardChecker<CardActio
         while (_actionDecks.Any())
         {
             Deck<CardAction> deck = _actionDecks.First();
-            Turn? turn = deck.TryGetTurn(nextPlayer, this);
+            Turn? turn = deck.TryGetTurn(nextPlayer, TryCreateActionTurn);
             if (turn is not null)
             {
                 _nextActionTurn = turn;

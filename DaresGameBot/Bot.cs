@@ -75,7 +75,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             return;
         }
 
-        Turn? turn = _manager!.Draw(game, action);
+        Turn? turn = game.Draw(_manager!.CreateQuestionsDeck, action);
         if (turn is null)
         {
             Contexts.Remove(chat.Id);
