@@ -75,11 +75,10 @@ internal sealed class Game : Context
         }
 
         List<Player>? partners = null;
-
-        if (card.PartnersToAssign > 0)
+        if (card.Partners > 0)
         {
             Player[] choices = _players.Where(p => p.IsCompatableWith(player)).ToArray();
-            if (choices.Length < card.PartnersToAssign)
+            if (choices.Length < card.Partners)
             {
                 return null;
             }
@@ -88,7 +87,7 @@ internal sealed class Game : Context
             if (card.CompatablePartners)
             {
                 partners =
-                    EnumerateSubgroups(choices.ToList(), card.PartnersToAssign).FirstOrDefault(Player.AreCompatable);
+                    EnumerateSubgroups(choices.ToList(), card.Partners).FirstOrDefault(Player.AreCompatable);
                 if (partners is null)
                 {
                     return null;
@@ -96,11 +95,25 @@ internal sealed class Game : Context
             }
             else
             {
-                partners = new List<Player>(choices.Take(card.PartnersToAssign));
+                partners = new List<Player>(choices.Take(card.Partners));
             }
         }
 
-        return new Turn($"{card.Tag} {card.Description}", player, partners);
+        List<Player>? helpers = null;
+        if (card.Helpers > 0)
+        {
+            Player[] choices =
+                _players.Where(p => (p != player) && (partners is null || !partners.Contains(p))).ToArray();
+            if (choices.Length < card.Helpers)
+            {
+                return null;
+            }
+
+            _random.Shuffle(choices);
+            helpers = new List<Player>(choices.Take(card.Helpers));
+        }
+
+        return new Turn($"{card.Tag} {card.Description}", player, partners, helpers);
     }
 
     private void TryPrepareNextActionTurn()

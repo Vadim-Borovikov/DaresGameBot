@@ -29,6 +29,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Turn.PartnersFormat = Config.Texts.TurnPartnersFormat;
         Turn.Partner = Config.Texts.Partner;
         Turn.Partners = Config.Texts.Partners;
+        Turn.Helper = Config.Texts.Helper;
+        Turn.Helpers = Config.Texts.Helpers;
         Turn.PartnersSeparator = Config.Texts.PartnersSeparator;
     }
 

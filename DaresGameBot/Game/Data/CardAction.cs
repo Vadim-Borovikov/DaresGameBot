@@ -15,8 +15,13 @@ internal sealed class CardAction : Card
 
     [UsedImplicitly]
     [Required]
-    [SheetField(PartnersToAssignTitle)]
-    public byte PartnersToAssign;
+    [SheetField(PartnersTitle)]
+    public byte Partners;
+
+    [UsedImplicitly]
+    [Required]
+    [SheetField(HelpersTitle)]
+    public byte Helpers;
 
     [UsedImplicitly]
     [Required]
@@ -29,7 +34,8 @@ internal sealed class CardAction : Card
     public string Tag = null!;
 
     private const string PlayersTitle = "Минимум";
-    private const string PartnersToAssignTitle = "Назначить";
+    private const string PartnersTitle = "Партнёры";
+    private const string HelpersTitle = "Помощники";
     private const string CompatablePartnersTitle = "Партнёры должны совмещаться друг с другом";
     private const string TagTitle = "Символ";
 }

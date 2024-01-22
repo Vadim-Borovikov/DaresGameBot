@@ -59,6 +59,16 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string Partners { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string Helper { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string Helpers { get; init; } = null!;
+
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
