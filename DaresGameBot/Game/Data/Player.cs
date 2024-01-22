@@ -45,6 +45,6 @@ internal sealed class Player
     private readonly string _group;
     private readonly HashSet<string> _compatableGroups;
 
-    private const string PartsSeparator = ";";
-    private const string GroupsSeparator = ",";
+    private const string PartsSeparator = ",";
+    private const string GroupsSeparator = "+";
 }
