@@ -113,6 +113,11 @@ internal sealed class Game : Context
             helpers = new List<Player>(choices.Take(card.Helpers));
         }
 
+        if (!card.AssignPartners)
+        {
+            partners = null;
+        }
+
         return new Turn($"{card.Tag} {card.Description}", player, partners, helpers);
     }
 
