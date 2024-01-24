@@ -10,11 +10,6 @@ internal sealed class CardAction : Card
 {
     [UsedImplicitly]
     [Required]
-    [SheetField(PlayersTitle)]
-    public byte Players;
-
-    [UsedImplicitly]
-    [Required]
     [SheetField(PartnersTitle)]
     public byte Partners;
 
@@ -38,7 +33,6 @@ internal sealed class CardAction : Card
     [SheetField(TagTitle)]
     public string Tag = null!;
 
-    private const string PlayersTitle = "Минимум";
     private const string PartnersTitle = "Партнёры";
     private const string AssignPartnersTitle = "Партнёров назначает бот";
     private const string CompatablePartnersTitle = "Партнёры должны совмещаться друг с другом";

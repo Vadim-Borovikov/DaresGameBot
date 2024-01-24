@@ -69,11 +69,6 @@ internal sealed class Game : Context
 
     private Turn? TryCreateActionTurn(Player player, CardAction card)
     {
-        if (_players.Count < card.Players)
-        {
-            return null;
-        }
-
         List<Player>? partners = null;
         if (card.Partners > 0)
         {
