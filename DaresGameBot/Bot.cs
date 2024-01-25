@@ -94,15 +94,15 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             return;
         }
 
-        Turn? turn = game.Draw(_manager!.CreateQuestionsDeck, action);
-        if (turn is null)
+        Turn turn = game.Draw(_manager!.CreateQuestionsDeck, action);
+        if (game.IsActive)
         {
-            Contexts.Remove(chat.Id);
-            await Config.Texts.GameOver.SendAsync(this, chat);
+            await _manager!.RepotTurnAsync(chat, game, turn, replyToMessageId);
         }
         else
         {
-            await _manager!.RepotTurnAsync(chat, game, turn, replyToMessageId);
+            Contexts.Remove(chat.Id);
+            await Config.Texts.GameOver.SendAsync(this, chat);
         }
     }
 

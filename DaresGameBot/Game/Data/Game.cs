@@ -24,7 +24,7 @@ internal sealed class Game : Context
         TryPrepareNextActionTurn();
     }
 
-    public Turn? Draw(Func<Deck<Card>> questionsDeckCreator, bool action = true)
+    public Turn Draw(Func<Deck<Card>> questionsDeckCreator, bool action = true)
     {
         if (action)
         {
@@ -36,7 +36,7 @@ internal sealed class Game : Context
             Fresh = false;
             Turn? result = _nextActionTurn;
             TryPrepareNextActionTurn();
-            return result;
+            return result!;
         }
 
         Turn? turn = DrawQuestion();
