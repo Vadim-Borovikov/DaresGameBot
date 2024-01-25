@@ -13,6 +13,7 @@ using DaresGameBot.Configs;
 using DaresGameBot.Game.Data;
 using System.Collections.Generic;
 using Telegram.Bot.Types.Enums;
+using AbstractBot.Configs.MessageTemplates;
 
 namespace DaresGameBot;
 
@@ -77,11 +78,19 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         await _manager!.UpdatePlayersAsync(chat, game, players);
     }
 
+    internal Task OnNewGameAsync(Chat chat)
+    {
+        MessageTemplateText message = Config.Texts.NewGame;
+        message.KeyboardProvider = KeyboardProvider.Remove;
+        return message.SendAsync(this, chat);
+    }
+
     internal async Task DrawAsync(Chat chat, int replyToMessageId, bool action = true)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
         if (game is null)
         {
+            await OnNewGameAsync(chat);
             return;
         }
 
