@@ -7,7 +7,7 @@ namespace DaresGameBot.Operations.Commands;
 
 internal sealed class NewCommand : DaresGameCommand
 {
-    protected override byte Order => 2;
+    protected override byte Order => 3;
 
     protected override string Alias => _bot.Config.Texts.NewGameCaption;
 

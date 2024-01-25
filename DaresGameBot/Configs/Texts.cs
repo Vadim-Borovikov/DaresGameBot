@@ -101,4 +101,9 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public MessageTemplateText UpdatePlayersOperationDescription { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string UpdateCommandDescription { get; init; } = null!;
 }

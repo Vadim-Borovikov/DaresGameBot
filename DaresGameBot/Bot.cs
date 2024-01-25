@@ -20,6 +20,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 {
     public Bot(Config config) : base(config)
     {
+        Operations.Add(new UpdateCommand(this));
         Operations.Add(new NewCommand(this));
         Operations.Add(new DrawActionCommand(this));
         Operations.Add(new DrawQuestionCommand(this));
@@ -32,6 +33,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Turn.Helper = Config.Texts.Helper;
         Turn.Helpers = Config.Texts.Helpers;
         Turn.PartnersSeparator = Config.Texts.PartnersSeparator;
+
+        GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
+
+        _actionsSheet = document.GetOrAddSheet(Config.Texts.ActionsTitle);
+        _questionsSheet = document.GetOrAddSheet(Config.Texts.QuestionsTitle);
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -44,18 +50,20 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             Type = ChatType.Private
         };
 
+        await UpdateDecksAsync(chat);
+    }
+
+    internal async Task UpdateDecksAsync(Chat chat)
+    {
         await using (await StatusMessage.CreateAsync(this, chat, Config.Texts.ReadingDecks))
         {
-            GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
-
-            Sheet actionsSheet = document.GetOrAddSheet(Config.Texts.ActionsTitle);
-            Sheet questionsSheet = document.GetOrAddSheet(Config.Texts.QuestionsTitle);
-
-            List<CardAction> actions = await actionsSheet.LoadAsync<CardAction>(Config.ActionsRange);
-            List<Card> questions = await questionsSheet.LoadAsync<Card>(Config.QuestionsRange);
+            List<CardAction> actions = await _actionsSheet.LoadAsync<CardAction>(Config.ActionsRange);
+            List<Card> questions = await _questionsSheet.LoadAsync<Card>(Config.QuestionsRange);
 
             _manager = new Game.Manager(this, actions, questions);
         }
+
+        Contexts.Remove(chat.Id);
     }
 
     internal async Task UpdatePlayersAsync(Chat chat, List<Player> players)
@@ -120,4 +128,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     }
 
     private Game.Manager? _manager;
+    private readonly Sheet _actionsSheet;
+    private readonly Sheet _questionsSheet;
 }

@@ -5,7 +5,7 @@ namespace DaresGameBot.Operations.Commands;
 
 internal sealed class DrawQuestionCommand : DaresGameCommand
 {
-    protected override byte Order => 4;
+    protected override byte Order => 5;
 
     protected override string Alias => _bot.Config.Texts.DrawQuestionCaption;
 
