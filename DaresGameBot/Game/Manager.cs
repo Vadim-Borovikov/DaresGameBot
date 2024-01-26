@@ -22,7 +22,7 @@ internal sealed class Manager
     {
         IList<Deck<CardAction>> actionDecks = GetActionDecks();
         Deck<Card> questionsDeck = CreateQuestionsDeck();
-        return new Data.Game(players, actionDecks, questionsDeck, _random);
+        return new Data.Game(_bot.Config, players, actionDecks, questionsDeck, _random);
     }
 
     public Task RepotNewGameAsync(Chat chat, Data.Game game)
@@ -52,7 +52,7 @@ internal sealed class Manager
 
     public async Task RepotTurnAsync(Chat chat, Data.Game game, Turn turn, int replyToMessageId)
     {
-        MessageTemplateText message = turn.GetMessage(game.PlayerNames.Count());
+        MessageTemplate message = turn.GetMessage(game.PlayerNames.Count());
         message.ReplyToMessageId = replyToMessageId;
         await message.SendAsync(_bot, chat);
     }

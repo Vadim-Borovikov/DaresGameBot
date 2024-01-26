@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using AbstractBot;
+using DaresGameBot.Configs;
 
 namespace DaresGameBot.Game.Data;
 
@@ -12,9 +13,11 @@ internal sealed class Game : Context
 
     public bool IsActive => _nextActionTurn is not null;
 
-    public Game(List<Player> players, IList<Deck<CardAction>> actionDecks, Deck<Card> questionsDeck, Random random)
+    public Game(Config config, List<Player> players, IList<Deck<CardAction>> actionDecks, Deck<Card> questionsDeck,
+        Random random)
     {
         Fresh = true;
+        _config = config;
         _actionDecks = actionDecks;
         _questionsDeck = questionsDeck;
         _random = random;
@@ -64,7 +67,7 @@ internal sealed class Game : Context
 
     private Turn TryCreateQuestionTurn(Player player, Card card)
     {
-        return new Turn(_questionsDeck.Tag, card.Description, player);
+        return new Turn(_config, _questionsDeck.Tag, card.Description, player);
     }
 
     private Turn? TryCreateActionTurn(Player player, CardAction card)
@@ -113,7 +116,7 @@ internal sealed class Game : Context
             partners = null;
         }
 
-        return new Turn(card.Tag, card.Description, player, partners, helpers);
+        return new Turn(_config, card.Tag, card.Description, player, card.ImagePath, partners, helpers);
     }
 
     private void TryPrepareNextActionTurn()
@@ -156,6 +159,7 @@ internal sealed class Game : Context
     }
 
     private readonly Random _random;
+    private readonly Config _config;
     private readonly IList<Deck<CardAction>> _actionDecks;
     private Deck<Card> _questionsDeck;
     private List<Player> _players = new();

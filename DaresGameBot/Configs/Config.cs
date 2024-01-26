@@ -31,4 +31,9 @@ public class Config : ConfigWithSheets<Texts>
     [UsedImplicitly]
     [Required]
     public long LogsChatId { get; init; }
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string ImagesFolder { get; init; } = null!;
 }

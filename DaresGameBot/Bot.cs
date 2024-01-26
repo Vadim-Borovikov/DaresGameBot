@@ -27,14 +27,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Operations.Add(new DrawQuestionCommand(this));
         Operations.Add(new UpdatePlayersOperation(this));
 
-        Turn.Format = Config.Texts.TurnFormat;
-        Turn.PartnersFormat = Config.Texts.TurnPartnersFormat;
-        Turn.Partner = Config.Texts.Partner;
-        Turn.Partners = Config.Texts.Partners;
-        Turn.Helper = Config.Texts.Helper;
-        Turn.Helpers = Config.Texts.Helpers;
-        Turn.PartnersSeparator = Config.Texts.PartnersSeparator;
-
         GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
 
         _actionsSheet = document.GetOrAddSheet(Config.Texts.ActionsTitle);

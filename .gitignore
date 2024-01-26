@@ -366,4 +366,5 @@ FodyWeavers.xsd
 /DaresGameBot.Web/.config/dotnet-tools.json
 /DaresGameBot.Web/Properties/ServiceDependencies/Dares-Game-Bot - Web Deploy/profile.arm.json
 /DaresGameBot.Web/Properties/launchSettings.json
+/DaresGameBot.Web/Images/*
 /NuGet.Config

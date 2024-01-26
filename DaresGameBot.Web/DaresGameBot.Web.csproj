@@ -16,5 +16,11 @@
     <ProjectReference Include="..\DaresGameBot\DaresGameBot.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Images\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 
 </Project>

@@ -14,6 +14,10 @@ internal sealed class CardAction : Card
     public byte Partners;
 
     [UsedImplicitly]
+    [SheetField(ImageTitle)]
+    public string? ImagePath;
+
+    [UsedImplicitly]
     [Required]
     [SheetField(AssignPartnersTitle)]
     public bool AssignPartners;
@@ -33,6 +37,7 @@ internal sealed class CardAction : Card
     [SheetField(TagTitle)]
     public string Tag = null!;
 
+    private const string ImageTitle = "Картинка";
     private const string PartnersTitle = "Партнёры";
     private const string AssignPartnersTitle = "Партнёров назначает бот";
     private const string CompatablePartnersTitle = "Партнёры должны совмещаться друг с другом";
