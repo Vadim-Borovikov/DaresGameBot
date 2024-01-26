@@ -20,11 +20,6 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string PercentFormat { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
     public MessageTemplateText PlayersFormat { get; init; } = null!;
     [UsedImplicitly]
     [Required]
@@ -95,9 +90,6 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     public MessageTemplateText GameOver { get; init; } = null!;
 
-    [Required]
-    [MinLength(1)]
-    public MessageTemplateText UpdateChoiceChanceOperationDescriptionFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]
     public MessageTemplateText UpdatePlayersOperationDescription { get; init; } = null!;
