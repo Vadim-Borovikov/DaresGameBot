@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using System.ComponentModel.DataAnnotations;
 using AbstractBot.Configs.MessageTemplates;
@@ -42,7 +41,7 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public List<string> TurnFormatLinesMarkdownV2 { get; init; } = null!;
+    public MessageTemplateText TurnFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]
     public MessageTemplateText TurnPartnersFormat { get; init; } = null!;

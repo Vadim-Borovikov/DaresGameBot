@@ -38,24 +38,14 @@ internal sealed class Turn
             helpersPart = _config.Texts.TurnPartnersFormat.Format(helpersPrefix, helpers);
         }
 
-        if (string.IsNullOrWhiteSpace(_imagePath))
+        MessageTemplate message = _config.Texts.TurnFormat;
+        if (!string.IsNullOrWhiteSpace(_imagePath))
         {
-            MessageTemplateText messageTemplateText = new()
-            {
-                Text = _config.Texts.TurnFormatLinesMarkdownV2,
-                MarkdownV2 = true
-            };
-            return messageTemplateText.Format(_player.Name, _tagPart, _descriprionPart, partnersPart, helpersPart);
+            string path = Path.Combine(_config.ImagesFolder, _imagePath);
+            message = new MessageTemplateImage(message, path);
         }
 
-        MessageTemplateImage messageTemplateImage = new()
-        {
-            Text = _config.Texts.TurnFormatLinesMarkdownV2,
-            MarkdownV2 = true,
-            ImagePath = Path.Combine(_config.ImagesFolder, _imagePath)
-        };
-
-        return messageTemplateImage.Format(_player.Name, _tagPart, _descriprionPart, partnersPart, helpersPart);
+        return message.Format(_player.Name, _tagPart, _descriprionPart, partnersPart, helpersPart);
     }
 
     private readonly MessageTemplateText _tagPart;
