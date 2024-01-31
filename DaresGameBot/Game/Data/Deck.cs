@@ -14,12 +14,12 @@ internal sealed class Deck<T> where T : Card
         _indices = indices;
     }
 
-    public Turn? TryGetTurn(Player player, Func<Player, T, Turn?> creator)
+    public Turn? TryGetTurn(Func<T, Turn?> creator)
     {
         foreach (int i in _indices)
         {
             T card = _allCards[i];
-            Turn? turn = creator(player, card);
+            Turn? turn = creator(card);
             if (turn is not null)
             {
                 _indices.Remove(i);
