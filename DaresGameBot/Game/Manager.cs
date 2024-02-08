@@ -36,8 +36,9 @@ internal sealed class Manager
     public Deck<Card> CreateQuestionsDeck()
     {
         ReadOnlyCollection<Card> cards = _questions.AsReadOnly();
-        List<int> indices = Enumerable.Range(0, cards.Count).ToList();
-        return new Deck<Card>(_bot.Config.Texts.QuestionsTag, cards, indices);
+        int[] indices = Enumerable.Range(0, cards.Count).ToArray();
+        _random.Shuffle(indices);
+        return new Deck<Card>(_bot.Config.Texts.QuestionsTag, cards, indices.ToList());
     }
 
     public Task UpdatePlayersAsync(Chat chat, Data.Game game, List<Player> players)

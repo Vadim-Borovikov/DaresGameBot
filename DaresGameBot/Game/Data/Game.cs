@@ -59,16 +59,9 @@ internal sealed class Game : Context
         _currentPlayerIndex = 0;
     }
 
-    private Turn? DrawQuestion()
-    {
-        Player player = _players[_currentPlayerIndex];
-        return _questionsDeck.TryGetTurn(player, TryCreateQuestionTurn);
-    }
+    private Turn? DrawQuestion() => _questionsDeck.TryGetTurn(TryCreateQuestionTurn);
 
-    private Turn TryCreateQuestionTurn(Player player, Card card)
-    {
-        return new Turn(_config, _questionsDeck.Tag, card.Description, player);
-    }
+    private Turn TryCreateQuestionTurn(Card card) => new(_config, _questionsDeck.Tag, card.Description);
 
     private Turn? TryCreateActionTurn(Player player, CardAction card)
     {
@@ -126,7 +119,7 @@ internal sealed class Game : Context
         while (_actionDecks.Any())
         {
             Deck<CardAction> deck = _actionDecks.First();
-            Turn? turn = deck.TryGetTurn(nextPlayer, TryCreateActionTurn);
+            Turn? turn = deck.TryGetTurn(c => TryCreateActionTurn(nextPlayer, c));
             if (turn is not null)
             {
                 _nextActionTurn = turn;

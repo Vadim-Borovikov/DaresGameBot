@@ -8,7 +8,7 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class Turn
 {
-    public Turn(Config config, string tag, string descriprion, Player player, string? imagePath = null,
+    public Turn(Config config, string tag, string descriprion, Player? player = null, string? imagePath = null,
         List<Player>? partners = null, List<Player>? helpers = null)
     {
         _tagPart = new MessageTemplateText(tag);
@@ -45,13 +45,13 @@ internal sealed class Turn
             message = new MessageTemplateImage(message, path);
         }
 
-        return message.Format(_player.Name, _tagPart, _descriprionPart, partnersPart, helpersPart);
+        return message.Format(_player?.Name, _tagPart, _descriprionPart, partnersPart, helpersPart);
     }
 
     private readonly MessageTemplateText _tagPart;
     private readonly MessageTemplateText _descriprionPart;
     private readonly Config _config;
-    private readonly Player _player;
+    private readonly Player? _player;
     private readonly string? _imagePath;
     private readonly List<Player>? _partners;
     private readonly List<Player>? _helpers;
