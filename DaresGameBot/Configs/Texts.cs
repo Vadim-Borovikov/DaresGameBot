@@ -43,6 +43,10 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public MessageTemplateText TurnFormat { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText TurnDescriptionRuEnFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]
     public MessageTemplateText TurnPartnersFormat { get; init; } = null!;
@@ -107,5 +111,18 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
+    public string LangCommandDescription { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
     public List<string> NoMatchesInDeckLines { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText LangToggledToRu { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText LangToggledToRuEn { get; init; } = null!;
 }

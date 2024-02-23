@@ -22,6 +22,7 @@ internal sealed class Game : Context
     public readonly CompanionsSelector CompanionsSelector;
 
     public ActionDecksStatus Status { get; private set; }
+    public bool IncludeEn { get; private set; }
 
     public IEnumerable<string> PlayerNames => _players.EnumerateNames();
 
@@ -74,8 +75,8 @@ internal sealed class Game : Context
                 CompanionsSelector.Matchmaker.RegisterActions(companions.Player, companions.Partners,
                     action.CompatablePartners);
             }
-            return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, null, action.Description, companions,
-                action.ImagePath);
+            return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, null, action.Description,
+                action.DescriptionEn, companions, action.ImagePath);
         }
 
         _actionDecks.Dequeue();
@@ -90,7 +91,7 @@ internal sealed class Game : Context
         string? prefix = forPlayerWithNoMatches ? Text.JoinLines(_config.Texts.NoMatchesInDeckLines) : null;
         CompanionsInfo? companions = forPlayerWithNoMatches ? new CompanionsInfo(_players.Current, null, null) : null;
         return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, prefix, question.Description,
-            companions);
+            question.DescriptionEn, companions);
     }
 
     public void UpdatePlayers(IEnumerable<Player> players)
@@ -98,6 +99,8 @@ internal sealed class Game : Context
         _players = new PlayerRepository(players);
         _shouldUpdatePossibilities = true;
     }
+
+    public void ToggleLanguages() => IncludeEn = !IncludeEn;
 
     private readonly Config _config;
     private readonly Queue<ActionDeck> _actionDecks;

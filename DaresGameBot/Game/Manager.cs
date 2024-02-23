@@ -58,7 +58,7 @@ internal sealed class Manager
 
     public async Task RepotTurnAsync(Chat chat, Data.Game game, Turn turn, int replyToMessageId)
     {
-        MessageTemplate message = turn.GetMessage(game.PlayerNames.Count());
+        MessageTemplate message = turn.GetMessage(game.PlayerNames.Count(), game.IncludeEn);
         message.ReplyToMessageId = replyToMessageId;
         await message.SendAsync(_bot, chat);
     }

@@ -13,5 +13,10 @@ internal class Card
     [SheetField(DescriptionTitle)]
     public string Description = null!;
 
+    [UsedImplicitly]
+    [SheetField(DescriptionEnTitle)]
+    public string? DescriptionEn;
+
     private const string DescriptionTitle = "Текст";
+    private const string DescriptionEnTitle = "Text";
 }

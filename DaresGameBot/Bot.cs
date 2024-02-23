@@ -29,6 +29,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Operations.Add(new NewCommand(this));
         Operations.Add(new DrawActionCommand(this));
         Operations.Add(new DrawQuestionCommand(this));
+        Operations.Add(new LangCommand(this));
         Operations.Add(new UpdatePlayersOperation(this));
 
         GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
@@ -99,6 +100,20 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
         return
             action ? DrawActionAsync(game, chat, replyToMessageId) : DrawQuestionAsync(game, chat, replyToMessageId);
+    }
+
+    internal Task OnToggleLanguagesAsync(Chat chat)
+    {
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
+        if (game is null)
+        {
+            return OnNewGameAsync(chat);
+        }
+
+        game.ToggleLanguages();
+
+        MessageTemplateText message = game.IncludeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
+        return message.SendAsync(this, chat);
     }
 
     private Task DrawActionAsync(Game.Data.Game game, Chat chat, int replyToMessageId)
