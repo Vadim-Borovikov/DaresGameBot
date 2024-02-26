@@ -3,19 +3,19 @@ using System.Collections.Generic;
 
 namespace DaresGameBot.Game.Data;
 
-internal sealed class Deck<T> where T : Card
+internal sealed class ActionDeck
 {
-    public Deck(IReadOnlyList<T> allCards, List<int> indices)
+    public ActionDeck(IReadOnlyList<CardAction> source, List<int> indices)
     {
-        _allCards = allCards;
+        _source = source;
         _indices = indices;
     }
 
-    public Turn? TryGetTurn(Func<T, Turn?> creator)
+    public Turn? TryGetTurn(Func<CardAction, Turn?> creator)
     {
         foreach (int i in _indices)
         {
-            T card = _allCards[i];
+            CardAction card = _source[i];
             Turn? turn = creator(card);
             if (turn is not null)
             {
@@ -27,6 +27,6 @@ internal sealed class Deck<T> where T : Card
         return null;
     }
 
+    private readonly IReadOnlyList<CardAction> _source;
     private readonly List<int> _indices;
-    private readonly IReadOnlyList<T> _allCards;
 }

@@ -15,7 +15,7 @@ internal sealed class Game : Context
 
     public bool IsActive => _nextActionTurn is not null;
 
-    public Game(Config config, List<Player> players, Matchmaker matchmaker, IList<Deck<CardAction>> actionDecks,
+    public Game(Config config, List<Player> players, Matchmaker matchmaker, IList<ActionDeck> actionDecks,
         QuestionDeck questionsDeck)
     {
         Fresh = true;
@@ -94,7 +94,7 @@ internal sealed class Game : Context
         Player nextPlayer = _players[nextPlayerIndex];
         while (_actionDecks.Any())
         {
-            Deck<CardAction> deck = _actionDecks.First();
+            ActionDeck deck = _actionDecks.First();
             Turn? turn = deck.TryGetTurn(c => TryCreateActionTurn(nextPlayer, c));
             if (turn is not null)
             {
@@ -108,7 +108,7 @@ internal sealed class Game : Context
     }
 
     private readonly Config _config;
-    private readonly IList<Deck<CardAction>> _actionDecks;
+    private readonly IList<ActionDeck> _actionDecks;
     private readonly QuestionDeck _questionsDeck;
     private List<Player> _players = new();
     private int _currentPlayerIndex;
