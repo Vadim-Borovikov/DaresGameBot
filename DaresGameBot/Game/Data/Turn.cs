@@ -8,12 +8,13 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class Turn
 {
-    public Turn(Config config, string tag, string descriprion, Player? player = null, string? imagePath = null,
-        List<Player>? partners = null, List<Player>? helpers = null)
+    public Turn(Texts texts, string imagesfolder, string tag, string descriprion, Player? player = null,
+        string? imagePath = null, List<Player>? partners = null, List<Player>? helpers = null)
     {
+        _texts = texts;
+        _imagesfolder = imagesfolder;
         _tagPart = new MessageTemplateText(tag);
         _descriprionPart = new MessageTemplateText(descriprion);
-        _config = config;
         _player = player;
         _imagePath = imagePath;
         _partners = partners;
@@ -25,23 +26,23 @@ internal sealed class Turn
         MessageTemplateText? partnersPart = null;
         if (_partners is not null && (_partners.Count != 0) && (_partners.Count != (playersAmount - 1)))
         {
-            string partnersPrefix = _partners.Count > 1 ? _config.Texts.Partners : _config.Texts.Partner;
-            string parnters = string.Join(_config.Texts.PartnersSeparator, _partners.Select(p => p.Name));
-            partnersPart = _config.Texts.TurnPartnersFormat.Format(partnersPrefix, parnters);
+            string partnersPrefix = _partners.Count > 1 ? _texts.Partners : _texts.Partner;
+            string parnters = string.Join(_texts.PartnersSeparator, _partners.Select(p => p.Name));
+            partnersPart = _texts.TurnPartnersFormat.Format(partnersPrefix, parnters);
         }
 
         MessageTemplateText? helpersPart = null;
         if (_helpers is not null && (_helpers.Count != 0))
         {
-            string helpersPrefix = _helpers.Count > 1 ? _config.Texts.Helpers : _config.Texts.Helper;
-            string helpers = string.Join(_config.Texts.PartnersSeparator, _helpers.Select(p => p.Name));
-            helpersPart = _config.Texts.TurnPartnersFormat.Format(helpersPrefix, helpers);
+            string helpersPrefix = _helpers.Count > 1 ? _texts.Helpers : _texts.Helper;
+            string helpers = string.Join(_texts.PartnersSeparator, _helpers.Select(p => p.Name));
+            helpersPart = _texts.TurnPartnersFormat.Format(helpersPrefix, helpers);
         }
 
-        MessageTemplate message = _config.Texts.TurnFormat;
+        MessageTemplate message = _texts.TurnFormat;
         if (!string.IsNullOrWhiteSpace(_imagePath))
         {
-            string path = Path.Combine(_config.ImagesFolder, _imagePath);
+            string path = Path.Combine(_imagesfolder, _imagePath);
             message = new MessageTemplateImage(message, path);
         }
 
@@ -50,7 +51,8 @@ internal sealed class Turn
 
     private readonly MessageTemplateText _tagPart;
     private readonly MessageTemplateText _descriprionPart;
-    private readonly Config _config;
+    private readonly Texts _texts;
+    private readonly string _imagesfolder;
     private readonly Player? _player;
     private readonly string? _imagePath;
     private readonly List<Player>? _partners;

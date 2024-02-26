@@ -3,18 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using AbstractBot;
 using DaresGameBot.Configs;
+using DaresGameBot.Game.Matchmaking;
 
 namespace DaresGameBot.Game.Data;
 
 internal sealed class Game : Context
 {
+    public Matchmaker Matchmaker;
     public IEnumerable<string> PlayerNames => _players.Select(p => p.Name);
     public bool Fresh;
 
     public bool IsActive => _nextActionTurn is not null;
 
-    public Game(Config config, List<Player> players, IList<Deck<CardAction>> actionDecks, Deck<Card> questionsDeck,
-        Random random)
+    public Game(Config config, List<Player> players, Matchmaker matchmaker, IList<Deck<CardAction>> actionDecks,
+        Deck<Card> questionsDeck, Random random)
     {
         Fresh = true;
         _config = config;
@@ -23,6 +25,7 @@ internal sealed class Game : Context
         _random = random;
 
         UpdatePlayers(players);
+        Matchmaker = matchmaker;
 
         TryPrepareNextActionTurn();
     }
@@ -61,14 +64,17 @@ internal sealed class Game : Context
 
     private Turn? DrawQuestion() => _questionsDeck.TryGetTurn(TryCreateQuestionTurn);
 
-    private Turn TryCreateQuestionTurn(Card card) => new(_config, _questionsDeck.Tag, card.Description);
+    private Turn TryCreateQuestionTurn(Card card)
+    {
+        return new Turn(_config.Texts, _config.ImagesFolder, _questionsDeck.Tag, card.Description);
+    }
 
     private Turn? TryCreateActionTurn(Player player, CardAction card)
     {
         List<Player>? partners = null;
         if (card.Partners > 0)
         {
-            Player[] choices = _players.Where(p => p.IsCompatableWith(player)).ToArray();
+            Player[] choices = _players.Where(p => Matchmaker.AreCompatable(p, player)).ToArray();
             if (choices.Length < card.Partners)
             {
                 return null;
@@ -78,7 +84,7 @@ internal sealed class Game : Context
             if (card.CompatablePartners)
             {
                 partners =
-                    EnumerateSubgroups(choices.ToList(), card.Partners).FirstOrDefault(Player.AreCompatable);
+                    EnumerateSubgroups(choices.ToList(), card.Partners).FirstOrDefault(Matchmaker.AreCompatable);
                 if (partners is null)
                 {
                     return null;
@@ -109,7 +115,8 @@ internal sealed class Game : Context
             partners = null;
         }
 
-        return new Turn(_config, card.Tag, card.Description, player, card.ImagePath, partners, helpers);
+        return new Turn(_config.Texts, _config.ImagesFolder, card.Tag, card.Description, player, card.ImagePath,
+            partners, helpers);
     }
 
     private void TryPrepareNextActionTurn()

@@ -14,6 +14,7 @@ using DaresGameBot.Game.Data;
 using System.Collections.Generic;
 using Telegram.Bot.Types.Enums;
 using AbstractBot.Configs.MessageTemplates;
+using DaresGameBot.Game.Matchmaking;
 
 namespace DaresGameBot;
 
@@ -59,15 +60,16 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Contexts.Remove(chat.Id);
     }
 
-    internal async Task UpdatePlayersAsync(Chat chat, List<Player> players)
+    internal async Task UpdatePlayersAsync(Chat chat, List<Player> players,
+        Dictionary<string, GroupMatchmakerPlayerInfo> groupMatchmakerPlayerInfos)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
         if (game is null)
         {
-            Contexts[chat.Id] = await StartNewGameAsync(chat, players);
+            Contexts[chat.Id] = await StartNewGameAsync(chat, players, groupMatchmakerPlayerInfos);
             return;
         }
-        await _manager!.UpdatePlayersAsync(chat, game, players);
+        await _manager!.UpdatePlayersAsync(chat, game, players, groupMatchmakerPlayerInfos);
     }
 
     internal Task OnNewGameAsync(Chat chat)
@@ -115,9 +117,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return GetKeyboard(Config.Texts.DrawActionCaption, Config.Texts.DrawQuestionCaption);
     }
 
-    private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, List<Player> players)
+    private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, List<Player> players,
+        Dictionary<string, GroupMatchmakerPlayerInfo> groupMatchmakerPlayerInfos)
     {
-        Game.Data.Game game = _manager!.StartNewGame(players);
+        Matchmaker matchmaker = new GroupMatchmaker(groupMatchmakerPlayerInfos);
+        Game.Data.Game game = _manager!.StartNewGame(players, matchmaker);
         Contexts[chat.Id] = game;
         await _manager.RepotNewGameAsync(chat, game);
         return game;

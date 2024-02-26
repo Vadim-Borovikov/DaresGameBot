@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Game.Data;
+using DaresGameBot.Game.Matchmaking;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game;
@@ -18,11 +19,11 @@ internal sealed class Manager
         _questions = questions;
     }
 
-    public Data.Game StartNewGame(List<Player> players)
+    public Data.Game StartNewGame(List<Player> players, Matchmaker matchmaker)
     {
         IList<Deck<CardAction>> actionDecks = GetActionDecks();
         Deck<Card> questionsDeck = CreateQuestionsDeck();
-        return new Data.Game(_bot.Config, players, actionDecks, questionsDeck, _random);
+        return new Data.Game(_bot.Config, players, matchmaker, actionDecks, questionsDeck, _random);
     }
 
     public Task RepotNewGameAsync(Chat chat, Data.Game game)
@@ -41,9 +42,11 @@ internal sealed class Manager
         return new Deck<Card>(_bot.Config.Texts.QuestionsTag, cards, indices.ToList());
     }
 
-    public Task UpdatePlayersAsync(Chat chat, Data.Game game, List<Player> players)
+    public Task UpdatePlayersAsync(Chat chat, Data.Game game, List<Player> players,
+        Dictionary<string, GroupMatchmakerPlayerInfo> groupMatchmakerPlayerInfos)
     {
         game.UpdatePlayers(players);
+        game.Matchmaker = new GroupMatchmaker(groupMatchmakerPlayerInfos);
 
         MessageTemplateText playersText =
             _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
