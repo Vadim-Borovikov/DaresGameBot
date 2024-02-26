@@ -7,9 +7,9 @@ internal sealed class GroupMatchmaker : Matchmaker
 {
     public GroupMatchmaker(Dictionary<string, GroupMatchmakerPlayerInfo> infos) => _infos = infos;
 
-    public override bool AreCompatable(Player p1, Player p2)
+    public override bool AreCompatible(Player p1, Player p2)
     {
-        if (!base.AreCompatable(p1, p2))
+        if (!base.AreCompatible(p1, p2))
         {
             return false;
         }

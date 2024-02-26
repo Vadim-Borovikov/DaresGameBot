@@ -7,9 +7,9 @@ namespace DaresGameBot.Game.Matchmaking;
 
 internal class Matchmaker
 {
-    public virtual bool AreCompatable(Player p1, Player p2) => p1.Name != p2.Name;
+    public virtual bool AreCompatible(Player p1, Player p2) => p1.Name != p2.Name;
 
-    public bool AreCompatable(IReadOnlyList<Player> players) => ListHelper.EnumeratePairs(players).All(AreCompatable);
+    public bool AreCompatible(IReadOnlyList<Player> players) => ListHelper.EnumeratePairs(players).All(AreCompatible);
 
-    private bool AreCompatable((Player, Player) pair) => AreCompatable(pair.Item1, pair.Item2);
+    private bool AreCompatible((Player, Player) pair) => AreCompatible(pair.Item1, pair.Item2);
 }

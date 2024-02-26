@@ -73,7 +73,7 @@ internal sealed class Game : Context
         List<Player>? partners = null;
         if (card.Partners > 0)
         {
-            Player[] choices = _players.Where(p => Matchmaker.AreCompatable(p, player)).ToArray();
+            Player[] choices = _players.Where(p => Matchmaker.AreCompatible(p, player)).ToArray();
             if (choices.Length < card.Partners)
             {
                 return null;
@@ -83,7 +83,7 @@ internal sealed class Game : Context
             if (card.CompatablePartners)
             {
                 partners =
-                    EnumerateSubgroups(choices.ToList(), card.Partners).FirstOrDefault(Matchmaker.AreCompatable);
+                    EnumerateSubgroups(choices.ToList(), card.Partners).FirstOrDefault(Matchmaker.AreCompatible);
                 if (partners is null)
                 {
                     return null;
