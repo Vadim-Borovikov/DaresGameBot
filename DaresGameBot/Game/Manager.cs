@@ -23,7 +23,8 @@ internal sealed class Manager
     {
         IList<Deck<CardAction>> actionDecks = GetActionDecks();
         Deck<Card> questionsDeck = CreateQuestionsDeck();
-        return new Data.Game(_bot.Config, players, compatibility, actionDecks, questionsDeck);
+        RandomMatchmaker matchmaker = new(compatibility);
+        return new Data.Game(_bot.Config, players, matchmaker, actionDecks, questionsDeck);
     }
 
     public Task RepotNewGameAsync(Chat chat, Data.Game game)
@@ -46,7 +47,8 @@ internal sealed class Manager
         Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos)
     {
         game.UpdatePlayers(players);
-        game.Compatibility = new GroupBasedCompatibility(compatibilityInfos);
+        GroupBasedCompatibility compatibility = new(compatibilityInfos);
+        game.Matchmaker = new RandomMatchmaker(compatibility);
 
         MessageTemplateText playersText =
             _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));

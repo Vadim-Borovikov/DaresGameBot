@@ -14,4 +14,26 @@ internal static class ListHelper
             }
         }
     }
+
+    public static IEnumerable<IList<T>> EnumerateSubsets<T>(IList<T> set, uint size)
+    {
+        if (set.Count <= size)
+        {
+            if (set.Count == size)
+            {
+                yield return set;
+            }
+            yield break;
+        }
+
+        for (int i = 0; i < set.Count; i++)
+        {
+            List<T> subset = new(set);
+            subset.RemoveAt(i);
+            foreach (IList<T> subsetOfSubset in EnumerateSubsets(subset, size))
+            {
+                yield return subsetOfSubset;
+            }
+        }
+    }
 }

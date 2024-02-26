@@ -4,18 +4,19 @@ using System.Linq;
 using AbstractBot;
 using DaresGameBot.Configs;
 using DaresGameBot.Game.Matchmaking;
+using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Data;
 
 internal sealed class Game : Context
 {
-    public Compatibility Compatibility;
+    public Matchmaker Matchmaker;
     public IEnumerable<string> PlayerNames => _players.Select(p => p.Name);
     public bool Fresh;
 
     public bool IsActive => _nextActionTurn is not null;
 
-    public Game(Config config, List<Player> players, Compatibility compatibility, IList<Deck<CardAction>> actionDecks,
+    public Game(Config config, List<Player> players, Matchmaker matchmaker, IList<Deck<CardAction>> actionDecks,
         Deck<Card> questionsDeck)
     {
         Fresh = true;
@@ -24,7 +25,7 @@ internal sealed class Game : Context
         _questionsDeck = questionsDeck;
 
         UpdatePlayers(players);
-        Compatibility = compatibility;
+        Matchmaker = matchmaker;
 
         TryPrepareNextActionTurn();
     }
@@ -73,39 +74,23 @@ internal sealed class Game : Context
         List<Player>? partners = null;
         if (card.Partners > 0)
         {
-            Player[] choices = _players.Where(p => Compatibility.Check(p, player)).ToArray();
-            if (choices.Length < card.Partners)
+            partners = Matchmaker.EnumerateMatches(player, _players, card.Partners, card.CompatablePartners)?.ToList();
+            if (partners is null)
             {
                 return null;
-            }
-
-            Random.Shared.Shuffle(choices);
-            if (card.CompatablePartners)
-            {
-                partners = EnumerateSubgroups(choices.ToList(), card.Partners).FirstOrDefault(Compatibility.Check);
-                if (partners is null)
-                {
-                    return null;
-                }
-            }
-            else
-            {
-                partners = new List<Player>(choices.Take(card.Partners));
             }
         }
 
         List<Player>? helpers = null;
         if (card.Helpers > 0)
         {
-            Player[] choices =
-                _players.Where(p => (p != player) && (partners is null || !partners.Contains(p))).ToArray();
-            if (choices.Length < card.Helpers)
+            List<Player> choices =
+                _players.Where(p => (p != player) && (partners is null || !partners.Contains(p))).ToList();
+            helpers = RandomHelper.EnumerateUniqueItems(Random.Shared, choices, card.Helpers)?.ToList();
+            if (helpers is null)
             {
                 return null;
             }
-
-            Random.Shared.Shuffle(choices);
-            helpers = new List<Player>(choices.Take(card.Helpers));
         }
 
         if (!card.AssignPartners)
@@ -134,26 +119,6 @@ internal sealed class Game : Context
         }
 
         _nextActionTurn = null;
-    }
-
-    private static IEnumerable<List<Player>> EnumerateSubgroups(List<Player> choices, int size)
-    {
-        if (choices.Count == size)
-        {
-            yield return choices;
-        }
-        else if (choices.Count > size)
-        {
-            for (int i = 0; i < choices.Count; i++)
-            {
-                List<Player> subset = new(choices);
-                subset.RemoveAt(i);
-                foreach (List<Player> subsetOfSubset in EnumerateSubgroups(subset, size))
-                {
-                    yield return subsetOfSubset;
-                }
-            }
-        }
     }
 
     private readonly Config _config;
