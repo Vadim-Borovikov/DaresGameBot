@@ -1,25 +1,27 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Data;
 
 internal sealed class ActionDeck
 {
-    public ActionDeck(IReadOnlyList<CardAction> source, List<int> indices)
+    public ActionDeck(IEnumerable<CardAction> source)
     {
-        _source = source;
-        _indices = indices;
+        CardAction[] cards = RandomHelper.Shuffle(source);
+        _cards = cards.ToList();
     }
 
     public Turn? TryGetTurn(Func<CardAction, Turn?> creator)
     {
-        foreach (int i in _indices)
+        for (int i = 0; i < _cards.Count; ++i)
         {
-            CardAction card = _source[i];
+            CardAction card = _cards[i];
             Turn? turn = creator(card);
             if (turn is not null)
             {
-                _indices.Remove(i);
+                _cards.RemoveAt(i);
                 return turn;
             }
         }
@@ -27,6 +29,5 @@ internal sealed class ActionDeck
         return null;
     }
 
-    private readonly IReadOnlyList<CardAction> _source;
-    private readonly List<int> _indices;
+    private readonly List<CardAction> _cards;
 }

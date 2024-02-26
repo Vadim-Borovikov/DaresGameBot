@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AbstractBot.Configs.MessageTemplates;
@@ -12,7 +10,7 @@ namespace DaresGameBot.Game;
 
 internal sealed class Manager
 {
-    public Manager(Bot bot, List<CardAction> actions, List<Card> questions)
+    public Manager(Bot bot, IReadOnlyList<CardAction> actions, IReadOnlyList<Card> questions)
     {
         _bot = bot;
         _actions = actions;
@@ -55,31 +53,11 @@ internal sealed class Manager
         await message.SendAsync(_bot, chat);
     }
 
-    private IList<ActionDeck> GetActionDecks()
-    {
-        ReadOnlyCollection<CardAction> cards = _actions.AsReadOnly();
-        return _actions.GroupBy(c => c.Tag).Select(g => CreateActionDeck(cards, g.Key)).ToList();
-    }
-
-    private static ActionDeck CreateActionDeck(IReadOnlyList<CardAction> cards, string tag)
-    {
-        List<int> indices = new();
-        for (int i = 0; i < cards.Count; i++)
-        {
-            if (cards[i].Tag.Equals(tag, StringComparison.OrdinalIgnoreCase))
-            {
-                indices.Add(i);
-            }
-        }
-
-        int[] indexArray = indices.ToArray();
-        Random.Shared.Shuffle(indexArray);
-        return new ActionDeck(cards, indexArray.ToList());
-    }
+    private IList<ActionDeck> GetActionDecks() => _actions.GroupBy(c => c.Tag).Select(g => new ActionDeck(g)).ToList();
 
     private readonly Bot _bot;
-    private readonly List<CardAction> _actions;
-    private readonly List<Card> _questions;
+    private readonly IReadOnlyList<CardAction> _actions;
+    private readonly IReadOnlyList<Card> _questions;
 
     private const string PlayerSeparator = ", ";
 }
