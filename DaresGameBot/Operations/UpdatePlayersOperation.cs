@@ -37,10 +37,9 @@ internal sealed class UpdatePlayersOperation : Operation<PlayersInfo>
 
     protected override Task ExecuteAsync(PlayersInfo data, Message message, User sender)
     {
-        return _bot.UpdatePlayersAsync(message.Chat, data.Players, data.MatchmakerInfos);
+        return _bot.UpdatePlayersAsync(message.Chat, data.Players, data.CompatibilityInfos);
     }
 
     private readonly Bot _bot;
-
     private const string PlayersSeparator = "\n";
 }

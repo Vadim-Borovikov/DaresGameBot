@@ -8,18 +8,18 @@ namespace DaresGameBot.Operations.Info;
 internal sealed class PlayersInfo
 {
     public readonly List<Player> Players;
-    public readonly Dictionary<string, GroupMatchmakerPlayerInfo> MatchmakerInfos;
+    public readonly Dictionary<string, GroupBasedCompatibilityPlayerInfo> CompatibilityInfos;
 
-    private PlayersInfo(List<Player> players, Dictionary<string, GroupMatchmakerPlayerInfo> matchmakerInfos)
+    private PlayersInfo(List<Player> players, Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos)
     {
         Players = players;
-        MatchmakerInfos = matchmakerInfos;
+        CompatibilityInfos = compatibilityInfos;
     }
 
     public static PlayersInfo? From(IEnumerable<string> lines)
     {
         List<Player> players = new();
-        Dictionary<string, GroupMatchmakerPlayerInfo> matchmakerInfos = new();
+        Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos = new();
 
         foreach (string[] parts in lines.Select(l => l.Split(PartsSeparator)))
         {
@@ -33,13 +33,13 @@ internal sealed class PlayersInfo
             string[] compatableGroups = parts[2].Split(GroupsSeparator);
 
             Player player = new(name);
-            GroupMatchmakerPlayerInfo info = new(group, new HashSet<string>(compatableGroups));
+            GroupBasedCompatibilityPlayerInfo info = new(group, new HashSet<string>(compatableGroups));
 
             players.Add(player);
-            matchmakerInfos[name] = info;
+            compatibilityInfos[name] = info;
         }
 
-        return new PlayersInfo(players, matchmakerInfos);
+        return new PlayersInfo(players, compatibilityInfos);
     }
 
     private const string PartsSeparator = ",";

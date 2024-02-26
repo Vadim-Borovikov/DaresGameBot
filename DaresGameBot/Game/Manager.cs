@@ -19,11 +19,11 @@ internal sealed class Manager
         _questions = questions;
     }
 
-    public Data.Game StartNewGame(List<Player> players, Matchmaker matchmaker)
+    public Data.Game StartNewGame(List<Player> players, Compatibility compatibility)
     {
         IList<Deck<CardAction>> actionDecks = GetActionDecks();
         Deck<Card> questionsDeck = CreateQuestionsDeck();
-        return new Data.Game(_bot.Config, players, matchmaker, actionDecks, questionsDeck);
+        return new Data.Game(_bot.Config, players, compatibility, actionDecks, questionsDeck);
     }
 
     public Task RepotNewGameAsync(Chat chat, Data.Game game)
@@ -43,10 +43,10 @@ internal sealed class Manager
     }
 
     public Task UpdatePlayersAsync(Chat chat, Data.Game game, List<Player> players,
-        Dictionary<string, GroupMatchmakerPlayerInfo> groupMatchmakerPlayerInfos)
+        Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos)
     {
         game.UpdatePlayers(players);
-        game.Matchmaker = new GroupMatchmaker(groupMatchmakerPlayerInfos);
+        game.Compatibility = new GroupBasedCompatibility(compatibilityInfos);
 
         MessageTemplateText playersText =
             _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));

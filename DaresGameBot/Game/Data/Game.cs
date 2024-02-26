@@ -9,13 +9,13 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class Game : Context
 {
-    public Matchmaker Matchmaker;
+    public Compatibility Compatibility;
     public IEnumerable<string> PlayerNames => _players.Select(p => p.Name);
     public bool Fresh;
 
     public bool IsActive => _nextActionTurn is not null;
 
-    public Game(Config config, List<Player> players, Matchmaker matchmaker, IList<Deck<CardAction>> actionDecks,
+    public Game(Config config, List<Player> players, Compatibility compatibility, IList<Deck<CardAction>> actionDecks,
         Deck<Card> questionsDeck)
     {
         Fresh = true;
@@ -24,7 +24,7 @@ internal sealed class Game : Context
         _questionsDeck = questionsDeck;
 
         UpdatePlayers(players);
-        Matchmaker = matchmaker;
+        Compatibility = compatibility;
 
         TryPrepareNextActionTurn();
     }
@@ -73,7 +73,7 @@ internal sealed class Game : Context
         List<Player>? partners = null;
         if (card.Partners > 0)
         {
-            Player[] choices = _players.Where(p => Matchmaker.AreCompatible(p, player)).ToArray();
+            Player[] choices = _players.Where(p => Compatibility.Check(p, player)).ToArray();
             if (choices.Length < card.Partners)
             {
                 return null;
@@ -82,8 +82,7 @@ internal sealed class Game : Context
             Random.Shared.Shuffle(choices);
             if (card.CompatablePartners)
             {
-                partners =
-                    EnumerateSubgroups(choices.ToList(), card.Partners).FirstOrDefault(Matchmaker.AreCompatible);
+                partners = EnumerateSubgroups(choices.ToList(), card.Partners).FirstOrDefault(Compatibility.Check);
                 if (partners is null)
                 {
                     return null;

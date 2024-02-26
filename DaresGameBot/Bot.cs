@@ -61,15 +61,15 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     }
 
     internal async Task UpdatePlayersAsync(Chat chat, List<Player> players,
-        Dictionary<string, GroupMatchmakerPlayerInfo> groupMatchmakerPlayerInfos)
+        Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
         if (game is null)
         {
-            Contexts[chat.Id] = await StartNewGameAsync(chat, players, groupMatchmakerPlayerInfos);
+            Contexts[chat.Id] = await StartNewGameAsync(chat, players, compatibilityInfos);
             return;
         }
-        await _manager!.UpdatePlayersAsync(chat, game, players, groupMatchmakerPlayerInfos);
+        await _manager!.UpdatePlayersAsync(chat, game, players, compatibilityInfos);
     }
 
     internal Task OnNewGameAsync(Chat chat)
@@ -118,10 +118,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     }
 
     private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, List<Player> players,
-        Dictionary<string, GroupMatchmakerPlayerInfo> groupMatchmakerPlayerInfos)
+        Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos)
     {
-        Matchmaker matchmaker = new GroupMatchmaker(groupMatchmakerPlayerInfos);
-        Game.Data.Game game = _manager!.StartNewGame(players, matchmaker);
+        Compatibility compatibility = new GroupBasedCompatibility(compatibilityInfos);
+        Game.Data.Game game = _manager!.StartNewGame(players, compatibility);
         Contexts[chat.Id] = game;
         await _manager.RepotNewGameAsync(chat, game);
         return game;
