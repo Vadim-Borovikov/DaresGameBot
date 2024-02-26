@@ -27,4 +27,11 @@ internal static class RandomHelper
 
         return count == items.Length ? items : items.Take(count);
     }
+
+    public static T[] Shuffle<T>(Random random, IEnumerable<T> source)
+    {
+        T[] value = source.ToArray();
+        random.Shuffle(value);
+        return value;
+    }
 }

@@ -88,7 +88,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             return;
         }
 
-        Turn turn = game.Draw(_manager!.CreateQuestionsDeck, action);
+        Turn turn = action ? game.DrawAction() : game.DrawQuestion();
         if (game.IsActive)
         {
             await _manager!.RepotTurnAsync(chat, game, turn, replyToMessageId);

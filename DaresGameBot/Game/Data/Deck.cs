@@ -5,11 +5,8 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class Deck<T> where T : Card
 {
-    public readonly string Tag;
-
-    public Deck(string tag, IReadOnlyList<T> allCards, List<int> indices)
+    public Deck(IReadOnlyList<T> allCards, List<int> indices)
     {
-        Tag = tag;
         _allCards = allCards;
         _indices = indices;
     }

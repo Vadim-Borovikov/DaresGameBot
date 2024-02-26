@@ -17,7 +17,7 @@ internal sealed class Game : Context
     public bool IsActive => _nextActionTurn is not null;
 
     public Game(Config config, List<Player> players, Matchmaker matchmaker, IList<Deck<CardAction>> actionDecks,
-        Deck<Card> questionsDeck)
+        QuestionDeck questionsDeck)
     {
         Fresh = true;
         _config = config;
@@ -30,43 +30,30 @@ internal sealed class Game : Context
         TryPrepareNextActionTurn();
     }
 
-    public Turn Draw(Func<Deck<Card>> questionsDeckCreator, bool action = true)
+    public Turn DrawAction()
     {
-        if (action)
+        if (!Fresh)
         {
-            if (!Fresh)
-            {
-                _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.Count;
-            }
-
-            Fresh = false;
-            Turn? result = _nextActionTurn;
-            TryPrepareNextActionTurn();
-            return result!;
-        }
-
-        Turn? turn = DrawQuestion();
-        if (turn is null)
-        {
-            _questionsDeck = questionsDeckCreator();
-            turn = DrawQuestion()!;
+            _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.Count;
         }
 
         Fresh = false;
-        return turn;
+        Turn? result = _nextActionTurn;
+        TryPrepareNextActionTurn();
+        return result!;
+    }
+
+    public Turn DrawQuestion()
+    {
+        Fresh = false;
+        Card question = _questionsDeck.Draw();
+        return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, question.Description);
     }
 
     public void UpdatePlayers(List<Player> players)
     {
         _players = players;
         _currentPlayerIndex = 0;
-    }
-
-    private Turn? DrawQuestion() => _questionsDeck.TryGetTurn(TryCreateQuestionTurn);
-
-    private Turn TryCreateQuestionTurn(Card card)
-    {
-        return new Turn(_config.Texts, _config.ImagesFolder, _questionsDeck.Tag, card.Description);
     }
 
     private Turn? TryCreateActionTurn(Player player, CardAction card)
@@ -123,7 +110,7 @@ internal sealed class Game : Context
 
     private readonly Config _config;
     private readonly IList<Deck<CardAction>> _actionDecks;
-    private Deck<Card> _questionsDeck;
+    private readonly QuestionDeck _questionsDeck;
     private List<Player> _players = new();
     private int _currentPlayerIndex;
     private Turn? _nextActionTurn;

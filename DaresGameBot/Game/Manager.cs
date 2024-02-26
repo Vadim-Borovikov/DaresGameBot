@@ -22,7 +22,7 @@ internal sealed class Manager
     public Data.Game StartNewGame(List<Player> players, Compatibility compatibility)
     {
         IList<Deck<CardAction>> actionDecks = GetActionDecks();
-        Deck<Card> questionsDeck = CreateQuestionsDeck();
+        QuestionDeck questionsDeck = new(_questions);
         RandomMatchmaker matchmaker = new(compatibility);
         return new Data.Game(_bot.Config, players, matchmaker, actionDecks, questionsDeck);
     }
@@ -33,14 +33,6 @@ internal sealed class Manager
             _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
         MessageTemplateText startText = _bot.Config.Texts.NewGameFormat.Format(playersText);
         return startText.SendAsync(_bot, chat);
-    }
-
-    public Deck<Card> CreateQuestionsDeck()
-    {
-        ReadOnlyCollection<Card> cards = _questions.AsReadOnly();
-        int[] indices = Enumerable.Range(0, cards.Count).ToArray();
-        Random.Shared.Shuffle(indices);
-        return new Deck<Card>(_bot.Config.Texts.QuestionsTag, cards, indices.ToList());
     }
 
     public Task UpdatePlayersAsync(Chat chat, Data.Game game, List<Player> players,
@@ -82,7 +74,7 @@ internal sealed class Manager
 
         int[] indexArray = indices.ToArray();
         Random.Shared.Shuffle(indexArray);
-        return new Deck<CardAction>(tag, cards, indexArray.ToList());
+        return new Deck<CardAction>(cards, indexArray.ToList());
     }
 
     private readonly Bot _bot;
