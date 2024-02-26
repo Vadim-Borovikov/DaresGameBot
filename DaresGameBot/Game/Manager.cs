@@ -23,7 +23,7 @@ internal sealed class Manager
     {
         IList<Deck<CardAction>> actionDecks = GetActionDecks();
         Deck<Card> questionsDeck = CreateQuestionsDeck();
-        return new Data.Game(_bot.Config, players, matchmaker, actionDecks, questionsDeck, _random);
+        return new Data.Game(_bot.Config, players, matchmaker, actionDecks, questionsDeck);
     }
 
     public Task RepotNewGameAsync(Chat chat, Data.Game game)
@@ -38,7 +38,7 @@ internal sealed class Manager
     {
         ReadOnlyCollection<Card> cards = _questions.AsReadOnly();
         int[] indices = Enumerable.Range(0, cards.Count).ToArray();
-        _random.Shuffle(indices);
+        Random.Shared.Shuffle(indices);
         return new Deck<Card>(_bot.Config.Texts.QuestionsTag, cards, indices.ToList());
     }
 
@@ -67,7 +67,7 @@ internal sealed class Manager
         return _actions.GroupBy(c => c.Tag).Select(g => CreateActionDeck(cards, g.Key)).ToList();
     }
 
-    private Deck<CardAction> CreateActionDeck(IReadOnlyList<CardAction> cards, string tag)
+    private static Deck<CardAction> CreateActionDeck(IReadOnlyList<CardAction> cards, string tag)
     {
         List<int> indices = new();
         for (int i = 0; i < cards.Count; i++)
@@ -79,14 +79,13 @@ internal sealed class Manager
         }
 
         int[] indexArray = indices.ToArray();
-        _random.Shuffle(indexArray);
+        Random.Shared.Shuffle(indexArray);
         return new Deck<CardAction>(tag, cards, indexArray.ToList());
     }
 
     private readonly Bot _bot;
     private readonly List<CardAction> _actions;
     private readonly List<Card> _questions;
-    private readonly Random _random = new();
 
     private const string PlayerSeparator = ", ";
 }

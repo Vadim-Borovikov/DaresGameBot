@@ -16,13 +16,12 @@ internal sealed class Game : Context
     public bool IsActive => _nextActionTurn is not null;
 
     public Game(Config config, List<Player> players, Matchmaker matchmaker, IList<Deck<CardAction>> actionDecks,
-        Deck<Card> questionsDeck, Random random)
+        Deck<Card> questionsDeck)
     {
         Fresh = true;
         _config = config;
         _actionDecks = actionDecks;
         _questionsDeck = questionsDeck;
-        _random = random;
 
         UpdatePlayers(players);
         Matchmaker = matchmaker;
@@ -80,7 +79,7 @@ internal sealed class Game : Context
                 return null;
             }
 
-            _random.Shuffle(choices);
+            Random.Shared.Shuffle(choices);
             if (card.CompatablePartners)
             {
                 partners =
@@ -106,7 +105,7 @@ internal sealed class Game : Context
                 return null;
             }
 
-            _random.Shuffle(choices);
+            Random.Shared.Shuffle(choices);
             helpers = new List<Player>(choices.Take(card.Helpers));
         }
 
@@ -158,7 +157,6 @@ internal sealed class Game : Context
         }
     }
 
-    private readonly Random _random;
     private readonly Config _config;
     private readonly IList<Deck<CardAction>> _actionDecks;
     private Deck<Card> _questionsDeck;
