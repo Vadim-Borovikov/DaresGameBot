@@ -2,7 +2,7 @@ using GoogleSheetsManager;
 using System.ComponentModel.DataAnnotations;
 using JetBrains.Annotations;
 
-namespace DaresGameBot.Game.Data;
+namespace DaresGameBot.Game.Data.Cards;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
 

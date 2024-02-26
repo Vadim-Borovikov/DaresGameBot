@@ -2,6 +2,8 @@
 using System.Linq;
 using AbstractBot;
 using DaresGameBot.Configs;
+using DaresGameBot.Game.Data.Cards;
+using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Helpers;
 

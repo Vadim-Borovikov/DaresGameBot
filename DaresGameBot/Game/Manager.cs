@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Game.Data;
+using DaresGameBot.Game.Data.Cards;
+using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Matchmaking;
 using Telegram.Bot.Types;
 

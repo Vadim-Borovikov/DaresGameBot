@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Helpers;
 
-namespace DaresGameBot.Game.Data;
+namespace DaresGameBot.Game.Data.Decks;
 
 internal sealed class QuestionDeck
 {
