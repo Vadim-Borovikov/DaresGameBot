@@ -7,9 +7,9 @@ namespace DaresGameBot.Helpers;
 
 internal static class RandomHelper
 {
-    public static T SelectItem<T>(Random random, IList<T> source) => source[random.Next(source.Count)];
+    public static T SelectItem<T>(IList<T> source) => source[Random.Shared.Next(source.Count)];
 
-    public static IEnumerable<T>? EnumerateUniqueItems<T>(Random random, IEnumerable<T> source, int count)
+    public static IEnumerable<T>? EnumerateUniqueItems<T>(IEnumerable<T> source, int count)
     {
         T[] items = source.ToArray();
 
@@ -20,18 +20,18 @@ internal static class RandomHelper
 
         if (count == 1)
         {
-            return SelectItem(random, items).Yield();
+            return SelectItem(items).Yield();
         }
 
-        random.Shuffle(items);
+        Random.Shared.Shuffle(items);
 
         return count == items.Length ? items : items.Take(count);
     }
 
-    public static T[] Shuffle<T>(Random random, IEnumerable<T> source)
+    public static T[] Shuffle<T>(IEnumerable<T> source)
     {
         T[] value = source.ToArray();
-        random.Shuffle(value);
+        Random.Shared.Shuffle(value);
         return value;
     }
 }

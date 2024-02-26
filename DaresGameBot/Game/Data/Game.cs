@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using AbstractBot;
 using DaresGameBot.Configs;
@@ -73,7 +72,7 @@ internal sealed class Game : Context
         {
             List<Player> choices =
                 _players.Where(p => (p != player) && (partners is null || !partners.Contains(p))).ToList();
-            helpers = RandomHelper.EnumerateUniqueItems(Random.Shared, choices, card.Helpers)?.ToList();
+            helpers = RandomHelper.EnumerateUniqueItems(choices, card.Helpers)?.ToList();
             if (helpers is null)
             {
                 return null;

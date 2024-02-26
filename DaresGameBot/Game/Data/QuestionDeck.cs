@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using DaresGameBot.Helpers;
 
@@ -16,7 +15,7 @@ internal sealed class QuestionDeck
     {
         if (_current.Count == 0)
         {
-            IEnumerable<Card> items = RandomHelper.Shuffle(Random.Shared, _source);
+            IEnumerable<Card> items = RandomHelper.Shuffle(_source);
             _current = new Queue<Card>(items);
         }
 
