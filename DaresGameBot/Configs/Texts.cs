@@ -1,6 +1,7 @@
-using JetBrains.Annotations;
-using System.ComponentModel.DataAnnotations;
 using AbstractBot.Configs.MessageTemplates;
+using JetBrains.Annotations;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace DaresGameBot.Configs;
 
@@ -102,4 +103,9 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string UpdateCommandDescription { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public List<string> NoMatchesInDeckLines { get; init; } = null!;
 }

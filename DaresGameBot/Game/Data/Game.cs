@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using AbstractBot;
+﻿using AbstractBot;
 using DaresGameBot.Configs;
 using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Data.Players;
+using GryphonUtilities.Helpers;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DaresGameBot.Game.Data;
 
@@ -54,30 +55,34 @@ internal sealed class Game : Context
             deck.UpdatePossibilities(_players);
             _shouldUpdatePossibilities = false;
         }
-
-        CardAction? action = deck.TrySelectCardFor(_players.Current);
-        CompanionsInfo? companions = null;
-        if (action is not null)
+        if (!deck.IsEmpty())
         {
-            companions = CompanionsSelector.TrySelectCompanionsFor(_players.Current, action);
-        }
-        if (action is null || companions is null)
-        {
-            _actionDecks.Dequeue();
-            _shouldUpdatePossibilities = _actionDecks.Any();
-            Status = _actionDecks.Any() ? ActionDecksStatus.BeforeDeck : ActionDecksStatus.AfterAllDecks;
-            return null;
+            Status = ActionDecksStatus.InDeck;
+            CardAction? action = deck.TrySelectCardFor(_players.Current);
+            if (action is null)
+            {
+                return null;
+            }
+            CompanionsInfo? companions = CompanionsSelector.TrySelectCompanionsFor(_players.Current, action);
+            return companions is null
+                ? null
+                : new Turn(_config.Texts, _config.ImagesFolder, action.Tag, null, action.Description, companions,
+                    action.ImagePath);
         }
 
-        Status = ActionDecksStatus.InDeck;
-        return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, action.Description, companions,
-            action.ImagePath);
+        _actionDecks.Dequeue();
+        _shouldUpdatePossibilities = _actionDecks.Any();
+        Status = _actionDecks.Any() ? ActionDecksStatus.BeforeDeck : ActionDecksStatus.AfterAllDecks;
+        return null;
     }
 
-    public Turn DrawQuestion()
+    public Turn DrawQuestion(bool forPlayerWithNoMatches)
     {
         Card question = _questionsDeck.Draw();
-        return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, question.Description);
+        string? prefix = forPlayerWithNoMatches ? Text.JoinLines(_config.Texts.NoMatchesInDeckLines) : null;
+        CompanionsInfo? companions = forPlayerWithNoMatches ? new CompanionsInfo(_players.Current, null, null) : null;
+        return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, prefix, question.Description,
+            companions);
     }
 
     public void UpdatePlayers(IEnumerable<Player> players)

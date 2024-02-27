@@ -72,7 +72,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             Contexts[chat.Id] = await StartNewGameAsync(chat, players, compatibilityInfos);
             return;
         }
-        await _manager!.UpdatePlayersAsync(chat, game, players, compatibilityInfos);
+
+        if (_manager is null)
+        {
+            throw new ArgumentNullException(nameof(_manager));
+        }
+
+        await _manager.UpdatePlayersAsync(chat, game, players, compatibilityInfos);
     }
 
     internal Task OnNewGameAsync(Chat chat)
@@ -91,30 +97,43 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             return OnNewGameAsync(chat);
         }
 
-        if (_manager is null)
-        {
-            throw new ArgumentNullException(nameof(_manager));
-        }
+        return
+            action ? DrawActionAsync(game, chat, replyToMessageId) : DrawQuestionAsync(game, chat, replyToMessageId);
+    }
 
-        Turn? turn;
-        if (!action)
-        {
-            turn = game.DrawQuestion();
-            return _manager.RepotTurnAsync(chat, game, turn, replyToMessageId);
-        }
-
-        turn = game.TryDrawAction();
+    private Task DrawActionAsync(Game.Data.Game game, Chat chat, int replyToMessageId)
+    {
+        Turn? turn = game.TryDrawAction();
         if (turn is not null)
         {
+            if (_manager is null)
+            {
+                throw new ArgumentNullException(nameof(_manager));
+            }
+
             return _manager.RepotTurnAsync(chat, game, turn, replyToMessageId);
         }
 
         return game.Status switch
         {
+            Game.Data.Game.ActionDecksStatus.InDeck        => DrawQuestionAsync(game, chat, replyToMessageId, true),
             Game.Data.Game.ActionDecksStatus.BeforeDeck    => Config.Texts.DeckEnded.SendAsync(this, chat),
             Game.Data.Game.ActionDecksStatus.AfterAllDecks => Config.Texts.GameOver.SendAsync(this, chat),
             _                                              => throw new ArgumentOutOfRangeException()
         };
+    }
+
+    private Task DrawQuestionAsync(Game.Data.Game game, Chat chat, int replyToMessageId,
+        bool forPlayerWithNoMatches = false)
+    {
+        Turn turn = game.DrawQuestion(forPlayerWithNoMatches);
+
+        if (_manager is null)
+        {
+            throw new ArgumentNullException(nameof(_manager));
+        }
+
+        return _manager.RepotTurnAsync(chat, game, turn, replyToMessageId);
     }
 
     protected override KeyboardProvider GetDefaultKeyboardProvider(Chat chat)
@@ -133,7 +152,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos)
     {
         Compatibility compatibility = new GroupBasedCompatibility(compatibilityInfos);
-        Game.Data.Game game = _manager!.StartNewGame(players, compatibility);
+
+        if (_manager is null)
+        {
+            throw new ArgumentNullException(nameof(_manager));
+        }
+
+        Game.Data.Game game = _manager.StartNewGame(players, compatibility);
         Contexts[chat.Id] = game;
         await _manager.RepotNewGameAsync(chat, game);
         return game;

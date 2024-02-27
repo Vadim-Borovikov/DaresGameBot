@@ -9,11 +9,12 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class Turn
 {
-    public Turn(Texts texts, string imagesfolder, string tag, string descriprion, CompanionsInfo? companions = null,
-        string? imagePath = null)
+    public Turn(Texts texts, string imagesfolder, string tag, string? prefix, string descriprion,
+        CompanionsInfo? companions = null, string? imagePath = null)
     {
         _texts = texts;
         _imagesfolder = imagesfolder;
+        _prefixPart = prefix is null ? null : new MessageTemplateText(prefix);
         _companions = companions;
         _tagPart = new MessageTemplateText(tag);
         _descriprionPart = new MessageTemplateText(descriprion);
@@ -47,13 +48,15 @@ internal sealed class Turn
             message = new MessageTemplateImage(message, path);
         }
 
-        return message.Format(_companions?.Player.Name, _tagPart, _descriprionPart, partnersPart, helpersPart);
+        return message.Format(_tagPart, _companions?.Player.Name, _prefixPart, _descriprionPart, partnersPart,
+            helpersPart);
     }
 
     private readonly MessageTemplateText _tagPart;
     private readonly MessageTemplateText _descriprionPart;
     private readonly Texts _texts;
     private readonly string _imagesfolder;
+    private readonly MessageTemplateText? _prefixPart;
     private readonly CompanionsInfo? _companions;
     private readonly string? _imagePath;
 }

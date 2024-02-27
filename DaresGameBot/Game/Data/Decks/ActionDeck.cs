@@ -18,6 +18,8 @@ internal sealed class ActionDeck
         _possiblePlayers = new Dictionary<ushort, List<string>>();
     }
 
+    public bool IsEmpty() => !_possiblePlayers.Any();
+
     public void UpdatePossibilities(IEnumerable<Player> players)
     {
         _possiblePlayers.Clear();
