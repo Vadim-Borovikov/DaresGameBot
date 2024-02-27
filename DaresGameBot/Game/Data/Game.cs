@@ -34,7 +34,7 @@ internal sealed class Game : Context
         _questionsDeck = questionsDeck;
         CompanionsSelector = companionsSelector;
 
-        _players = new PlayerRepository(players);
+        UpdatePlayers(players);
     }
 
     public Turn? TryDrawAction()
@@ -49,6 +49,12 @@ internal sealed class Game : Context
         }
 
         ActionDeck deck = _actionDecks.Peek();
+        if (_shouldUpdatePossibilities)
+        {
+            deck.UpdatePossibilities(_players);
+            _shouldUpdatePossibilities = false;
+        }
+
         CardAction? action = deck.TrySelectCardFor(_players.Current);
         CompanionsInfo? companions = null;
         if (action is not null)
@@ -58,6 +64,7 @@ internal sealed class Game : Context
         if (action is null || companions is null)
         {
             _actionDecks.Dequeue();
+            _shouldUpdatePossibilities = _actionDecks.Any();
             Status = _actionDecks.Any() ? ActionDecksStatus.BeforeDeck : ActionDecksStatus.AfterAllDecks;
             return null;
         }
@@ -73,10 +80,15 @@ internal sealed class Game : Context
         return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, question.Description);
     }
 
-    public void UpdatePlayers(IEnumerable<Player> players) => _players = new PlayerRepository(players);
+    public void UpdatePlayers(IEnumerable<Player> players)
+    {
+        _players = new PlayerRepository(players);
+        _shouldUpdatePossibilities = true;
+    }
 
     private readonly Config _config;
     private readonly Queue<ActionDeck> _actionDecks;
     private readonly QuestionDeck _questionsDeck;
-    private PlayerRepository _players;
+    private PlayerRepository _players = null!;
+    private bool _shouldUpdatePossibilities;
 }

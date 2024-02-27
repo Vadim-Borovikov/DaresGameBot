@@ -77,6 +77,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     internal Task OnNewGameAsync(Chat chat)
     {
+        Contexts.Remove(chat.Id);
         MessageTemplateText message = Config.Texts.NewGame;
         message.KeyboardProvider = KeyboardProvider.Remove;
         return message.SendAsync(this, chat);
