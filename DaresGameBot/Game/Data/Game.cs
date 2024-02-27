@@ -50,7 +50,12 @@ internal sealed class Game : Context
 
         ActionDeck deck = _actionDecks.Peek();
         CardAction? action = deck.TrySelectCardFor(_players.Current);
-        if (action is null)
+        CompanionsInfo? companions = null;
+        if (action is not null)
+        {
+            companions = CompanionsSelector.TrySelectCompanionsFor(_players.Current, action);
+        }
+        if (action is null || companions is null)
         {
             _actionDecks.Dequeue();
             Status = _actionDecks.Any() ? ActionDecksStatus.BeforeDeck : ActionDecksStatus.AfterAllDecks;
@@ -58,8 +63,8 @@ internal sealed class Game : Context
         }
 
         Status = ActionDecksStatus.InDeck;
-        return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, action.Description,
-            CompanionsSelector.CompanionsInfo, action.ImagePath);
+        return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, action.Description, companions,
+            action.ImagePath);
     }
 
     public Turn DrawQuestion()

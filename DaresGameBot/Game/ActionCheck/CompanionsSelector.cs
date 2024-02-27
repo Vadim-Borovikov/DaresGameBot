@@ -1,3 +1,4 @@
+using System;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Matchmaking;
@@ -12,28 +13,48 @@ internal sealed class CompanionsSelector : IActionChecker
 {
     public Matchmaker Matchmaker;
 
-    public CompanionsInfo? CompanionsInfo { get; private set; }
-
-    private readonly IReadOnlyList<Player> _players;
-
     public CompanionsSelector(Matchmaker matchmaker, IReadOnlyList<Player> players)
     {
         Matchmaker = matchmaker;
         _players = players;
+        _partnersCache = new Dictionary<int, List<Player>?>();
     }
 
-    public bool Check(Player player, CardAction card)
+    public bool Check(Player player, CardAction action)
     {
-        CompanionsInfo = TryGetCompanionsFor(player, card);
-        return CompanionsInfo is not null;
+        List<Player>? partners = TryGetPartnersFromCache(player, action);
+        if (partners is not null)
+        {
+            return true;
+        }
+
+        if ((action.Partners + action.Helpers) >= _players.Count)
+        {
+            return false;
+        }
+
+        if (action.Partners == 0)
+        {
+            return true;
+        }
+
+        partners = Matchmaker.EnumerateMatches(player, _players, action.Partners, action.CompatablePartners)?.ToList();
+        if (partners is null)
+        {
+            return false;
+        }
+        AddPartnersToCache(player, action, partners);
+        return true;
     }
 
-    private CompanionsInfo? TryGetCompanionsFor(Player player, CardAction card)
+    public CompanionsInfo? TrySelectCompanionsFor(Player player, CardAction action)
     {
         List<Player>? partners = null;
-        if (card.Partners > 0)
+        if (action.Partners > 0)
         {
-            partners = Matchmaker.EnumerateMatches(player, _players, card.Partners, card.CompatablePartners)?.ToList();
+            partners =
+                TryGetPartnersFromCache(player, action)
+                ?? Matchmaker.EnumerateMatches(player, _players, action.Partners, action.CompatablePartners)?.ToList();
             if (partners is null)
             {
                 return null;
@@ -41,22 +62,39 @@ internal sealed class CompanionsSelector : IActionChecker
         }
 
         List<Player>? helpers = null;
-        if (card.Helpers > 0)
+        if (action.Helpers > 0)
         {
             List<Player> choices =
                 _players.Where(p => (p != player) && (partners is null || !partners.Contains(p))).ToList();
-            helpers = RandomHelper.EnumerateUniqueItems(choices, card.Helpers)?.ToList();
+            helpers = RandomHelper.EnumerateUniqueItems(choices, action.Helpers)?.ToList();
             if (helpers is null)
             {
                 return null;
             }
         }
 
-        if (!card.AssignPartners)
+        if (!action.AssignPartners)
         {
             partners = null;
         }
 
         return new CompanionsInfo(player, partners, helpers);
     }
+
+    private static int GetHachCode(Player player, CardAction action) => HashCode.Combine(player.Name, action.Id);
+
+    private void AddPartnersToCache(Player player, CardAction action, List<Player> partners)
+    {
+        int hash = GetHachCode(player, action);
+        _partnersCache[hash] = partners;
+    }
+
+    private List<Player>? TryGetPartnersFromCache(Player player, CardAction card)
+    {
+        int hash = GetHachCode(player, card);
+        return _partnersCache.GetValueOrDefault(hash);
+    }
+
+    private readonly IReadOnlyList<Player> _players;
+    private readonly Dictionary<int, List<Player>?> _partnersCache;
 }

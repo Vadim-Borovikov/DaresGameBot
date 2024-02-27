@@ -25,6 +25,5 @@ internal sealed class RandomMatchmaker : Matchmaker
 
         List<IReadOnlyList<Player>> groups = EnumerateIntercompatibleGroups(choices, amount).ToList();
         return RandomHelper.SelectItem(groups);
-
     }
 }

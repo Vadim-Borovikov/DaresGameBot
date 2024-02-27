@@ -16,6 +16,11 @@ internal sealed class Manager
 {
     public Manager(Bot bot, IReadOnlyList<CardAction> actions, IReadOnlyList<Card> questions)
     {
+        for (ushort i = 0; i < actions.Count; i++)
+        {
+            actions[i].Id = i;
+        }
+
         _bot = bot;
         _actions = actions;
         _questions = questions;

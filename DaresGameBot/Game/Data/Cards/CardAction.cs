@@ -8,6 +8,8 @@ namespace DaresGameBot.Game.Data.Cards;
 
 internal sealed class CardAction : Card
 {
+    public ushort Id = 0;
+
     [UsedImplicitly]
     [Required]
     [SheetField(PartnersTitle)]
