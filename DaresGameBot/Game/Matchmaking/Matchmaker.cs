@@ -1,7 +1,7 @@
-﻿using DaresGameBot.Game.Data;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Helpers;
+using DaresGameBot.Game.Data.Players;
 
 namespace DaresGameBot.Game.Matchmaking;
 

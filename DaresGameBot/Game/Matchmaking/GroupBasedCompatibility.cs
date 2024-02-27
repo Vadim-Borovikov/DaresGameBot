@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using DaresGameBot.Game.Data;
+using DaresGameBot.Game.Data.Players;
 
 namespace DaresGameBot.Game.Matchmaking;
 

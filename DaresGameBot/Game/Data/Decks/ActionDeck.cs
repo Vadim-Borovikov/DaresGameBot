@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data.Cards;
+using DaresGameBot.Game.Data.Players;
 using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Data.Decks;

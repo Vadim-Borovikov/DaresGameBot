@@ -1,5 +1,5 @@
-using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Data.Cards;
+using DaresGameBot.Game.Data.Players;
 
 namespace DaresGameBot.Game.ActionCheck;
 

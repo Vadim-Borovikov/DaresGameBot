@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Configs;
+using DaresGameBot.Game.Data.Players;
 
 namespace DaresGameBot.Game.Data;
 

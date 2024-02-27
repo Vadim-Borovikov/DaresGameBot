@@ -1,4 +1,4 @@
-namespace DaresGameBot.Game.Data;
+namespace DaresGameBot.Game.Data.Players;
 
 internal sealed class Player
 {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Data;
+using DaresGameBot.Game.Data.Players;
 using DaresGameBot.Game.Matchmaking;
 
 namespace DaresGameBot.Operations.Info;

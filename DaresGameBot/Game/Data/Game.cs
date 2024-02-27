@@ -5,18 +5,19 @@ using DaresGameBot.Configs;
 using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
+using DaresGameBot.Game.Data.Players;
 
 namespace DaresGameBot.Game.Data;
 
 internal sealed class Game : Context
 {
     public readonly CompanionsSelector CompanionsSelector;
-    public IEnumerable<string> PlayerNames => _players.Select(p => p.Name);
-    public bool Fresh;
+    public bool Fresh { get; private set; }
 
     public bool IsActive => _nextActionTurn is not null;
+    public IEnumerable<string> PlayerNames => _players.EnumerateNames();
 
-    public Game(Config config, List<Player> players, IList<ActionDeck> actionDecks, QuestionDeck questionsDeck,
+    public Game(Config config, IEnumerable<Player> players, IList<ActionDeck> actionDecks, QuestionDeck questionsDeck,
         CompanionsSelector companionsSelector)
     {
         Fresh = true;
@@ -25,22 +26,22 @@ internal sealed class Game : Context
         _questionsDeck = questionsDeck;
         CompanionsSelector = companionsSelector;
 
-        UpdatePlayers(players);
+        _players = new PlayerRepository(players);
 
-        TryPrepareNextActionTurn();
+        _nextActionTurn = TryDrawAction();
     }
 
     public Turn DrawAction()
     {
         if (!Fresh)
         {
-            _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.Count;
+            _players.MoveNext();
         }
 
         Fresh = false;
-        Turn? result = _nextActionTurn;
-        TryPrepareNextActionTurn();
-        return result!;
+        Turn result = _nextActionTurn!;
+        _nextActionTurn = TryDrawAction();
+        return result;
     }
 
     public Turn DrawQuestion()
@@ -50,36 +51,30 @@ internal sealed class Game : Context
         return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, question.Description);
     }
 
-    public void UpdatePlayers(List<Player> players)
-    {
-        _players = players;
-        _currentPlayerIndex = 0;
-    }
+    public void UpdatePlayers(IEnumerable<Player> players) => _players = new PlayerRepository(players);
 
-    private void TryPrepareNextActionTurn()
+    private Turn? TryDrawAction()
     {
-        int nextPlayerIndex = Fresh ? 0 : (_currentPlayerIndex + 1) % _players.Count;
-        Player player = _players[nextPlayerIndex];
+        Player player = Fresh ? _players.Current : _players.Next;
+
         while (_actionDecks.Any())
         {
             ActionDeck deck = _actionDecks.First();
             CardAction? action = deck.TrySelectCardFor(player);
             if (action is not null)
             {
-                _nextActionTurn = new Turn(_config.Texts, _config.ImagesFolder, action.Tag, action.Description,
+                return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, action.Description,
                     CompanionsSelector.CompanionsInfo, action.ImagePath);
-                return;
             }
             _actionDecks.RemoveAt(0);
         }
 
-        _nextActionTurn = null;
+        return null;
     }
 
     private readonly Config _config;
     private readonly IList<ActionDeck> _actionDecks;
     private readonly QuestionDeck _questionsDeck;
-    private List<Player> _players = new();
-    private int _currentPlayerIndex;
+    private PlayerRepository _players;
     private Turn? _nextActionTurn;
 }

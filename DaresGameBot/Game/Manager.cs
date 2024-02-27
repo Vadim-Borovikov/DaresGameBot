@@ -6,6 +6,7 @@ using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
+using DaresGameBot.Game.Data.Players;
 using DaresGameBot.Game.Matchmaking;
 using Telegram.Bot.Types;
 
@@ -37,7 +38,7 @@ internal sealed class Manager
         return startText.SendAsync(_bot, chat);
     }
 
-    public Task UpdatePlayersAsync(Chat chat, Data.Game game, List<Player> players,
+    public Task UpdatePlayersAsync(Chat chat, Data.Game game, IEnumerable<Player> players,
         Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos)
     {
         game.UpdatePlayers(players);

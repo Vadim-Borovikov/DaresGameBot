@@ -16,6 +16,7 @@ using Telegram.Bot.Types.Enums;
 using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Game.Data.Cards;
+using DaresGameBot.Game.Data.Players;
 
 namespace DaresGameBot;
 
