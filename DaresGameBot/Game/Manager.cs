@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using AbstractBot.Configs.MessageTemplates;
+using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
@@ -21,10 +22,11 @@ internal sealed class Manager
 
     public Data.Game StartNewGame(List<Player> players, Compatibility compatibility)
     {
-        IList<ActionDeck> actionDecks = GetActionDecks();
-        QuestionDeck questionsDeck = new(_questions);
         RandomMatchmaker matchmaker = new(compatibility);
-        return new Data.Game(_bot.Config, players, matchmaker, actionDecks, questionsDeck);
+        CompanionsSelector companionsSelector = new(matchmaker, players);
+        IList<ActionDeck> actionDecks = GetActionDecks(companionsSelector);
+        QuestionDeck questionsDeck = new(_questions);
+        return new Data.Game(_bot.Config, players, actionDecks, questionsDeck, companionsSelector);
     }
 
     public Task RepotNewGameAsync(Chat chat, Data.Game game)
@@ -40,7 +42,7 @@ internal sealed class Manager
     {
         game.UpdatePlayers(players);
         GroupBasedCompatibility compatibility = new(compatibilityInfos);
-        game.Matchmaker = new RandomMatchmaker(compatibility);
+        game.CompanionsSelector.Matchmaker = new RandomMatchmaker(compatibility);
 
         MessageTemplateText playersText =
             _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
@@ -55,7 +57,10 @@ internal sealed class Manager
         await message.SendAsync(_bot, chat);
     }
 
-    private IList<ActionDeck> GetActionDecks() => _actions.GroupBy(c => c.Tag).Select(g => new ActionDeck(g)).ToList();
+    private IList<ActionDeck> GetActionDecks(IActionChecker checker)
+    {
+        return _actions.GroupBy(c => c.Tag).Select(g => new ActionDeck(g, checker)).ToList();
+    }
 
     private readonly Bot _bot;
     private readonly IReadOnlyList<CardAction> _actions;

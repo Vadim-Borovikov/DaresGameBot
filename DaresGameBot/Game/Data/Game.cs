@@ -2,31 +2,30 @@
 using System.Linq;
 using AbstractBot;
 using DaresGameBot.Configs;
+using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
-using DaresGameBot.Game.Matchmaking;
-using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Data;
 
 internal sealed class Game : Context
 {
-    public Matchmaker Matchmaker;
+    public readonly CompanionsSelector CompanionsSelector;
     public IEnumerable<string> PlayerNames => _players.Select(p => p.Name);
     public bool Fresh;
 
     public bool IsActive => _nextActionTurn is not null;
 
-    public Game(Config config, List<Player> players, Matchmaker matchmaker, IList<ActionDeck> actionDecks,
-        QuestionDeck questionsDeck)
+    public Game(Config config, List<Player> players, IList<ActionDeck> actionDecks, QuestionDeck questionsDeck,
+        CompanionsSelector companionsSelector)
     {
         Fresh = true;
         _config = config;
         _actionDecks = actionDecks;
         _questionsDeck = questionsDeck;
+        CompanionsSelector = companionsSelector;
 
         UpdatePlayers(players);
-        Matchmaker = matchmaker;
 
         TryPrepareNextActionTurn();
     }
@@ -57,50 +56,18 @@ internal sealed class Game : Context
         _currentPlayerIndex = 0;
     }
 
-    private Turn? TryCreateActionTurn(Player player, CardAction card)
-    {
-        List<Player>? partners = null;
-        if (card.Partners > 0)
-        {
-            partners = Matchmaker.EnumerateMatches(player, _players, card.Partners, card.CompatablePartners)?.ToList();
-            if (partners is null)
-            {
-                return null;
-            }
-        }
-
-        List<Player>? helpers = null;
-        if (card.Helpers > 0)
-        {
-            List<Player> choices =
-                _players.Where(p => (p != player) && (partners is null || !partners.Contains(p))).ToList();
-            helpers = RandomHelper.EnumerateUniqueItems(choices, card.Helpers)?.ToList();
-            if (helpers is null)
-            {
-                return null;
-            }
-        }
-
-        if (!card.AssignPartners)
-        {
-            partners = null;
-        }
-
-        return new Turn(_config.Texts, _config.ImagesFolder, card.Tag, card.Description, player, card.ImagePath,
-            partners, helpers);
-    }
-
     private void TryPrepareNextActionTurn()
     {
         int nextPlayerIndex = Fresh ? 0 : (_currentPlayerIndex + 1) % _players.Count;
-        Player nextPlayer = _players[nextPlayerIndex];
+        Player player = _players[nextPlayerIndex];
         while (_actionDecks.Any())
         {
             ActionDeck deck = _actionDecks.First();
-            Turn? turn = deck.TryGetTurn(c => TryCreateActionTurn(nextPlayer, c));
-            if (turn is not null)
+            CardAction? action = deck.TrySelectCardFor(player);
+            if (action is not null)
             {
-                _nextActionTurn = turn;
+                _nextActionTurn = new Turn(_config.Texts, _config.ImagesFolder, action.Tag, action.Description,
+                    CompanionsSelector.CompanionsInfo, action.ImagePath);
                 return;
             }
             _actionDecks.RemoveAt(0);

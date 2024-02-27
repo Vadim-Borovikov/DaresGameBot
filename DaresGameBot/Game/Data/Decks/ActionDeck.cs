@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Helpers;
 
@@ -8,22 +8,24 @@ namespace DaresGameBot.Game.Data.Decks;
 
 internal sealed class ActionDeck
 {
-    public ActionDeck(IEnumerable<CardAction> source)
+    private readonly IActionChecker _checker;
+
+    public ActionDeck(IEnumerable<CardAction> source, IActionChecker checker)
     {
+        _checker = checker;
         CardAction[] cards = RandomHelper.Shuffle(source);
         _cards = cards.ToList();
     }
 
-    public Turn? TryGetTurn(Func<CardAction, Turn?> creator)
+    public CardAction? TrySelectCardFor(Player player)
     {
         for (int i = 0; i < _cards.Count; ++i)
         {
             CardAction card = _cards[i];
-            Turn? turn = creator(card);
-            if (turn is not null)
+            if (_checker.Check(player, card))
             {
                 _cards.RemoveAt(i);
-                return turn;
+                return card;
             }
         }
 
