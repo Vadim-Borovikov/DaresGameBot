@@ -25,7 +25,7 @@ internal sealed class Manager
     {
         RandomMatchmaker matchmaker = new(compatibility);
         CompanionsSelector companionsSelector = new(matchmaker, players);
-        IList<ActionDeck> actionDecks = GetActionDecks(companionsSelector);
+        Queue<ActionDeck> actionDecks = GetActionDecks(companionsSelector);
         QuestionDeck questionsDeck = new(_questions);
         return new Data.Game(_bot.Config, players, actionDecks, questionsDeck, companionsSelector);
     }
@@ -58,9 +58,10 @@ internal sealed class Manager
         await message.SendAsync(_bot, chat);
     }
 
-    private IList<ActionDeck> GetActionDecks(IActionChecker checker)
+    private Queue<ActionDeck> GetActionDecks(IActionChecker checker)
     {
-        return _actions.GroupBy(c => c.Tag).Select(g => new ActionDeck(g, checker)).ToList();
+        IEnumerable<ActionDeck> decks = _actions.GroupBy(c => c.Tag).Select(g => new ActionDeck(g, checker));
+        return new Queue<ActionDeck>(decks);
     }
 
     private readonly Bot _bot;

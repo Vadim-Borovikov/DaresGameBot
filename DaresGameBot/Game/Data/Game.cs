@@ -11,70 +11,67 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class Game : Context
 {
-    public readonly CompanionsSelector CompanionsSelector;
-    public bool Fresh { get; private set; }
+    public enum ActionDecksStatus
+    {
+        BeforeDeck,
+        InDeck,
+        AfterAllDecks
+    }
 
-    public bool IsActive => _nextActionTurn is not null;
+    public readonly CompanionsSelector CompanionsSelector;
+
+    public ActionDecksStatus Status { get; private set; }
+
     public IEnumerable<string> PlayerNames => _players.EnumerateNames();
 
-    public Game(Config config, IEnumerable<Player> players, IList<ActionDeck> actionDecks, QuestionDeck questionsDeck,
+    public Game(Config config, IEnumerable<Player> players, Queue<ActionDeck> actionDecks, QuestionDeck questionsDeck,
         CompanionsSelector companionsSelector)
     {
-        Fresh = true;
+        Status = ActionDecksStatus.BeforeDeck;
+
         _config = config;
         _actionDecks = actionDecks;
         _questionsDeck = questionsDeck;
         CompanionsSelector = companionsSelector;
 
         _players = new PlayerRepository(players);
-
-        _nextActionTurn = TryDrawAction();
     }
 
-    public Turn DrawAction()
+    public Turn? TryDrawAction()
     {
-        if (!Fresh)
+        switch (Status)
         {
-            _players.MoveNext();
+            case ActionDecksStatus.AfterAllDecks:
+                return null;
+            case ActionDecksStatus.InDeck:
+                _players.MoveNext();
+                break;
         }
 
-        Fresh = false;
-        Turn result = _nextActionTurn!;
-        _nextActionTurn = TryDrawAction();
-        return result;
+        ActionDeck deck = _actionDecks.Peek();
+        CardAction? action = deck.TrySelectCardFor(_players.Current);
+        if (action is null)
+        {
+            _actionDecks.Dequeue();
+            Status = _actionDecks.Any() ? ActionDecksStatus.BeforeDeck : ActionDecksStatus.AfterAllDecks;
+            return null;
+        }
+
+        Status = ActionDecksStatus.InDeck;
+        return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, action.Description,
+            CompanionsSelector.CompanionsInfo, action.ImagePath);
     }
 
     public Turn DrawQuestion()
     {
-        Fresh = false;
         Card question = _questionsDeck.Draw();
         return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, question.Description);
     }
 
     public void UpdatePlayers(IEnumerable<Player> players) => _players = new PlayerRepository(players);
 
-    private Turn? TryDrawAction()
-    {
-        Player player = Fresh ? _players.Current : _players.Next;
-
-        while (_actionDecks.Any())
-        {
-            ActionDeck deck = _actionDecks.First();
-            CardAction? action = deck.TrySelectCardFor(player);
-            if (action is not null)
-            {
-                return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, action.Description,
-                    CompanionsSelector.CompanionsInfo, action.ImagePath);
-            }
-            _actionDecks.RemoveAt(0);
-        }
-
-        return null;
-    }
-
     private readonly Config _config;
-    private readonly IList<ActionDeck> _actionDecks;
+    private readonly Queue<ActionDeck> _actionDecks;
     private readonly QuestionDeck _questionsDeck;
     private PlayerRepository _players;
-    private Turn? _nextActionTurn;
 }

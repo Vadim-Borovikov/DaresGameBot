@@ -88,6 +88,10 @@ public class Texts : AbstractBot.Configs.Texts
 
     [UsedImplicitly]
     [Required]
+    public MessageTemplateText DeckEnded { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
     public MessageTemplateText GameOver { get; init; } = null!;
 
     [Required]

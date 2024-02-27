@@ -17,6 +17,7 @@ using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Players;
+using System;
 
 namespace DaresGameBot;
 
@@ -81,39 +82,47 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return message.SendAsync(this, chat);
     }
 
-    internal async Task DrawAsync(Chat chat, int replyToMessageId, bool action = true)
+    internal Task DrawAsync(Chat chat, int replyToMessageId, bool action = true)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
         if (game is null)
         {
-            await OnNewGameAsync(chat);
-            return;
+            return OnNewGameAsync(chat);
         }
 
-        Turn turn = action ? game.DrawAction() : game.DrawQuestion();
-        if (game.IsActive)
+        if (_manager is null)
         {
-            await _manager!.RepotTurnAsync(chat, game, turn, replyToMessageId);
+            throw new ArgumentNullException(nameof(_manager));
         }
-        else
+
+        Turn? turn;
+        if (!action)
         {
-            Contexts.Remove(chat.Id);
-            await Config.Texts.GameOver.SendAsync(this, chat);
+            turn = game.DrawQuestion();
+            return _manager.RepotTurnAsync(chat, game, turn, replyToMessageId);
         }
+
+        turn = game.TryDrawAction();
+        if (turn is not null)
+        {
+            return _manager.RepotTurnAsync(chat, game, turn, replyToMessageId);
+        }
+
+        return game.Status switch
+        {
+            Game.Data.Game.ActionDecksStatus.BeforeDeck    => Config.Texts.DeckEnded.SendAsync(this, chat),
+            Game.Data.Game.ActionDecksStatus.AfterAllDecks => Config.Texts.GameOver.SendAsync(this, chat),
+            _                                              => throw new ArgumentOutOfRangeException()
+        };
     }
 
     protected override KeyboardProvider GetDefaultKeyboardProvider(Chat chat)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
 
-        if (game is null || !game.IsActive)
+        if (game is null || (game.Status == Game.Data.Game.ActionDecksStatus.AfterAllDecks))
         {
             return GetKeyboard(Config.Texts.NewGameCaption);
-        }
-
-        if (game.Fresh)
-        {
-            return GetKeyboard(Config.Texts.DrawActionCaption);
         }
 
         return GetKeyboard(Config.Texts.DrawActionCaption, Config.Texts.DrawQuestionCaption);
