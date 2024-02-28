@@ -45,11 +45,12 @@ internal sealed class ActionDeck
         IEnumerable<CardAction> possibleCards = _cards.Where(c => _possiblePlayers.ContainsKey(c.Id)
                                                                   && _possiblePlayers[c.Id].Contains(player.Name));
 
-        List<CardAction>? bestCards = possibleCards.GroupBy(c => _possiblePlayers[c.Id].Count)
-                                                   .MinBy(g => g.Key)
-                                                   ?.ToList();
+        List<CardAction> bestCards = possibleCards.GroupBy(c => _possiblePlayers[c.Id].Count)
+                                                  .OrderBy(g => g.Key)
+                                                  .First()
+                                                  .ToList();
 
-        if (bestCards is null || !bestCards.Any())
+        if (!bestCards.Any())
         {
             return null;
         }

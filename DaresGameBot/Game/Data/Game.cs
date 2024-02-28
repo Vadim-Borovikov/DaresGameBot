@@ -64,10 +64,18 @@ internal sealed class Game : Context
                 return null;
             }
             CompanionsInfo? companions = CompanionsSelector.TrySelectCompanionsFor(_players.Current, action);
-            return companions is null
-                ? null
-                : new Turn(_config.Texts, _config.ImagesFolder, action.Tag, null, action.Description, companions,
-                    action.ImagePath);
+            if (companions is null)
+            {
+                return null;
+            }
+
+            if (companions.Partners is not null)
+            {
+                CompanionsSelector.Matchmaker.RegisterActions(companions.Player, companions.Partners,
+                    action.CompatablePartners);
+            }
+            return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, null, action.Description, companions,
+                action.ImagePath);
         }
 
         _actionDecks.Dequeue();

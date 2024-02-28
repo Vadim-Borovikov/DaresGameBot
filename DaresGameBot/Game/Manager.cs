@@ -28,7 +28,7 @@ internal sealed class Manager
 
     public Data.Game StartNewGame(List<Player> players, Compatibility compatibility)
     {
-        RandomMatchmaker matchmaker = new(compatibility);
+        DistributedMatchmaker matchmaker = new(compatibility);
         CompanionsSelector companionsSelector = new(matchmaker, players);
         Queue<ActionDeck> actionDecks = GetActionDecks(companionsSelector);
         QuestionDeck questionsDeck = new(_questions);
@@ -48,7 +48,7 @@ internal sealed class Manager
     {
         game.UpdatePlayers(players);
         GroupBasedCompatibility compatibility = new(compatibilityInfos);
-        game.CompanionsSelector.Matchmaker = new RandomMatchmaker(compatibility);
+        game.CompanionsSelector.Matchmaker = new DistributedMatchmaker(compatibility);
 
         MessageTemplateText playersText =
             _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
