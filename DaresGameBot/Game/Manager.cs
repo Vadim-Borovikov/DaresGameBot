@@ -44,10 +44,10 @@ internal sealed class Manager
     }
 
     public Task UpdatePlayersAsync(Chat chat, Data.Game game, IEnumerable<Player> players,
-        Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos)
+        Dictionary<string, IInteractabilityProvider> infos)
     {
         game.UpdatePlayers(players);
-        GroupBasedCompatibility compatibility = new(compatibilityInfos);
+        Compatibility compatibility = new(infos);
         game.CompanionsSelector.Matchmaker = new DistributedMatchmaker(compatibility);
 
         MessageTemplateText playersText =

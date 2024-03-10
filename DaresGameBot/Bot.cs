@@ -65,12 +65,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     }
 
     internal async Task UpdatePlayersAsync(Chat chat, List<Player> players,
-        Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos)
+        Dictionary<string, IInteractabilityProvider> infos)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
         if (game is null)
         {
-            Contexts[chat.Id] = await StartNewGameAsync(chat, players, compatibilityInfos);
+            Contexts[chat.Id] = await StartNewGameAsync(chat, players, infos);
             return;
         }
 
@@ -79,7 +79,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             throw new ArgumentNullException(nameof(_manager));
         }
 
-        await _manager.UpdatePlayersAsync(chat, game, players, compatibilityInfos);
+        await _manager.UpdatePlayersAsync(chat, game, players, infos);
     }
 
     internal Task OnNewGameAsync(Chat chat)
@@ -164,9 +164,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     }
 
     private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, List<Player> players,
-        Dictionary<string, GroupBasedCompatibilityPlayerInfo> compatibilityInfos)
+        Dictionary<string, IInteractabilityProvider> infos)
     {
-        Compatibility compatibility = new GroupBasedCompatibility(compatibilityInfos);
+        Compatibility compatibility = new(infos);
 
         if (_manager is null)
         {
