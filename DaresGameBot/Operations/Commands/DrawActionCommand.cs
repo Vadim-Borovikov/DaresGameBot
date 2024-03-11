@@ -14,10 +14,7 @@ internal sealed class DrawActionCommand : DaresGameCommand
         _bot = bot;
     }
 
-    protected override Task ExecuteAsync(Chat chat, int replyToMessageId)
-    {
-        return _bot.DrawAsync(chat, replyToMessageId);
-    }
+    protected override Task ExecuteAsync(Chat chat, int replyToMessageId) => _bot.DrawAsync(chat, replyToMessageId);
 
     private readonly Bot _bot;
 }
