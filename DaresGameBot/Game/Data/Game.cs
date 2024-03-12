@@ -1,5 +1,4 @@
-﻿using AbstractBot;
-using DaresGameBot.Configs;
+﻿using DaresGameBot.Configs;
 using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
@@ -10,7 +9,7 @@ using System.Linq;
 
 namespace DaresGameBot.Game.Data;
 
-internal sealed class Game : Context
+internal sealed class Game
 {
     public enum ActionDecksStatus
     {
