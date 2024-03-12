@@ -1,16 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Data.Players;
 using DaresGameBot.Game.Matchmaking.PlayerCheck;
 
 namespace DaresGameBot.Operations.Info;
 
 internal sealed class PlayersInfo
 {
-    public readonly List<Player> Players;
+    public readonly List<string> Players;
     public readonly Dictionary<string, IPartnerChecker> InteractabilityInfos;
 
-    private PlayersInfo(List<Player> players, Dictionary<string, IPartnerChecker> interactabilityInfos)
+    private PlayersInfo(List<string> players, Dictionary<string, IPartnerChecker> interactabilityInfos)
     {
         Players = players;
         InteractabilityInfos = interactabilityInfos;
@@ -18,7 +17,7 @@ internal sealed class PlayersInfo
 
     public static PlayersInfo? From(IEnumerable<string> lines)
     {
-        List<Player> players = new();
+        List<string> players = new();
         Dictionary<string, IPartnerChecker> compatibilityInfos = new();
 
         foreach (string[] parts in lines.Select(l => l.Split(PartsSeparator)))
@@ -32,7 +31,7 @@ internal sealed class PlayersInfo
             string group = parts[1];
             string[] compatableGroups = parts[2].Split(GroupsSeparator);
 
-            Player player = new(name);
+            string player = new(name);
             GroupChecker info = new(group, new HashSet<string>(compatableGroups));
 
             players.Add(player);

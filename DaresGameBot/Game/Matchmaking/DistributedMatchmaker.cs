@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Helpers;
-using DaresGameBot.Game.Data.Players;
 using GryphonUtilities.Extensions;
 using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using DaresGameBot.Game.Matchmaking.Interactions;
@@ -16,10 +15,10 @@ internal sealed class DistributedMatchmaker : Matchmaker
         _interactionRepository = interactionRepository;
     }
 
-    public override IEnumerable<Player>? EnumerateMatches(Player player, IEnumerable<Player> all, byte amount,
+    public override IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all, byte amount,
         bool compatableWithEachOther)
     {
-        List<Player> choices = EnumerateCompatiblePlayers(player, all).ToList();
+        List<string> choices = EnumerateCompatiblePlayers(player, all).ToList();
         if (choices.Count < amount)
         {
             return null;
@@ -27,8 +26,8 @@ internal sealed class DistributedMatchmaker : Matchmaker
 
         if (compatableWithEachOther)
         {
-            IEnumerable<IReadOnlyList<Player>> groups = EnumerateIntercompatibleGroups(choices, amount);
-            List<IReadOnlyList<Player>> bestGroups =
+            IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatibleGroups(choices, amount);
+            List<IReadOnlyList<string>> bestGroups =
                 groups.GroupBy(g => _interactionRepository.GetInteractions(player, g))
                       .OrderBy(g => g.Key)
                       .First()
@@ -36,12 +35,12 @@ internal sealed class DistributedMatchmaker : Matchmaker
             return RandomHelper.SelectItem(bestGroups);
         }
 
-        List<Player> bestChoices = new();
+        List<string> bestChoices = new();
         while (bestChoices.Count < amount)
         {
             int toAdd = amount - bestChoices.Count;
 
-            List<Player> batch = choices.GroupBy(c => _interactionRepository.GetInteractions(player, c))
+            List<string> batch = choices.GroupBy(c => _interactionRepository.GetInteractions(player, c))
                                         .OrderBy(g => g.Key)
                                         .First()
                                         .ToList();
@@ -49,14 +48,14 @@ internal sealed class DistributedMatchmaker : Matchmaker
             if (batch.Count <= toAdd)
             {
                 bestChoices.AddRange(batch);
-                foreach (Player p in batch)
+                foreach (string p in batch)
                 {
                     choices.Remove(p);
                 }
                 continue;
             }
 
-            IEnumerable<Player> selection = RandomHelper.EnumerateUniqueItems(batch, toAdd).Denull("Logic error");
+            IEnumerable<string> selection = RandomHelper.EnumerateUniqueItems(batch, toAdd).Denull("Logic error");
             bestChoices.AddRange(selection);
             break;
         }

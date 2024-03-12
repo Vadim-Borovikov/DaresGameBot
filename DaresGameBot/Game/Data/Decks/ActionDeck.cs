@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Game.Data.Cards;
-using DaresGameBot.Game.Data.Players;
 using DaresGameBot.Game.Matchmaking.ActionCheck;
 using DaresGameBot.Helpers;
 
@@ -20,10 +19,10 @@ internal sealed class ActionDeck
 
     public bool IsEmpty() => !_possiblePlayers.Any();
 
-    public void UpdatePossibilities(IEnumerable<Player> players)
+    public void UpdatePossibilities(IEnumerable<string> players)
     {
         _possiblePlayers.Clear();
-        foreach (Player player in players)
+        foreach (string player in players)
         {
             foreach (CardAction action in _cards)
             {
@@ -35,15 +34,15 @@ internal sealed class ActionDeck
                 {
                     _possiblePlayers[action.Id] = new List<string>();
                 }
-                _possiblePlayers[action.Id].Add(player.Name);
+                _possiblePlayers[action.Id].Add(player);
             }
         }
     }
 
-    public CardAction? TrySelectCardFor(Player player)
+    public CardAction? TrySelectCardFor(string player)
     {
         IEnumerable<CardAction> possibleCards = _cards.Where(c => _possiblePlayers.ContainsKey(c.Id)
-                                                                  && _possiblePlayers[c.Id].Contains(player.Name));
+                                                                  && _possiblePlayers[c.Id].Contains(player));
 
         List<CardAction> bestCards = possibleCards.GroupBy(c => _possiblePlayers[c.Id].Count)
                                                   .OrderBy(g => g.Key)

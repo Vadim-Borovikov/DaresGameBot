@@ -1,7 +1,6 @@
 ﻿using DaresGameBot.Configs;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
-using DaresGameBot.Game.Data.Players;
 using DaresGameBot.Game.Matchmaking.ActionCheck;
 using GryphonUtilities.Helpers;
 using System.Collections.Generic;
@@ -24,9 +23,9 @@ internal sealed class Game
     public ActionDecksStatus Status { get; private set; }
     public bool IncludeEn { get; private set; }
 
-    public IEnumerable<string> PlayerNames => _players.EnumerateNames();
+    public IEnumerable<string> PlayerNames => _players;
 
-    public Game(Config config, IEnumerable<Player> players, DecksProvider decksProvider,
+    public Game(Config config, IEnumerable<string> players, DecksProvider decksProvider,
         CompanionsSelector companionsSelector, IInteractionSubscriber interactionSubscriber)
     {
         Status = ActionDecksStatus.BeforeDeck;
@@ -95,7 +94,7 @@ internal sealed class Game
             question.DescriptionEn, companions);
     }
 
-    public void UpdatePlayers(IEnumerable<Player> players)
+    public void UpdatePlayers(IEnumerable<string> players)
     {
         _players = new PlayerRepository(players);
         _shouldUpdatePossibilities = true;

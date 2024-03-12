@@ -1,6 +1,5 @@
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Data.Cards;
-using DaresGameBot.Game.Data.Players;
 using DaresGameBot.Helpers;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +10,13 @@ internal sealed class CompanionsSelector : IActionChecker
 {
     public readonly Matchmaker Matchmaker;
 
-    public CompanionsSelector(Matchmaker matchmaker, IReadOnlyList<Player> players)
+    public CompanionsSelector(Matchmaker matchmaker, IReadOnlyList<string> players)
     {
         Matchmaker = matchmaker;
         _players = players;
     }
 
-    public bool CanPlay(Player player, CardAction action)
+    public bool CanPlay(string player, CardAction action)
     {
         if ((action.Partners + action.Helpers) >= _players.Count)
         {
@@ -28,9 +27,9 @@ internal sealed class CompanionsSelector : IActionChecker
                || Matchmaker.AreThereAnyMatches(player, _players, action.Partners, action.CompatablePartners);
     }
 
-    public CompanionsInfo? TrySelectCompanionsFor(Player player, CardAction action)
+    public CompanionsInfo? TrySelectCompanionsFor(string player, CardAction action)
     {
-        List<Player>? partners = null;
+        List<string>? partners = null;
         if (action.Partners > 0)
         {
             partners =
@@ -41,10 +40,10 @@ internal sealed class CompanionsSelector : IActionChecker
             }
         }
 
-        List<Player>? helpers = null;
+        List<string>? helpers = null;
         if (action.Helpers > 0)
         {
-            List<Player> choices =
+            List<string> choices =
                 _players.Where(p => (p != player) && (partners is null || !partners.Contains(p))).ToList();
             helpers = RandomHelper.EnumerateUniqueItems(choices, action.Helpers)?.ToList();
             if (helpers is null)
@@ -61,5 +60,5 @@ internal sealed class CompanionsSelector : IActionChecker
         return new CompanionsInfo(player, partners, helpers);
     }
 
-    private readonly IReadOnlyList<Player> _players;
+    private readonly IReadOnlyList<string> _players;
 }

@@ -1,14 +1,13 @@
 ﻿using System.Collections.Generic;
 using DaresGameBot.Helpers;
-using DaresGameBot.Game.Data.Players;
 
 namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal sealed class InteractionRepository : IInteractionSubscriber
 {
-    public void OnInteraction(Player player, IReadOnlyList<Player> partners, bool actionsBetweenPartners)
+    public void OnInteraction(string player, IReadOnlyList<string> partners, bool actionsBetweenPartners)
     {
-        foreach (Player p in partners)
+        foreach (string p in partners)
         {
             RegisterInteraction(player, p);
         }
@@ -17,22 +16,22 @@ internal sealed class InteractionRepository : IInteractionSubscriber
         {
             return;
         }
-        foreach ((Player, Player) pair in ListHelper.EnumeratePairs(partners))
+        foreach ((string, string) pair in ListHelper.EnumeratePairs(partners))
         {
             RegisterInteraction(pair.Item1, pair.Item2);
         }
     }
 
-    public ushort GetInteractions(Player player, IReadOnlyList<Player> players)
+    public ushort GetInteractions(string player, IReadOnlyList<string> players)
     {
         ushort result = 0;
 
-        foreach (Player p in players)
+        foreach (string p in players)
         {
             result += GetInteractions(player, p);
         }
 
-        foreach ((Player, Player) pair in ListHelper.EnumeratePairs(players))
+        foreach ((string, string) pair in ListHelper.EnumeratePairs(players))
         {
             result += GetInteractions(pair.Item1, pair.Item2);
         }
@@ -40,13 +39,13 @@ internal sealed class InteractionRepository : IInteractionSubscriber
         return result;
     }
 
-    public ushort GetInteractions(Player p1, Player p2)
+    public ushort GetInteractions(string p1, string p2)
     {
         int hash = GetHash(p1, p2);
         return _interactions.GetValueOrDefault(hash);
     }
 
-    private void RegisterInteraction(Player p1, Player p2)
+    private void RegisterInteraction(string p1, string p2)
     {
         int hash = GetHash(p1, p2);
         if (_interactions.ContainsKey(hash))
@@ -59,7 +58,7 @@ internal sealed class InteractionRepository : IInteractionSubscriber
         }
     }
 
-    private static int GetHash(Player p1, Player p2) => p1.Name.GetHashCode() ^ p2.Name.GetHashCode();
+    private static int GetHash(string p1, string p2) => p1.GetHashCode() ^ p2.GetHashCode();
 
     private readonly Dictionary<int, ushort> _interactions = new();
 }

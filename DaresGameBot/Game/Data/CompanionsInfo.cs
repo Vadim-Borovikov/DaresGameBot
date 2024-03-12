@@ -1,15 +1,14 @@
 using System.Collections.Generic;
-using DaresGameBot.Game.Data.Players;
 
 namespace DaresGameBot.Game.Data;
 
 internal sealed class CompanionsInfo
 {
-    public readonly Player Player;
-    public readonly IReadOnlyList<Player>? Partners;
-    public readonly IReadOnlyList<Player>? Helpers;
+    public readonly string Player;
+    public readonly IReadOnlyList<string>? Partners;
+    public readonly IReadOnlyList<string>? Helpers;
 
-    public CompanionsInfo(Player player, IReadOnlyList<Player>? partners, IReadOnlyList<Player>? helpers)
+    public CompanionsInfo(string player, IReadOnlyList<string>? partners, IReadOnlyList<string>? helpers)
     {
         Player = player;
         Partners = partners;

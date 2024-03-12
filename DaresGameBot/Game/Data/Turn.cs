@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Configs;
-using DaresGameBot.Game.Data.Players;
 
 namespace DaresGameBot.Game.Data;
 
@@ -31,20 +29,20 @@ internal sealed class Turn
         }
 
         MessageTemplateText? partnersPart = null;
-        IReadOnlyList<Player>? partners = _companions?.Partners;
+        IReadOnlyList<string>? partners = _companions?.Partners;
         if (partners is not null && (partners.Count != 0) && (partners.Count != (playersAmount - 1)))
         {
             string partnersPrefix = partners.Count > 1 ? _texts.Partners : _texts.Partner;
-            string partnersText = string.Join(_texts.PartnersSeparator, partners.Select(p => p.Name));
+            string partnersText = string.Join(_texts.PartnersSeparator, partners);
             partnersPart = _texts.TurnPartnersFormat.Format(partnersPrefix, partnersText);
         }
 
         MessageTemplateText? helpersPart = null;
-        IReadOnlyList<Player>? helpers = _companions?.Helpers;
+        IReadOnlyList<string>? helpers = _companions?.Helpers;
         if (helpers is not null && (helpers.Count != 0))
         {
             string helpersPrefix = helpers.Count > 1 ? _texts.Helpers : _texts.Helper;
-            string helpersText = string.Join(_texts.PartnersSeparator, helpers.Select(p => p.Name));
+            string helpersText = string.Join(_texts.PartnersSeparator, helpers);
             helpersPart = _texts.TurnPartnersFormat.Format(helpersPrefix, helpersText);
         }
 
@@ -55,8 +53,7 @@ internal sealed class Turn
             message = new MessageTemplateImage(message, path);
         }
 
-        return message.Format(_tagPart, _companions?.Player.Name, _prefixPart, descriprionPart, partnersPart,
-            helpersPart);
+        return message.Format(_tagPart, _companions?.Player, _prefixPart, descriprionPart, partnersPart, helpersPart);
     }
 
     private readonly MessageTemplateText _tagPart;

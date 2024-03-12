@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using DaresGameBot.Game.Data.Players;
 
 namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal interface IInteractionSubscriber
 {
-    public void OnInteraction(Player player, IReadOnlyList<Player> partners, bool actionsBetweenPartners);
+    public void OnInteraction(string player, IReadOnlyList<string> partners, bool actionsBetweenPartners);
 }

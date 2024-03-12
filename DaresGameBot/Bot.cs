@@ -5,7 +5,6 @@ using AbstractBot.Operations.Data;
 using DaresGameBot.Configs;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Data.Cards;
-using DaresGameBot.Game.Data.Players;
 using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Game.Matchmaking.ActionCheck;
 using DaresGameBot.Game.Matchmaking.Interactions;
@@ -67,7 +66,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Contexts.Remove(chat.Id);
     }
 
-    internal async Task UpdatePlayersAsync(Chat chat, List<Player> players, Dictionary<string, IPartnerChecker> infos)
+    internal async Task UpdatePlayersAsync(Chat chat, IReadOnlyList<string> players, Dictionary<string,
+        IPartnerChecker> infos)
     {
         Compatibility compatibility = new(infos);
 
@@ -133,7 +133,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return GetKeyboard(Config.Texts.DrawActionCaption, Config.Texts.DrawQuestionCaption);
     }
 
-    private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, IReadOnlyList<Player> players,
+    private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, IReadOnlyList<string> players,
         Compatibility compatibility)
     {
         if (_decksProvider is null)
