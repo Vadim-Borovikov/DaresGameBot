@@ -6,11 +6,11 @@ using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class UpdatePlayersOperation : Operation<PlayersInfo>
+internal sealed class UpdatePlayers : Operation<PlayersInfo>
 {
     protected override byte Order => 6;
 
-    public UpdatePlayersOperation(Bot bot) : base(bot, bot.Config.Texts.UpdatePlayersOperationDescription)
+    public UpdatePlayers(Bot bot) : base(bot, bot.Config.Texts.UpdatePlayersOperationDescription)
     {
         _bot = bot;
     }

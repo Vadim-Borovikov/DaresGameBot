@@ -33,7 +33,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Operations.Add(new DrawActionCommand(this));
         Operations.Add(new DrawQuestionCommand(this));
         Operations.Add(new LangCommand(this));
-        Operations.Add(new UpdatePlayersOperation(this));
+        Operations.Add(new UpdatePlayers(this));
 
         GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
 
