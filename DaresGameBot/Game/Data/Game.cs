@@ -1,11 +1,12 @@
 ﻿using DaresGameBot.Configs;
-using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Data.Players;
+using DaresGameBot.Game.Matchmaking.ActionCheck;
 using GryphonUtilities.Helpers;
 using System.Collections.Generic;
 using System.Linq;
+using DaresGameBot.Game.Matchmaking.Interactions;
 
 namespace DaresGameBot.Game.Data;
 
@@ -26,7 +27,7 @@ internal sealed class Game
     public IEnumerable<string> PlayerNames => _players.EnumerateNames();
 
     public Game(Config config, IEnumerable<Player> players, Queue<ActionDeck> actionDecks, QuestionDeck questionsDeck,
-        CompanionsSelector companionsSelector)
+        CompanionsSelector companionsSelector, IInteractionSubscriber interactionSubscriber)
     {
         Status = ActionDecksStatus.BeforeDeck;
 
@@ -34,6 +35,7 @@ internal sealed class Game
         _actionDecks = actionDecks;
         _questionsDeck = questionsDeck;
         CompanionsSelector = companionsSelector;
+        _interactionSubscriber = interactionSubscriber;
 
         UpdatePlayers(players);
     }
@@ -71,7 +73,7 @@ internal sealed class Game
 
             if (companions.Partners is not null)
             {
-                CompanionsSelector.Matchmaker.RegisterActions(companions.Player, companions.Partners,
+                _interactionSubscriber.OnInteraction(companions.Player, companions.Partners,
                     action.CompatablePartners);
             }
             return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, null, action.Description,
@@ -106,4 +108,5 @@ internal sealed class Game
     private readonly QuestionDeck _questionsDeck;
     private PlayerRepository _players = null!;
     private bool _shouldUpdatePossibilities;
+    private readonly IInteractionSubscriber _interactionSubscriber;
 }

@@ -2,12 +2,14 @@
 using System.Linq;
 using System.Threading.Tasks;
 using AbstractBot.Configs.MessageTemplates;
-using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Data.Players;
 using DaresGameBot.Game.Matchmaking;
+using DaresGameBot.Game.Matchmaking.ActionCheck;
+using DaresGameBot.Game.Matchmaking.Interactions;
+using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game;
@@ -28,11 +30,13 @@ internal sealed class Manager
 
     public Data.Game StartNewGame(List<Player> players, Compatibility compatibility)
     {
-        DistributedMatchmaker matchmaker = new(compatibility);
+        InteractionRepository interactionRepository = new();
+        DistributedMatchmaker matchmaker = new(compatibility, interactionRepository);
         CompanionsSelector companionsSelector = new(matchmaker, players);
         Queue<ActionDeck> actionDecks = GetActionDecks(companionsSelector);
         QuestionDeck questionsDeck = new(_questions);
-        return new Data.Game(_bot.Config, players, actionDecks, questionsDeck, companionsSelector);
+        return
+            new Data.Game(_bot.Config, players, actionDecks, questionsDeck, companionsSelector, interactionRepository);
     }
 
     public Task RepotNewGameAsync(Chat chat, Data.Game game)
@@ -44,11 +48,11 @@ internal sealed class Manager
     }
 
     public Task UpdatePlayersAsync(Chat chat, Data.Game game, IEnumerable<Player> players,
-        Dictionary<string, IInteractabilityProvider> infos)
+        Dictionary<string, IPartnerChecker> infos)
     {
         game.UpdatePlayers(players);
         Compatibility compatibility = new(infos);
-        game.CompanionsSelector.Matchmaker = new DistributedMatchmaker(compatibility);
+        game.CompanionsSelector.Matchmaker.Compatibility = compatibility;
 
         MessageTemplateText playersText =
             _bot.Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));

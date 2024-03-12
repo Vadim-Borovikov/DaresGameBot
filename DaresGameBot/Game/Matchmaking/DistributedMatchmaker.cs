@@ -3,26 +3,20 @@ using System.Linq;
 using DaresGameBot.Helpers;
 using DaresGameBot.Game.Data.Players;
 using GryphonUtilities.Extensions;
+using DaresGameBot.Game.Matchmaking.PlayerCheck;
+using DaresGameBot.Game.Matchmaking.Interactions;
 
 namespace DaresGameBot.Game.Matchmaking;
 
 internal sealed class DistributedMatchmaker : Matchmaker
 {
-    public DistributedMatchmaker(Compatibility compatibility) : base(compatibility) { }
-
-    public bool AreThereAnyMatches(Player player, IEnumerable<Player> all, byte amount,
-        bool compatableWithEachOther)
+    public DistributedMatchmaker(Compatibility compatibility, InteractionRepository interactionRepository)
+        : base(compatibility)
     {
-        List<Player> choices = EnumerateCompatiblePlayers(player, all).ToList();
-        if (choices.Count < amount)
-        {
-            return false;
-        }
-
-        return !compatableWithEachOther || EnumerateIntercompatibleGroups(choices, amount).Any();
+        _interactionRepository = interactionRepository;
     }
 
-    public IEnumerable<Player>? EnumerateMatches(Player player, IEnumerable<Player> all, byte amount,
+    public override IEnumerable<Player>? EnumerateMatches(Player player, IEnumerable<Player> all, byte amount,
         bool compatableWithEachOther)
     {
         List<Player> choices = EnumerateCompatiblePlayers(player, all).ToList();
@@ -34,10 +28,11 @@ internal sealed class DistributedMatchmaker : Matchmaker
         if (compatableWithEachOther)
         {
             IEnumerable<IReadOnlyList<Player>> groups = EnumerateIntercompatibleGroups(choices, amount);
-            List<IReadOnlyList<Player>> bestGroups = groups.GroupBy(g => GetActionsPerformed(player, g))
-                                                           .OrderBy(g => g.Key)
-                                                           .First()
-                                                           .ToList();
+            List<IReadOnlyList<Player>> bestGroups =
+                groups.GroupBy(g => _interactionRepository.GetInteractions(player, g))
+                      .OrderBy(g => g.Key)
+                      .First()
+                      .ToList();
             return RandomHelper.SelectItem(bestGroups);
         }
 
@@ -46,7 +41,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
         {
             int toAdd = amount - bestChoices.Count;
 
-            List<Player> batch = choices.GroupBy(c => GetActionsPerformed(player, c))
+            List<Player> batch = choices.GroupBy(c => _interactionRepository.GetInteractions(player, c))
                                         .OrderBy(g => g.Key)
                                         .First()
                                         .ToList();
@@ -68,60 +63,5 @@ internal sealed class DistributedMatchmaker : Matchmaker
         return bestChoices;
     }
 
-    public void RegisterActions(Player player, IReadOnlyList<Player> partners, bool actionsBetweenPartners)
-    {
-        foreach (Player p in partners)
-        {
-            RegisterAction(player, p);
-        }
-
-        if (!actionsBetweenPartners)
-        {
-            return;
-        }
-        foreach ((Player, Player) pair in ListHelper.EnumeratePairs(partners))
-        {
-            RegisterAction(pair.Item1, pair.Item2);
-        }
-    }
-
-    private void RegisterAction(Player p1, Player p2)
-    {
-        int hash = GetHash(p1, p2);
-        if (_actionsPerformed.ContainsKey(hash))
-        {
-            ++_actionsPerformed[hash];
-        }
-        else
-        {
-            _actionsPerformed[hash] = 1;
-        }
-    }
-
-    private ushort GetActionsPerformed(Player player, IReadOnlyList<Player> players)
-    {
-        ushort result = 0;
-
-        foreach (Player p in players)
-        {
-            result += GetActionsPerformed(player, p);
-        }
-
-        foreach ((Player, Player) pair in ListHelper.EnumeratePairs(players))
-        {
-            result += GetActionsPerformed(pair.Item1, pair.Item2);
-        }
-
-        return result;
-    }
-
-    private ushort GetActionsPerformed(Player p1, Player p2)
-    {
-        int hash = GetHash(p1, p2);
-        return _actionsPerformed.GetValueOrDefault(hash);
-    }
-
-    private static int GetHash(Player p1, Player p2) => p1.Name.GetHashCode() ^ p2.Name.GetHashCode();
-
-    private readonly Dictionary<int, ushort> _actionsPerformed = new();
+    private readonly InteractionRepository _interactionRepository;
 }

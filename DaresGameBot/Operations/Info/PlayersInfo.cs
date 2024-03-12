@@ -1,16 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Game.Data.Players;
-using DaresGameBot.Game.Matchmaking;
+using DaresGameBot.Game.Matchmaking.PlayerCheck;
 
 namespace DaresGameBot.Operations.Info;
 
 internal sealed class PlayersInfo
 {
     public readonly List<Player> Players;
-    public readonly Dictionary<string, IInteractabilityProvider> InteractabilityInfos;
+    public readonly Dictionary<string, IPartnerChecker> InteractabilityInfos;
 
-    private PlayersInfo(List<Player> players, Dictionary<string, IInteractabilityProvider> interactabilityInfos)
+    private PlayersInfo(List<Player> players, Dictionary<string, IPartnerChecker> interactabilityInfos)
     {
         Players = players;
         InteractabilityInfos = interactabilityInfos;
@@ -19,7 +19,7 @@ internal sealed class PlayersInfo
     public static PlayersInfo? From(IEnumerable<string> lines)
     {
         List<Player> players = new();
-        Dictionary<string, IInteractabilityProvider> compatibilityInfos = new();
+        Dictionary<string, IPartnerChecker> compatibilityInfos = new();
 
         foreach (string[] parts in lines.Select(l => l.Split(PartsSeparator)))
         {
@@ -33,7 +33,7 @@ internal sealed class PlayersInfo
             string[] compatableGroups = parts[2].Split(GroupsSeparator);
 
             Player player = new(name);
-            GroupBasedInteractability info = new(group, new HashSet<string>(compatableGroups));
+            GroupChecker info = new(group, new HashSet<string>(compatableGroups));
 
             players.Add(player);
             compatibilityInfos[name] = info;

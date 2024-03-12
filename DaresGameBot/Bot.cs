@@ -14,10 +14,10 @@ using DaresGameBot.Game.Data;
 using System.Collections.Generic;
 using Telegram.Bot.Types.Enums;
 using AbstractBot.Configs.MessageTemplates;
-using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Players;
 using System;
+using DaresGameBot.Game.Matchmaking.PlayerCheck;
 
 namespace DaresGameBot;
 
@@ -65,7 +65,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     }
 
     internal async Task UpdatePlayersAsync(Chat chat, List<Player> players,
-        Dictionary<string, IInteractabilityProvider> infos)
+        Dictionary<string, IPartnerChecker> infos)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
         if (game is null)
@@ -164,7 +164,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     }
 
     private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, List<Player> players,
-        Dictionary<string, IInteractabilityProvider> infos)
+        Dictionary<string, IPartnerChecker> infos)
     {
         Compatibility compatibility = new(infos);
 

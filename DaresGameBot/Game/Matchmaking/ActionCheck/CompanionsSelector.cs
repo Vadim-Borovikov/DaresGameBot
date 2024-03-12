@@ -1,24 +1,23 @@
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Players;
-using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Helpers;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DaresGameBot.Game.ActionCheck;
+namespace DaresGameBot.Game.Matchmaking.ActionCheck;
 
 internal sealed class CompanionsSelector : IActionChecker
 {
-    public DistributedMatchmaker Matchmaker;
+    public readonly Matchmaker Matchmaker;
 
-    public CompanionsSelector(DistributedMatchmaker matchmaker, IReadOnlyList<Player> players)
+    public CompanionsSelector(Matchmaker matchmaker, IReadOnlyList<Player> players)
     {
         Matchmaker = matchmaker;
         _players = players;
     }
 
-    public bool Check(Player player, CardAction action)
+    public bool CanPlay(Player player, CardAction action)
     {
         if ((action.Partners + action.Helpers) >= _players.Count)
         {

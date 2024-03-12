@@ -1,9 +1,9 @@
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Players;
 
-namespace DaresGameBot.Game.ActionCheck;
+namespace DaresGameBot.Game.Matchmaking.ActionCheck;
 
 internal interface IActionChecker
 {
-    public bool Check(Player player, CardAction action);
+    public bool CanPlay(Player player, CardAction action);
 }

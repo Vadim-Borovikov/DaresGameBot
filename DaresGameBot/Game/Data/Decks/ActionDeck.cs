@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.ActionCheck;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Players;
+using DaresGameBot.Game.Matchmaking.ActionCheck;
 using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Data.Decks;
@@ -27,7 +27,7 @@ internal sealed class ActionDeck
         {
             foreach (CardAction action in _cards)
             {
-                if (!_checker.Check(player, action))
+                if (!_checker.CanPlay(player, action))
                 {
                     continue;
                 }
