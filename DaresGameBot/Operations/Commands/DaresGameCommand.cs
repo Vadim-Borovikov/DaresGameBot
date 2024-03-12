@@ -9,7 +9,7 @@ namespace DaresGameBot.Operations.Commands;
 
 internal abstract class DaresGameCommand : CommandSimple
 {
-    protected abstract string? Alias { get; }
+    protected virtual string? Alias => null;
 
     protected DaresGameCommand(Bot bot, string command, string description) : base(bot, command, description) { }
 

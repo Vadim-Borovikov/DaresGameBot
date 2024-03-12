@@ -125,4 +125,48 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public MessageTemplateText LangToggledToRuEn { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText PlayerFormat { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText CurrentPlayersFormat { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string AllPreferencesCommandDescription { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string MyPreferencesCommandDescription { get; set; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText PlayerAccepted { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText PlayerDeclinedNameFormat { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText NoGameFound { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText GameCanNotBeJoined { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string StartGameAndGetLink { get; set; } = null!;
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText NewGameLink { get; init; } = null!;
+
 }

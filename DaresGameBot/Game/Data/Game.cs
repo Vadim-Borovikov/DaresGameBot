@@ -2,10 +2,12 @@
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Matchmaking.ActionCheck;
+using DaresGameBot.Game.Matchmaking.Interactions;
 using GryphonUtilities.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Matchmaking.Interactions;
+using DaresGameBot.Game.Matchmaking.PlayerCheck;
 
 namespace DaresGameBot.Game.Data;
 
@@ -18,16 +20,21 @@ internal sealed class Game
         AfterAllDecks
     }
 
+    public readonly Guid Id;
+
     public readonly CompanionsSelector CompanionsSelector;
 
     public ActionDecksStatus Status { get; private set; }
+    public bool CanBeJoined { get; private set; }
     public bool IncludeEn { get; private set; }
 
-    public IEnumerable<string> PlayerNames => _players;
+    public IEnumerable<string> Players => _players;
 
     public Game(Config config, IEnumerable<string> players, DecksProvider decksProvider,
-        CompanionsSelector companionsSelector, IInteractionSubscriber interactionSubscriber)
+        CompanionsSelector companionsSelector, IInteractionSubscriber interactionSubscriber, bool canBeJoined)
     {
+        Id = Guid.NewGuid();
+
         Status = ActionDecksStatus.BeforeDeck;
 
         _config = config;
@@ -36,7 +43,7 @@ internal sealed class Game
         CompanionsSelector = companionsSelector;
         _interactionSubscriber = interactionSubscriber;
 
-        UpdatePlayers(players);
+        UpdatePlayers(players, canBeJoined);
     }
 
     public Turn? TryDrawAction()
@@ -94,10 +101,17 @@ internal sealed class Game
             question.DescriptionEn, companions);
     }
 
-    public void UpdatePlayers(IEnumerable<string> players)
+    public void AddPlayer(string player, IPartnerChecker checker)
+    {
+        _players.Add(player);
+        CompanionsSelector.Matchmaker.Compatibility.AddPlayer(player, checker);
+    }
+
+    public void UpdatePlayers(IEnumerable<string> players, bool canBeJoined = false)
     {
         _players = new PlayerRepository(players);
         _shouldUpdatePossibilities = true;
+        CanBeJoined = canBeJoined;
     }
 
     public void ToggleLanguages() => IncludeEn = !IncludeEn;

@@ -6,7 +6,12 @@ namespace DaresGameBot.Game.Matchmaking.PlayerCheck;
 
 internal sealed class Compatibility
 {
-    public Compatibility(Dictionary<string, IPartnerChecker> playerInfos) => _playerInfos = playerInfos;
+    public Compatibility(Dictionary<string, IPartnerChecker>? playerInfos = null)
+    {
+        _playerInfos = playerInfos ?? new Dictionary<string, IPartnerChecker>();
+    }
+
+    public void AddPlayer(string player, IPartnerChecker checker) => _playerInfos.Add(player, checker);
 
     public bool AreCompatable(string p1, string p2)
     {

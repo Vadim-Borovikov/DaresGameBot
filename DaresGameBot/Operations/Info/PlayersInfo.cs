@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using DaresGameBot.Game.Matchmaking.PlayerCheck;
+using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Matchmaking.PlayerCheck;
 
 namespace DaresGameBot.Operations.Info;
 
@@ -27,15 +27,13 @@ internal sealed class PlayersInfo
                 return null;
             }
 
-            string name = parts[0];
+            string player = parts[0];
             string group = parts[1];
-            string[] compatableGroups = parts[2].Split(GroupsSeparator);
-
-            string player = new(name);
-            GroupChecker info = new(group, new HashSet<string>(compatableGroups));
+            string[] groups = parts[2].Split(GroupsSeparator);
+            HashSet<string> compatableGroups = new(groups);
 
             players.Add(player);
-            compatibilityInfos[name] = info;
+            compatibilityInfos[player] = new GroupChecker(group, new HashSet<string>(compatableGroups));
         }
 
         return new PlayersInfo(players, compatibilityInfos);

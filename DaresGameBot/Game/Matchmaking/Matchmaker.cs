@@ -7,7 +7,7 @@ namespace DaresGameBot.Game.Matchmaking;
 
 internal abstract class Matchmaker
 {
-    public Compatibility Compatibility { private get; set; }
+    public Compatibility Compatibility;
 
     protected Matchmaker(Compatibility compatibility) => Compatibility = compatibility;
 
