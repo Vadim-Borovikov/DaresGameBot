@@ -66,16 +66,17 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Contexts.Remove(chat.Id);
     }
 
-    internal async Task UpdatePlayersAsync(Chat chat, User sender, IReadOnlyList<string> players, Dictionary<string,
-        IPartnerChecker> infos)
+    internal Task UpdatePlayersAsync(Chat chat, User sender, IReadOnlyList<string> players,
+        Dictionary<string, IPartnerChecker> infos)
     {
         Compatibility compatibility = new(infos);
 
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
         if (game is null)
         {
-            Contexts[sender.Id] = await StartNewGameAsync(chat, players, compatibility);
-            return;
+            game = StartNewGame(players, compatibility);
+            Contexts[sender.Id] = game;
+            return ReportNewGameAsync(chat, game);
         }
 
         game.UpdatePlayers(players);
@@ -84,7 +85,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         MessageTemplateText playersText =
             Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
         MessageTemplateText messageText = Config.Texts.AcceptedFormat.Format(playersText);
-        await messageText.SendAsync(this, chat);
+        return messageText.SendAsync(this, chat);
     }
 
     internal Task OnNewGameAsync(Chat chat, User sender)
@@ -133,8 +134,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return GetKeyboard(Config.Texts.DrawActionCaption, Config.Texts.DrawQuestionCaption);
     }
 
-    private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, IReadOnlyList<string> players,
-        Compatibility compatibility)
+    private Game.Data.Game StartNewGame(IReadOnlyList<string> players, Compatibility compatibility)
     {
         if (_decksProvider is null)
         {
@@ -145,13 +145,15 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         DistributedMatchmaker matchmaker = new(compatibility, interactionRepository);
         CompanionsSelector companionsSelector = new(matchmaker, players);
 
-        Game.Data.Game game = new(Config, players, _decksProvider, companionsSelector, interactionRepository);
+        return new Game.Data.Game(Config, players, _decksProvider, companionsSelector, interactionRepository);
+    }
 
+    private Task ReportNewGameAsync(Chat chat, Game.Data.Game game)
+    {
         MessageTemplateText playersText =
             Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
         MessageTemplateText startText = Config.Texts.NewGameFormat.Format(playersText);
-        await startText.SendAsync(this, chat);
-        return game;
+        return startText.SendAsync(this, chat);
     }
 
     private Task DrawActionAsync(Chat chat, Game.Data.Game game, int replyToMessageId)
