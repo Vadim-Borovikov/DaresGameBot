@@ -10,7 +10,10 @@ internal sealed class LangCommand : CommandSimple
 
     public LangCommand(Bot bot) : base(bot, "lang", bot.Config.Texts.LangCommandDescription) => _bot = bot;
 
-    protected override Task ExecuteAsync(Message message, User sender) => _bot.OnToggleLanguagesAsync(message.Chat);
+    protected override Task ExecuteAsync(Message message, User sender)
+    {
+        return _bot.OnToggleLanguagesAsync(message.Chat, sender);
+    }
 
     private readonly Bot _bot;
 }

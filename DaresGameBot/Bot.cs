@@ -66,15 +66,15 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Contexts.Remove(chat.Id);
     }
 
-    internal async Task UpdatePlayersAsync(Chat chat, IReadOnlyList<string> players, Dictionary<string,
+    internal async Task UpdatePlayersAsync(Chat chat, User sender, IReadOnlyList<string> players, Dictionary<string,
         IPartnerChecker> infos)
     {
         Compatibility compatibility = new(infos);
 
-        Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
         if (game is null)
         {
-            Contexts[chat.Id] = await StartNewGameAsync(chat, players, compatibility);
+            Contexts[sender.Id] = await StartNewGameAsync(chat, players, compatibility);
             return;
         }
 
@@ -87,32 +87,32 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         await messageText.SendAsync(this, chat);
     }
 
-    internal Task OnNewGameAsync(Chat chat)
+    internal Task OnNewGameAsync(Chat chat, User sender)
     {
-        Contexts.Remove(chat.Id);
+        Contexts.Remove(sender.Id);
         MessageTemplateText message = Config.Texts.NewGame;
         message.KeyboardProvider = KeyboardProvider.Remove;
         return message.SendAsync(this, chat);
     }
 
-    internal Task DrawAsync(Chat chat, int replyToMessageId, bool action = true)
+    internal Task DrawAsync(Chat chat, User sender, int replyToMessageId, bool action = true)
     {
-        Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
         if (game is null)
         {
-            return OnNewGameAsync(chat);
+            return OnNewGameAsync(chat, sender);
         }
 
         return
             action ? DrawActionAsync(chat, game, replyToMessageId) : DrawQuestionAsync(chat, game, replyToMessageId);
     }
 
-    internal Task OnToggleLanguagesAsync(Chat chat)
+    internal Task OnToggleLanguagesAsync(Chat chat, User sender)
     {
-        Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
         if (game is null)
         {
-            return OnNewGameAsync(chat);
+            return OnNewGameAsync(chat, sender);
         }
 
         game.ToggleLanguages();

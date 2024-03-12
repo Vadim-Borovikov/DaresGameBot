@@ -22,8 +22,8 @@ internal abstract class DaresGameCommand : CommandSimple
     protected override Task ExecuteAsync(Message message, User sender)
     {
         int replyToMessageId = message.Chat.IsGroup() ? message.MessageId : 0;
-        return ExecuteAsync(message.Chat, replyToMessageId);
+        return ExecuteAsync(message.Chat, sender, replyToMessageId);
     }
 
-    protected abstract Task ExecuteAsync(Chat chat, int replyToMessageId);
+    protected abstract Task ExecuteAsync(Chat chat, User sender, int replyToMessageId);
 }

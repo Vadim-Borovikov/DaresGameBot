@@ -37,7 +37,7 @@ internal sealed class UpdatePlayers : Operation<PlayersInfo>
 
     protected override Task ExecuteAsync(PlayersInfo data, Message message, User sender)
     {
-        return _bot.UpdatePlayersAsync(message.Chat, data.Players, data.InteractabilityInfos);
+        return _bot.UpdatePlayersAsync(message.Chat, sender, data.Players, data.InteractabilityInfos);
     }
 
     private readonly Bot _bot;
