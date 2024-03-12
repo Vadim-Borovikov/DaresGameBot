@@ -26,14 +26,14 @@ internal sealed class Game
 
     public IEnumerable<string> PlayerNames => _players.EnumerateNames();
 
-    public Game(Config config, IEnumerable<Player> players, Queue<ActionDeck> actionDecks, QuestionDeck questionsDeck,
+    public Game(Config config, IEnumerable<Player> players, DecksProvider decksProvider,
         CompanionsSelector companionsSelector, IInteractionSubscriber interactionSubscriber)
     {
         Status = ActionDecksStatus.BeforeDeck;
 
         _config = config;
-        _actionDecks = actionDecks;
-        _questionsDeck = questionsDeck;
+        _actionDecks = decksProvider.GetActionDecks(companionsSelector);
+        _questionsDeck = decksProvider.GetQuestionDeck();
         CompanionsSelector = companionsSelector;
         _interactionSubscriber = interactionSubscriber;
 

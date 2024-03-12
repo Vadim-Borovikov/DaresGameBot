@@ -1,23 +1,26 @@
+using AbstractBot;
+using AbstractBot.Bots;
+using AbstractBot.Configs.MessageTemplates;
+using AbstractBot.Operations.Data;
+using DaresGameBot.Configs;
+using DaresGameBot.Game.Data;
+using DaresGameBot.Game.Data.Cards;
+using DaresGameBot.Game.Data.Players;
+using DaresGameBot.Game.Matchmaking;
+using DaresGameBot.Game.Matchmaking.ActionCheck;
+using DaresGameBot.Game.Matchmaking.Interactions;
+using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using DaresGameBot.Operations;
+using DaresGameBot.Operations.Commands;
 using GoogleSheetsManager.Documents;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AbstractBot;
-using AbstractBot.Bots;
-using AbstractBot.Operations.Data;
-using DaresGameBot.Operations.Commands;
-using DaresGameBot.Configs;
-using DaresGameBot.Game.Data;
-using System.Collections.Generic;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using AbstractBot.Configs.MessageTemplates;
-using DaresGameBot.Game.Data.Cards;
-using DaresGameBot.Game.Data.Players;
-using System;
-using DaresGameBot.Game.Matchmaking.PlayerCheck;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DaresGameBot;
 
@@ -58,28 +61,30 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             List<CardAction> actions = await _actionsSheet.LoadAsync<CardAction>(Config.ActionsRange);
             List<Card> questions = await _questionsSheet.LoadAsync<Card>(Config.QuestionsRange);
 
-            _manager = new Game.Manager(this, actions, questions);
+            _decksProvider = new Game.DecksProvider(actions, questions);
         }
 
         Contexts.Remove(chat.Id);
     }
 
-    internal async Task UpdatePlayersAsync(Chat chat, List<Player> players,
-        Dictionary<string, IPartnerChecker> infos)
+    internal async Task UpdatePlayersAsync(Chat chat, List<Player> players, Dictionary<string, IPartnerChecker> infos)
     {
+        Compatibility compatibility = new(infos);
+
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
         if (game is null)
         {
-            Contexts[chat.Id] = await StartNewGameAsync(chat, players, infos);
+            Contexts[chat.Id] = await StartNewGameAsync(chat, players, compatibility);
             return;
         }
 
-        if (_manager is null)
-        {
-            throw new ArgumentNullException(nameof(_manager));
-        }
+        game.UpdatePlayers(players);
+        game.CompanionsSelector.Matchmaker.Compatibility = compatibility;
 
-        await _manager.UpdatePlayersAsync(chat, game, players, infos);
+        MessageTemplateText playersText =
+            Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
+        MessageTemplateText messageText = Config.Texts.AcceptedFormat.Format(playersText);
+        await messageText.SendAsync(this, chat);
     }
 
     internal Task OnNewGameAsync(Chat chat)
@@ -99,7 +104,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
 
         return
-            action ? DrawActionAsync(game, chat, replyToMessageId) : DrawQuestionAsync(game, chat, replyToMessageId);
+            action ? DrawActionAsync(chat, game, replyToMessageId) : DrawQuestionAsync(chat, game, replyToMessageId);
     }
 
     internal Task OnToggleLanguagesAsync(Chat chat)
@@ -116,41 +121,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return message.SendAsync(this, chat);
     }
 
-    private Task DrawActionAsync(Game.Data.Game game, Chat chat, int replyToMessageId)
-    {
-        Turn? turn = game.TryDrawAction();
-        if (turn is not null)
-        {
-            if (_manager is null)
-            {
-                throw new ArgumentNullException(nameof(_manager));
-            }
-
-            return _manager.RepotTurnAsync(chat, game, turn, replyToMessageId);
-        }
-
-        return game.Status switch
-        {
-            Game.Data.Game.ActionDecksStatus.InDeck        => DrawQuestionAsync(game, chat, replyToMessageId, true),
-            Game.Data.Game.ActionDecksStatus.BeforeDeck    => Config.Texts.DeckEnded.SendAsync(this, chat),
-            Game.Data.Game.ActionDecksStatus.AfterAllDecks => Config.Texts.GameOver.SendAsync(this, chat),
-            _                                              => throw new ArgumentOutOfRangeException()
-        };
-    }
-
-    private Task DrawQuestionAsync(Game.Data.Game game, Chat chat, int replyToMessageId,
-        bool forPlayerWithNoMatches = false)
-    {
-        Turn turn = game.DrawQuestion(forPlayerWithNoMatches);
-
-        if (_manager is null)
-        {
-            throw new ArgumentNullException(nameof(_manager));
-        }
-
-        return _manager.RepotTurnAsync(chat, game, turn, replyToMessageId);
-    }
-
     protected override KeyboardProvider GetDefaultKeyboardProvider(Chat chat)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
@@ -163,20 +133,56 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return GetKeyboard(Config.Texts.DrawActionCaption, Config.Texts.DrawQuestionCaption);
     }
 
-    private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, List<Player> players,
-        Dictionary<string, IPartnerChecker> infos)
+    private async Task<Game.Data.Game> StartNewGameAsync(Chat chat, IReadOnlyList<Player> players,
+        Compatibility compatibility)
     {
-        Compatibility compatibility = new(infos);
-
-        if (_manager is null)
+        if (_decksProvider is null)
         {
-            throw new ArgumentNullException(nameof(_manager));
+            throw new ArgumentNullException(nameof(_decksProvider));
         }
 
-        Game.Data.Game game = _manager.StartNewGame(players, compatibility);
-        Contexts[chat.Id] = game;
-        await _manager.RepotNewGameAsync(chat, game);
+        InteractionRepository interactionRepository = new();
+        DistributedMatchmaker matchmaker = new(compatibility, interactionRepository);
+        CompanionsSelector companionsSelector = new(matchmaker, players);
+
+        Game.Data.Game game = new(Config, players, _decksProvider, companionsSelector, interactionRepository);
+
+        MessageTemplateText playersText =
+            Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.PlayerNames));
+        MessageTemplateText startText = Config.Texts.NewGameFormat.Format(playersText);
+        await startText.SendAsync(this, chat);
         return game;
+    }
+
+    private Task DrawActionAsync(Chat chat, Game.Data.Game game, int replyToMessageId)
+    {
+        Turn? turn = game.TryDrawAction();
+        if (turn is not null)
+        {
+            return RepotTurnAsync(chat, game, turn, replyToMessageId);
+        }
+
+        return game.Status switch
+        {
+            Game.Data.Game.ActionDecksStatus.InDeck        => DrawQuestionAsync(chat, game, replyToMessageId, true),
+            Game.Data.Game.ActionDecksStatus.BeforeDeck    => Config.Texts.DeckEnded.SendAsync(this, chat),
+            Game.Data.Game.ActionDecksStatus.AfterAllDecks => Config.Texts.GameOver.SendAsync(this, chat),
+            _                                              => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    private Task DrawQuestionAsync(Chat chat, Game.Data.Game game, int replyToMessageId,
+        bool forPlayerWithNoMatches = false)
+    {
+        Turn turn = game.DrawQuestion(forPlayerWithNoMatches);
+        return RepotTurnAsync(chat, game, turn, replyToMessageId);
+    }
+
+    private async Task RepotTurnAsync(Chat chat, Game.Data.Game game, Turn turn, int replyToMessageId)
+    {
+        MessageTemplate message = turn.GetMessage(game.PlayerNames.Count(), game.IncludeEn);
+        message.ReplyToMessageId = replyToMessageId;
+        await message.SendAsync(this, chat);
     }
 
     private static ReplyKeyboardMarkup GetKeyboard(params string[] buttonCaptions)
@@ -184,7 +190,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new ReplyKeyboardMarkup(buttonCaptions.Select(c => new KeyboardButton(c)));
     }
 
-    private Game.Manager? _manager;
+    private Game.DecksProvider? _decksProvider;
     private readonly Sheet _actionsSheet;
     private readonly Sheet _questionsSheet;
+
+    private const string PlayerSeparator = ", ";
 }
