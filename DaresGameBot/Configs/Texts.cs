@@ -168,5 +168,30 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     public MessageTemplateText NewGameLink { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText SetCompatabilityFormat { get; init; } = null!;
 
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText CompatabilityFormat { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string CompatabilityButtonCaptionFormat { get; init; } = null!;
+
+    [Required]
+    public CompatabilityInfo Compatable { get; init; } = null!;
+    [Required]
+    public CompatabilityInfo NotCompatable { get; init; } = null!;
+
+    internal MessageTemplateText GetPreferences()
+    {
+        MessageTemplateText templateCompatable = CompatabilityFormat.Format(Compatable.Sign, Compatable.Description);
+        MessageTemplateText templateNotCompatable =
+            CompatabilityFormat.Format(NotCompatable.Sign, NotCompatable.Description);
+        MessageTemplateText[] templates =  { templateCompatable, templateNotCompatable };
+        return MessageTemplateText.JoinTexts(templates);
+    }
 }

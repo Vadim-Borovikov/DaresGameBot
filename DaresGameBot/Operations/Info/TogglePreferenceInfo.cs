@@ -1,6 +1,6 @@
 ﻿using GoogleSheetsManager.Extensions;
 
-namespace DaresGameBot.Operations.Infos;
+namespace DaresGameBot.Operations.Info;
 
 internal sealed class TogglePreferenceInfo
 {

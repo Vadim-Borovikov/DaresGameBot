@@ -6,12 +6,14 @@ namespace DaresGameBot.Game.Matchmaking.PlayerCheck;
 
 internal sealed class Compatibility
 {
+    public readonly Dictionary<string, IPartnerChecker> PlayerInfos;
+
     public Compatibility(Dictionary<string, IPartnerChecker>? playerInfos = null)
     {
-        _playerInfos = playerInfos ?? new Dictionary<string, IPartnerChecker>();
+        PlayerInfos = playerInfos ?? new Dictionary<string, IPartnerChecker>();
     }
 
-    public void AddPlayer(string player, IPartnerChecker checker) => _playerInfos.Add(player, checker);
+    public void AddPlayer(string player, IPartnerChecker checker) => PlayerInfos.Add(player, checker);
 
     public bool AreCompatable(string p1, string p2)
     {
@@ -20,8 +22,8 @@ internal sealed class Compatibility
             return false;
         }
 
-        IPartnerChecker info1 = _playerInfos[p1];
-        IPartnerChecker info2 = _playerInfos[p2];
+        IPartnerChecker info1 = PlayerInfos[p1];
+        IPartnerChecker info2 = PlayerInfos[p2];
 
         return info1.WouldInteractWith(info2) && info2.WouldInteractWith(info1);
     }
@@ -29,6 +31,4 @@ internal sealed class Compatibility
     public bool AreCompatable(IReadOnlyList<string> players) => ListHelper.EnumeratePairs(players).All(AreCompatable);
 
     private bool AreCompatable((string, string) pair) => AreCompatable(pair.Item1, pair.Item2);
-
-    private readonly Dictionary<string, IPartnerChecker> _playerInfos;
 }

@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using AbstractBot.Operations;
-using DaresGameBot.Operations.Infos;
+using DaresGameBot.Operations.Info;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations;
@@ -24,8 +24,7 @@ internal sealed class TogglePreference : Operation<TogglePreferenceInfo>
 
     protected override Task ExecuteAsync(TogglePreferenceInfo data, Message message, User sender)
     {
-        return Task.CompletedTask;
-        //return _bot.TogglePreferenceAsync(message.Chat, data.PartnerId);
+        return _bot.TogglePreferenceAsync(message.Chat, data.PartnerId);
     }
 
     private readonly Bot _bot;

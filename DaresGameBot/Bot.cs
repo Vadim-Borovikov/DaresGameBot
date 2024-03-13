@@ -6,12 +6,9 @@ using DaresGameBot.Configs;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Matchmaking;
-using DaresGameBot.Game.Matchmaking.ActionCheck;
-using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using DaresGameBot.Operations;
 using DaresGameBot.Operations.Commands;
-using DaresGameBot.Operations.Infos;
 using GoogleSheetsManager.Documents;
 using GryphonUtilities.Extensions;
 using System;
@@ -19,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DaresGameBot.Operations.Info;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -67,8 +65,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
 
     protected override Task OnStartCommand(StartData info, Message message, User sender)
     {
-        Game.Data.Game? game =
-            Contexts.FilterByValueType<long, Game.Data.Game>().Values.SingleOrDefault(l => l.Id == info.GameId);
+        Game.Data.Game? game = Contexts.FilterByValueType<long, object, Game.Data.Game>()
+                                       .Values
+                                       .SingleOrDefault(l => l.Id == info.GameId);
         Chat chat = message.Chat;
         if (game is null)
         {
@@ -81,7 +80,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
 
         Contexts[sender.Id] = game;
 
-        return AddPlayerAsync(chat, sender, game);
+        return AddPlayerAsync(chat, game);
     }
 
     internal async Task UpdateDecksAsync(Chat chat)
@@ -97,21 +96,18 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
         Contexts.Remove(chat.Id);
     }
 
-    internal Task UpdatePlayersAsync(Chat chat, User sender, IReadOnlyList<string> players,
+    internal Task UpdatePlayersAsync(Chat chat, User sender, IEnumerable<string> players,
         Dictionary<string, IPartnerChecker> infos)
     {
-        Compatibility compatibility = new(infos);
-
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
         if (game is null)
         {
-            game = StartNewGame(players, compatibility, false);
+            game = StartNewGame(players, infos);
             Contexts[sender.Id] = game;
             return ReportNewGameAsync(chat, game);
         }
 
-        game.UpdatePlayers(players);
-        game.CompanionsSelector.Matchmaker.Compatibility = compatibility;
+        game.UpdatePlayers(players, infos);
 
         MessageTemplateText playersText =
             Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.Players));
@@ -121,10 +117,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
 
     internal async Task StartGameWithPersonalPreferences(Chat chat, User sender)
     {
-        Compatibility compatibility = new();
-
-        string name = sender.FirstName;
-        Game.Data.Game game = StartNewGame(name.WrapWithList(), compatibility, true);
+        Game.Data.Game game = StartNewGame(sender.FirstName, chat);
         Contexts[sender.Id] = game;
 
         Config.Texts.NewGameLink.KeyboardProvider = KeyboardProvider.Remove;
@@ -135,34 +128,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
 
         await ShowPlayersSoFar(game, chat);
     }
-
-    /*internal async Task UpdatePlayersAsync(Chat chat, IReadOnlyList<string> players, Dictionary<string,
-        IPartnerChecker> infos)
-    {
-        Compatibility compatibility = new(infos);
-
-        Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
-        if (game is not null)
-        {
-            await _manager.UpdatePlayersAsync(chat, game, names, infos);
-            return;
-        }
-
-        Compatibility compatibility = new(infos);
-        Guid id = Guid.NewGuid();
-        Contexts[chat.Id] = await _manager.StartNewGameAsync(chat, id, names, compatibility);
-    }
-
-    internal Task OnNewGameAsync(Chat chat, User sender)
-    {
-        if (_manager is null)
-        {
-            throw new ArgumentNullException(nameof(_manager));
-        }
-
-        Config.Texts.NewGame.KeyboardProvider = null;
-        return Config.Texts.NewGame.SendAsync(this, chat);
-    }*/
 
     internal Task OnNewGameAsync(Chat chat, User sender)
     {
@@ -198,9 +163,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
         return message.SendAsync(this, chat);
     }
 
-    internal async Task AddPlayerAsync(Chat chat, User sender, Game.Data.Game game, string? player = null)
+    internal async Task AddPlayerAsync(Chat chat, Game.Data.Game game, string? player = null)
     {
-        player ??= sender.FirstName;
+        player ??= chat.FirstName!;
         if (game.Players.Contains(player))
         {
             MessageTemplateText messageText = Config.Texts.PlayerDeclinedNameFormat.Format(player);
@@ -209,7 +174,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
             return;
         }
 
-        PersonalChecker checker = new(sender.Id);
+        PersonalChecker checker = new(chat);
         game.AddPlayer(player, checker);
         await ShowPlayersSoFar(game);
 
@@ -217,12 +182,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
         await Config.Texts.PlayerAccepted.SendAsync(this, chat);
         if (game.Status == Game.Data.Game.ActionDecksStatus.InDeck)
         {
-            // TODO
-            // await _bot.UpdateAllPreferences(lobby);
+            await UpdateAllPreferencesAsync(game);
         }
     }
 
-    /*internal Task UpdatePreferencesAsync(Chat chat)
+    internal Task UpdatePreferencesAsync(Chat chat)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
         if (game is null)
@@ -230,28 +194,21 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
             return Config.Texts.NoGameFound.SendAsync(this, chat);
         }
 
-        Player? player = game.Players.Get(chat.Id);
-        if (player is null)
+        Dictionary<string, PersonalChecker> infos = GetPersonalCheckers(game);
+        PersonalChecker? info = infos.Values.FirstOrDefault(i => i.Id == chat.Id);
+        if (info is null)
         {
             return Config.Texts.NoGameFound.SendAsync(this, chat);
         }
 
-        return UpdatePreferencesAsync(player, game);
+        info.PreferencesMessage = null;
+        return UpdatePreferencesAsync(info, infos);
     }
 
-    internal Task UpdateAllPreferences(Chat chat)
+    internal Task UpdateAllPreferencesAsync(Chat chat)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
-        return game is null ? Config.Texts.NoGameFound.SendAsync(this, chat) : UpdateAllPreferences(game);
-    }
-
-    internal async Task UpdateAllPreferences(Game.Data.Game game)
-    {
-        foreach (Player player in game.Players)
-        {
-            player.PreferencesMessage = null;
-            await UpdatePreferencesAsync(player, game);
-        }
+        return game is null ? Config.Texts.NoGameFound.SendAsync(this, chat) : UpdateAllPreferencesAsync(game);
     }
 
     internal Task TogglePreferenceAsync(Chat chat, long partnerId)
@@ -262,29 +219,37 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
             return Config.Texts.NoGameFound.SendAsync(this, chat);
         }
 
-        if (_manager is null)
-        {
-            throw new ArgumentNullException(nameof(_manager));
-        }
-
-        return _manager.TogglePreferenceAsync(chat, game, partnerId);
-    }
-
-    internal Task TogglePreferenceAsync(Chat chat, long partnerId)
-    {
-        Lobby? lobby = TryGetContext<Lobby>(chat.Id);
-        if (lobby is null)
+        Dictionary<string, PersonalChecker> infos = GetPersonalCheckers(game);
+        PersonalChecker? info = infos.Values.FirstOrDefault(i => i.Id == chat.Id);
+        if (info is null)
         {
             return Config.Texts.NoGameFound.SendAsync(this, chat);
         }
 
-        if (_manager is null)
-        {
-            throw new ArgumentNullException(nameof(_manager));
-        }
+        info.Toggle(partnerId);
+        game.OnPlayersChanged();
 
-        return _manager.TogglePreferenceAsync(chat, lobby, partnerId);
-    }*/
+        return UpdatePreferencesAsync(info, infos);
+    }
+
+    private static Dictionary<string, PersonalChecker> GetPersonalCheckers(Game.Data.Game game)
+    {
+        return game.CompanionsSelector
+                   .Matchmaker
+                   .Compatibility
+                   .PlayerInfos
+                   .FilterByValueType<string, IPartnerChecker, PersonalChecker>();
+    }
+
+    private async Task UpdateAllPreferencesAsync(Game.Data.Game game)
+    {
+        Dictionary<string, PersonalChecker> infos = GetPersonalCheckers(game);
+        foreach (PersonalChecker info in infos.Values)
+        {
+            info.PreferencesMessage = null;
+            await UpdatePreferencesAsync(info, infos);
+        }
+    }
 
     protected override KeyboardProvider GetDefaultKeyboardProvider(Chat chat)
     {
@@ -306,19 +271,33 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
         return startText.SendAsync(this, chat);
     }
 
-    private Game.Data.Game StartNewGame(IReadOnlyList<string> players, Compatibility compatibility, bool canBeJoined)
+    private Game.Data.Game StartNewGame(IEnumerable<string> players, Dictionary<string, IPartnerChecker> infos)
     {
         if (_decksProvider is null)
         {
             throw new ArgumentNullException(nameof(_decksProvider));
         }
 
-        InteractionRepository interactionRepository = new();
-        DistributedMatchmaker matchmaker = new(compatibility, interactionRepository);
-        CompanionsSelector companionsSelector = new(matchmaker, players);
+        Compatibility compatibility = new(infos);
+        DistributedMatchmaker matchmaker = new(compatibility);
 
-        return new Game.Data.Game(Config, players, _decksProvider, companionsSelector, interactionRepository,
-            canBeJoined);
+        return new Game.Data.Game(Config, _decksProvider, matchmaker, matchmaker.InteractionRepository, players);
+    }
+
+    private Game.Data.Game StartNewGame(string player, Chat chat)
+    {
+        if (_decksProvider is null)
+        {
+            throw new ArgumentNullException(nameof(_decksProvider));
+        }
+
+        Compatibility compatibility = new();
+        DistributedMatchmaker matchmaker = new(compatibility);
+
+        PersonalChecker checker = new(chat);
+
+        return
+            new Game.Data.Game(Config, _decksProvider, matchmaker, matchmaker.InteractionRepository, player, checker);
     }
 
     private Task DrawActionAsync(Chat chat, Game.Data.Game game, int replyToMessageId)
@@ -347,7 +326,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
 
     private async Task RepotTurnAsync(Chat chat, Game.Data.Game game, Turn turn, int replyToMessageId)
     {
-        MessageTemplate message = turn.GetMessage(game.Players.Count(), game.IncludeEn);
+        MessageTemplate message = turn.GetMessage(game.Players.Count, game.IncludeEn);
         message.ReplyToMessageId = replyToMessageId;
         await message.SendAsync(this, chat);
     }
@@ -376,28 +355,21 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
         await DeleteMessageAsync(chat, messageId + 1);
     }
 
-    /*public Task TogglePreferenceAsync(Chat chat, Lobby lobby, long partnerId)
-    {
-        lobby.ToggleInteractability(chat.Id, partnerId);
-        return UpdatePreferencesAsync(player, game);
-    }*/
-
-    /*private async Task UpdatePreferencesAsync(Player player, Lobby lobby)
+    private async Task UpdatePreferencesAsync(PersonalChecker me, Dictionary<string, PersonalChecker> all)
     {
         MessageTemplateText messageTemplate =
-            _bot.Config.Texts.SetCompatabilityFormat.Format(_bot.Config.Texts.GetPreferences(),
-                _myPreferencesCommandName);
-        InlineKeyboardMarkup keyboard = GetPreferenceKeyboard(player, game.Players);
-        if (player.PreferencesMessage is not null)
+            Config.Texts.SetCompatabilityFormat.Format(Config.Texts.GetPreferences(), _myPreferencesCommandName);
+        InlineKeyboardMarkup keyboard = GetPreferenceKeyboard(me, all);
+        if (me.PreferencesMessage is not null)
         {
-            await _bot.EditMessageTextAsync(player.Chat, player.PreferencesMessage.MessageId,
-                messageTemplate.EscapeIfNeeded(), ParseMode.MarkdownV2, replyMarkup: keyboard);
+            await EditMessageTextAsync(me.Chat, me.PreferencesMessage.MessageId, messageTemplate.EscapeIfNeeded(),
+                ParseMode.MarkdownV2, replyMarkup: keyboard);
             return;
         }
 
         messageTemplate.KeyboardProvider = keyboard;
-        player.PreferencesMessage = await messageTemplate.SendAsync(_bot, player.Chat);
-    }*/
+        me.PreferencesMessage = await messageTemplate.SendAsync(this, me.Chat);
+    }
 
     private InlineKeyboardMarkup GetNewGameKeyboard()
     {
@@ -406,6 +378,24 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
             CallbackData = nameof(DaresGameBot.Operations.StartGameWithPersonalPreferences)
         };
         return new InlineKeyboardMarkup(button);
+    }
+
+    private InlineKeyboardMarkup GetPreferenceKeyboard(PersonalChecker me, Dictionary<string, PersonalChecker> all)
+    {
+        IEnumerable<IEnumerable<InlineKeyboardButton>> rows =
+            all.Where(p => p.Value.Id != me.Id).Select(o => GetPreferenceButton(me, o.Key, o.Value).Yield());
+        return new InlineKeyboardMarkup(rows);
+    }
+
+    private InlineKeyboardButton GetPreferenceButton(PersonalChecker me, string other, PersonalChecker otherInfo)
+    {
+        CompatabilityInfo info =
+            me.CompatablePlayerIds.Contains(otherInfo.Id) ? Config.Texts.Compatable : Config.Texts.NotCompatable;
+        string caption = string.Format(Config.Texts.CompatabilityButtonCaptionFormat, other, info.Sign);
+        return new InlineKeyboardButton(caption)
+        {
+            CallbackData = $"{nameof(TogglePreference)}{otherInfo.Id}"
+        };
     }
 
     private static ReplyKeyboardMarkup GetKeyboard(params string[] buttonCaptions)

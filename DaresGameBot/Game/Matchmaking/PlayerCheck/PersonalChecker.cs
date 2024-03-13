@@ -1,13 +1,18 @@
 ﻿using System.Collections.Generic;
+using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game.Matchmaking.PlayerCheck;
 
 internal sealed class PersonalChecker : IPartnerChecker
 {
-    public readonly long Id;
+    public long Id => Chat.Id;
+
     public readonly HashSet<long> CompatablePlayerIds = new();
 
-    public PersonalChecker(long id) => Id = id;
+    public readonly Chat Chat;
+    public Message? PreferencesMessage;
+
+    public PersonalChecker(Chat chat) => Chat = chat;
 
     public bool WouldInteractWith(IPartnerChecker other)
     {

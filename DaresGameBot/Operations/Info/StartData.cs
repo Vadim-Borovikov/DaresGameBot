@@ -3,7 +3,7 @@ using System.Linq;
 using AbstractBot.Operations.Data;
 using Telegram.Bot.Types;
 
-namespace DaresGameBot.Operations.Infos;
+namespace DaresGameBot.Operations.Info;
 
 public sealed class StartData : ICommandData<StartData>
 {

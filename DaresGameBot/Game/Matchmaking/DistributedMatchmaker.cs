@@ -9,10 +9,11 @@ namespace DaresGameBot.Game.Matchmaking;
 
 internal sealed class DistributedMatchmaker : Matchmaker
 {
-    public DistributedMatchmaker(Compatibility compatibility, InteractionRepository interactionRepository)
-        : base(compatibility)
+    public readonly InteractionRepository InteractionRepository;
+
+    public DistributedMatchmaker(Compatibility compatibility) : base(compatibility)
     {
-        _interactionRepository = interactionRepository;
+        InteractionRepository = new InteractionRepository();
     }
 
     public override IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all, byte amount,
@@ -28,7 +29,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
         {
             IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatibleGroups(choices, amount);
             List<IReadOnlyList<string>> bestGroups =
-                groups.GroupBy(g => _interactionRepository.GetInteractions(player, g))
+                groups.GroupBy(g => InteractionRepository.GetInteractions(player, g))
                       .OrderBy(g => g.Key)
                       .First()
                       .ToList();
@@ -40,7 +41,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
         {
             int toAdd = amount - bestChoices.Count;
 
-            List<string> batch = choices.GroupBy(c => _interactionRepository.GetInteractions(player, c))
+            List<string> batch = choices.GroupBy(c => InteractionRepository.GetInteractions(player, c))
                                         .OrderBy(g => g.Key)
                                         .First()
                                         .ToList();
@@ -61,6 +62,4 @@ internal sealed class DistributedMatchmaker : Matchmaker
         }
         return bestChoices;
     }
-
-    private readonly InteractionRepository _interactionRepository;
 }

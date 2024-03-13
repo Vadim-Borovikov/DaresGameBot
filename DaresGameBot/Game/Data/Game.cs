@@ -7,6 +7,8 @@ using GryphonUtilities.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using AbstractBot.Extensions;
+using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Game.Matchmaking.PlayerCheck;
 
 namespace DaresGameBot.Game.Data;
@@ -28,22 +30,37 @@ internal sealed class Game
     public bool CanBeJoined { get; private set; }
     public bool IncludeEn { get; private set; }
 
-    public IEnumerable<string> Players => _players;
+    public IReadOnlyList<string> Players => _players.AsReadOnly();
 
-    public Game(Config config, IEnumerable<string> players, DecksProvider decksProvider,
-        CompanionsSelector companionsSelector, IInteractionSubscriber interactionSubscriber, bool canBeJoined)
+    public Game(Config config, DecksProvider decksProvider, Matchmaker matchmaker,
+        IInteractionSubscriber interactionSubscriber, IEnumerable<string> players)
+        : this(config, decksProvider, matchmaker, interactionSubscriber)
+    {
+        UpdatePlayers(players);
+    }
+
+    public Game(Config config, DecksProvider decksProvider, Matchmaker matchmaker,
+        IInteractionSubscriber interactionSubscriber, string player, IPartnerChecker checker)
+        : this(config, decksProvider, matchmaker, interactionSubscriber)
+    {
+        AddPlayer(player, checker);
+        CanBeJoined = true;
+    }
+
+    private Game(Config config, DecksProvider decksProvider, Matchmaker matchmaker,
+        IInteractionSubscriber interactionSubscriber)
     {
         Id = Guid.NewGuid();
 
         Status = ActionDecksStatus.BeforeDeck;
 
         _config = config;
-        _actionDecks = decksProvider.GetActionDecks(companionsSelector);
-        _questionsDeck = decksProvider.GetQuestionDeck();
-        CompanionsSelector = companionsSelector;
-        _interactionSubscriber = interactionSubscriber;
+        _players = new PlayerRepository();
 
-        UpdatePlayers(players, canBeJoined);
+        CompanionsSelector = new CompanionsSelector(matchmaker, Players);
+        _actionDecks = decksProvider.GetActionDecks(CompanionsSelector);
+        _questionsDeck = decksProvider.GetQuestionDeck();
+        _interactionSubscriber = interactionSubscriber;
     }
 
     public Turn? TryDrawAction()
@@ -105,21 +122,31 @@ internal sealed class Game
     {
         _players.Add(player);
         CompanionsSelector.Matchmaker.Compatibility.AddPlayer(player, checker);
+        OnPlayersChanged();
     }
 
-    public void UpdatePlayers(IEnumerable<string> players, bool canBeJoined = false)
+    public void UpdatePlayers(IEnumerable<string> players, Dictionary<string, IPartnerChecker>? infos = null)
     {
-        _players = new PlayerRepository(players);
-        _shouldUpdatePossibilities = true;
-        CanBeJoined = canBeJoined;
+        _players.ResetWith(players);
+
+        if (infos is not null)
+        {
+            CompanionsSelector.Matchmaker.Compatibility.PlayerInfos.Clear();
+            CompanionsSelector.Matchmaker.Compatibility.PlayerInfos.AddAll(infos);
+        }
+
+        CanBeJoined = false;
+        OnPlayersChanged();
     }
+
+    public void OnPlayersChanged() => _shouldUpdatePossibilities = true;
 
     public void ToggleLanguages() => IncludeEn = !IncludeEn;
 
     private readonly Config _config;
     private readonly Queue<ActionDeck> _actionDecks;
     private readonly QuestionDeck _questionsDeck;
-    private PlayerRepository _players = null!;
-    private bool _shouldUpdatePossibilities;
+    private readonly PlayerRepository _players;
     private readonly IInteractionSubscriber _interactionSubscriber;
+    private bool _shouldUpdatePossibilities;
 }

@@ -15,8 +15,7 @@ internal sealed class AllPreferencesCommand : DaresGameCommand
 
     protected override Task ExecuteAsync(Chat chat, User sender, int replyToMessageId)
     {
-        return Task.CompletedTask;
-        //return _bot.UpdateAllPreferences(chat);
+        return _bot.UpdateAllPreferencesAsync(chat);
     }
 
     private readonly Bot _bot;

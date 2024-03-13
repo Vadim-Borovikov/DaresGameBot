@@ -32,7 +32,7 @@ internal sealed class UpdateName : Operation<UpdateNameInfo>
 
     protected override Task ExecuteAsync(UpdateNameInfo data, Message message, User sender)
     {
-        return _bot.AddPlayerAsync(message.Chat, sender, data.Game, data.Name);
+        return _bot.AddPlayerAsync(message.Chat, data.Game, data.Name);
     }
 
     private readonly Bot _bot;
