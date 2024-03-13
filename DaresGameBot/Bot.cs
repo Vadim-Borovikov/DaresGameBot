@@ -67,7 +67,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
     {
         Game.Data.Game? game = Contexts.FilterByValueType<long, object, Game.Data.Game>()
                                        .Values
-                                       .SingleOrDefault(l => l.Id == info.GameId);
+                                       .FirstOrDefault(l => l.Id == info.GameId);
         Chat chat = message.Chat;
         if (game is null)
         {
