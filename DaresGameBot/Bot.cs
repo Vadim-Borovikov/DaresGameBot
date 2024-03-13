@@ -65,7 +65,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, StartData>
 
     protected override Task OnStartCommand(StartData info, Message message, User sender)
     {
-        Game.Data.Game? game = Contexts.FilterByValueType<long, object, Game.Data.Game>()
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
+        if (game?.Id == info.GameId)
+        {
+            return Task.CompletedTask;
+        }
+
+        game = Contexts.FilterByValueType<long, object, Game.Data.Game>()
                                        .Values
                                        .FirstOrDefault(l => l.Id == info.GameId);
         Chat chat = message.Chat;
