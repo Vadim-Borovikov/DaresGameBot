@@ -4,7 +4,6 @@ using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Matchmaking.ActionCheck;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using GryphonUtilities.Helpers;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using AbstractBot.Extensions;
@@ -22,12 +21,7 @@ internal sealed class Game
         AfterAllDecks
     }
 
-    public readonly Guid Id;
-
-    public readonly CompanionsSelector CompanionsSelector;
-
     public ActionDecksStatus Status { get; private set; }
-    public bool CanBeJoined { get; private set; }
     public bool IncludeEn { get; private set; }
 
     public IReadOnlyList<string> Players => _players.AsReadOnly();
@@ -39,26 +33,16 @@ internal sealed class Game
         UpdatePlayers(players);
     }
 
-    public Game(Config config, DecksProvider decksProvider, Matchmaker matchmaker,
-        IInteractionSubscriber interactionSubscriber, string player, IPartnerChecker checker)
-        : this(config, decksProvider, matchmaker, interactionSubscriber)
-    {
-        AddPlayer(player, checker);
-        CanBeJoined = true;
-    }
-
     private Game(Config config, DecksProvider decksProvider, Matchmaker matchmaker,
         IInteractionSubscriber interactionSubscriber)
     {
-        Id = Guid.NewGuid();
-
         Status = ActionDecksStatus.BeforeDeck;
 
         _config = config;
         _players = new PlayerRepository();
 
-        CompanionsSelector = new CompanionsSelector(matchmaker, Players);
-        _actionDecks = decksProvider.GetActionDecks(CompanionsSelector);
+        _companionsSelector = new CompanionsSelector(matchmaker, Players);
+        _actionDecks = decksProvider.GetActionDecks(_companionsSelector);
         _questionsDeck = decksProvider.GetQuestionDeck();
         _interactionSubscriber = interactionSubscriber;
     }
@@ -88,7 +72,7 @@ internal sealed class Game
             {
                 return null;
             }
-            CompanionsInfo? companions = CompanionsSelector.TrySelectCompanionsFor(_players.Current, action);
+            CompanionsInfo? companions = _companionsSelector.TrySelectCompanionsFor(_players.Current, action);
             if (companions is null)
             {
                 return null;
@@ -121,7 +105,7 @@ internal sealed class Game
     public void AddPlayer(string player, IPartnerChecker checker)
     {
         _players.Add(player);
-        CompanionsSelector.Matchmaker.Compatibility.AddPlayer(player, checker);
+        _companionsSelector.Matchmaker.Compatibility.AddPlayer(player, checker);
         OnPlayersChanged();
     }
 
@@ -131,17 +115,16 @@ internal sealed class Game
 
         if (infos is not null)
         {
-            CompanionsSelector.Matchmaker.Compatibility.PlayerInfos.Clear();
-            CompanionsSelector.Matchmaker.Compatibility.PlayerInfos.AddAll(infos);
+            _companionsSelector.Matchmaker.Compatibility.PlayerInfos.Clear();
+            _companionsSelector.Matchmaker.Compatibility.PlayerInfos.AddAll(infos);
         }
 
-        CanBeJoined = false;
         OnPlayersChanged();
     }
 
-    public void OnPlayersChanged() => _shouldUpdatePossibilities = true;
-
     public void ToggleLanguages() => IncludeEn = !IncludeEn;
+
+    private void OnPlayersChanged() => _shouldUpdatePossibilities = true;
 
     private readonly Config _config;
     private readonly Queue<ActionDeck> _actionDecks;
@@ -149,4 +132,6 @@ internal sealed class Game
     private readonly PlayerRepository _players;
     private readonly IInteractionSubscriber _interactionSubscriber;
     private bool _shouldUpdatePossibilities;
+    private readonly CompanionsSelector _companionsSelector;
+
 }
