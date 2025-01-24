@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AbstractBot.Extensions;
 using DaresGameBot.Game.Matchmaking;
-using DaresGameBot.Game.Matchmaking.PlayerCheck;
+using DaresGameBot.Operations.Info;
 
 namespace DaresGameBot.Game.Data;
 
@@ -25,12 +25,13 @@ internal sealed class Game
     public bool IncludeEn { get; private set; }
 
     public IReadOnlyList<string> Players => _players.AsReadOnly();
+    public IEnumerable<string> PlayerLines => _playerLines.AsReadOnly();
 
     public Game(Config config, DecksProvider decksProvider, Matchmaker matchmaker,
-        IInteractionSubscriber interactionSubscriber, IEnumerable<string> players)
+        IInteractionSubscriber interactionSubscriber, PlayersInfo info)
         : this(config, decksProvider, matchmaker, interactionSubscriber)
     {
-        UpdatePlayers(players);
+        UpdatePlayers(info);
     }
 
     private Game(Config config, DecksProvider decksProvider, Matchmaker matchmaker,
@@ -102,22 +103,14 @@ internal sealed class Game
             question.DescriptionEn, companions);
     }
 
-    public void AddPlayer(string player, IPartnerChecker checker)
+    public void UpdatePlayers(PlayersInfo info)
     {
-        _players.Add(player);
-        _companionsSelector.Matchmaker.Compatibility.AddPlayer(player, checker);
-        OnPlayersChanged();
-    }
+        _playerLines = info.Lines;
 
-    public void UpdatePlayers(IEnumerable<string> players, Dictionary<string, IPartnerChecker>? infos = null)
-    {
-        _players.ResetWith(players);
+        _players.ResetWith(info.Players);
 
-        if (infos is not null)
-        {
-            _companionsSelector.Matchmaker.Compatibility.PlayerInfos.Clear();
-            _companionsSelector.Matchmaker.Compatibility.PlayerInfos.AddAll(infos);
-        }
+        _companionsSelector.Matchmaker.Compatibility.PlayerInfos.Clear();
+        _companionsSelector.Matchmaker.Compatibility.PlayerInfos.AddAll(info.InteractabilityInfos);
 
         OnPlayersChanged();
     }
@@ -133,5 +126,5 @@ internal sealed class Game
     private readonly IInteractionSubscriber _interactionSubscriber;
     private bool _shouldUpdatePossibilities;
     private readonly CompanionsSelector _companionsSelector;
-
+    private List<string> _playerLines = new();
 }

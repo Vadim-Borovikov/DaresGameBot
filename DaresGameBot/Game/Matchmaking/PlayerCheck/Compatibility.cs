@@ -13,8 +13,6 @@ internal sealed class Compatibility
         PlayerInfos = playerInfos ?? new Dictionary<string, IPartnerChecker>();
     }
 
-    public void AddPlayer(string player, IPartnerChecker checker) => PlayerInfos.Add(player, checker);
-
     public bool AreCompatable(string p1, string p2)
     {
         if (p1 == p2)

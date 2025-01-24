@@ -15,6 +15,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AbstractBot.Operations.Data;
+using DaresGameBot.Operations.Info;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -64,18 +65,17 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Contexts.Remove(chat.Id);
     }
 
-    internal Task UpdatePlayersAsync(Chat chat, User sender, IEnumerable<string> players,
-        Dictionary<string, IPartnerChecker> infos)
+    internal Task UpdatePlayersAsync(Chat chat, User sender, PlayersInfo info)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
         if (game is null)
         {
-            game = StartNewGame(players, infos);
+            game = StartNewGame(info);
             Contexts[sender.Id] = game;
             return ReportNewGameAsync(chat, game);
         }
 
-        game.UpdatePlayers(players, infos);
+        game.UpdatePlayers(info);
 
         MessageTemplateText playersText =
             Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.Players));
@@ -136,17 +136,17 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return startText.SendAsync(this, chat);
     }
 
-    private Game.Data.Game StartNewGame(IEnumerable<string> players, Dictionary<string, IPartnerChecker> infos)
+    private Game.Data.Game StartNewGame(PlayersInfo info)
     {
         if (_decksProvider is null)
         {
             throw new ArgumentNullException(nameof(_decksProvider));
         }
 
-        Compatibility compatibility = new(infos);
+        Compatibility compatibility = new(info.InteractabilityInfos);
         DistributedMatchmaker matchmaker = new(compatibility);
 
-        return new Game.Data.Game(Config, _decksProvider, matchmaker, matchmaker.InteractionRepository, players);
+        return new Game.Data.Game(Config, _decksProvider, matchmaker, matchmaker.InteractionRepository, info);
     }
 
     private Task DrawActionAsync(Chat chat, Game.Data.Game game, int replyToMessageId)
