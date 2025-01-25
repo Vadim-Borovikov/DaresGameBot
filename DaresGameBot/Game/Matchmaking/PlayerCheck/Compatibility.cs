@@ -4,15 +4,8 @@ using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Matchmaking.PlayerCheck;
 
-internal sealed class Compatibility
+internal sealed class Compatibility : Dictionary<string, GroupChecker>
 {
-    public readonly Dictionary<string, IPartnerChecker> PlayerInfos;
-
-    public Compatibility(Dictionary<string, IPartnerChecker>? playerInfos = null)
-    {
-        PlayerInfos = playerInfos ?? new Dictionary<string, IPartnerChecker>();
-    }
-
     public bool AreCompatable(string p1, string p2)
     {
         if (p1 == p2)
@@ -20,8 +13,8 @@ internal sealed class Compatibility
             return false;
         }
 
-        IPartnerChecker info1 = PlayerInfos[p1];
-        IPartnerChecker info2 = PlayerInfos[p2];
+        GroupChecker info1 = this[p1];
+        GroupChecker info2 = this[p2];
 
         return info1.WouldInteractWith(info2) && info2.WouldInteractWith(info1);
     }

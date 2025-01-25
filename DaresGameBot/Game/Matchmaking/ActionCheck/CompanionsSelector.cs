@@ -8,11 +8,9 @@ namespace DaresGameBot.Game.Matchmaking.ActionCheck;
 
 internal sealed class CompanionsSelector : IActionChecker
 {
-    public readonly Matchmaker Matchmaker;
-
     public CompanionsSelector(Matchmaker matchmaker, IReadOnlyList<string> players)
     {
-        Matchmaker = matchmaker;
+        _matchmaker = matchmaker;
         _players = players;
     }
 
@@ -24,7 +22,7 @@ internal sealed class CompanionsSelector : IActionChecker
         }
 
         return (action.Partners == 0)
-               || Matchmaker.AreThereAnyMatches(player, _players, action.Partners, action.CompatablePartners);
+               || _matchmaker.AreThereAnyMatches(player, _players, action.Partners, action.CompatablePartners);
     }
 
     public CompanionsInfo? TrySelectCompanionsFor(string player, CardAction action)
@@ -33,7 +31,7 @@ internal sealed class CompanionsSelector : IActionChecker
         if (action.Partners > 0)
         {
             partners =
-                Matchmaker.EnumerateMatches(player, _players, action.Partners, action.CompatablePartners)?.ToList();
+                _matchmaker.EnumerateMatches(player, _players, action.Partners, action.CompatablePartners)?.ToList();
             if (partners is null)
             {
                 return null;
@@ -61,4 +59,5 @@ internal sealed class CompanionsSelector : IActionChecker
     }
 
     private readonly IReadOnlyList<string> _players;
+    private readonly Matchmaker _matchmaker;
 }

@@ -2,21 +2,16 @@
 
 namespace DaresGameBot.Game.Matchmaking.PlayerCheck;
 
-internal sealed class GroupChecker : IPartnerChecker
+internal sealed class GroupChecker
 {
-    public readonly string Group;
-    public readonly HashSet<string> CompatableGroups;
-
     public GroupChecker(string group, HashSet<string> compatableGroups)
     {
-        Group = group;
-        CompatableGroups = compatableGroups;
+        _group = group;
+        _compatableGroups = compatableGroups;
     }
 
-    public bool WouldInteractWith(IPartnerChecker other)
-    {
-        return other is GroupChecker o && WouldInteractWith(o);
-    }
+    public bool WouldInteractWith(GroupChecker other) => _compatableGroups.Contains(other._group);
 
-    private bool WouldInteractWith(GroupChecker other) => CompatableGroups.Contains(other.Group);
+    private readonly string _group;
+    private readonly HashSet<string> _compatableGroups;
 }

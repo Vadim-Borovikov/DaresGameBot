@@ -1,19 +1,51 @@
 using System.Collections.Generic;
+using DaresGameBot.Game.Data.PlayerListUpdates;
+using DaresGameBot.Game.Matchmaking.PlayerCheck;
 
 namespace DaresGameBot.Game.Data;
 
-internal sealed class PlayerRepository : List<string>
+internal sealed class PlayerRepository
 {
-    public string Current => this[_currentIndex];
+    public readonly Compatibility Compatibility = new();
 
-    public void ResetWith(IEnumerable<string> players)
+    public IReadOnlyList<string> Names => _names.AsReadOnly();
+
+    public string Current => _names[_currentIndex];
+
+    public PlayerRepository(List<PlayerListUpdate> updates) => Update(updates);
+
+    public void MoveNext() => _currentIndex = (_currentIndex + 1) % _names.Count;
+
+    public void Update(List<PlayerListUpdate> updates)
     {
-        Clear();
-        AddRange(players);
-        _currentIndex = 0;
+        foreach (PlayerListUpdate update in updates)
+        {
+            switch (update)
+            {
+                case AddOrUpdatePlayer a:
+                    Compatibility[a.Name] = a.Checker;
+                    if (!_names.Contains(a.Name))
+                    {
+                        _names.Add(a.Name);
+                    }
+                    break;
+                case RemovePlayer r:
+                    int index = _names.IndexOf(r.Name);
+                    if (index > -1)
+                    {
+                        _names.RemoveAt(index);
+
+                        if (_currentIndex > index)
+                        {
+                            --_currentIndex;
+                        }
+                    }
+                    Compatibility.Remove(r.Name);
+                    break;
+            }
+        }
     }
 
-    public void MoveNext() => _currentIndex = (_currentIndex + 1) % Count;
-
+    private readonly List<string> _names = new();
     private int _currentIndex;
 }

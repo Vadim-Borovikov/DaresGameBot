@@ -6,9 +6,8 @@ using DaresGameBot.Game.Matchmaking.Interactions;
 using GryphonUtilities.Helpers;
 using System.Collections.Generic;
 using System.Linq;
-using AbstractBot.Extensions;
 using DaresGameBot.Game.Matchmaking;
-using DaresGameBot.Operations.Info;
+using DaresGameBot.Game.Data.PlayerListUpdates;
 
 namespace DaresGameBot.Game.Data;
 
@@ -24,28 +23,22 @@ internal sealed class Game
     public ActionDecksStatus Status { get; private set; }
     public bool IncludeEn { get; private set; }
 
-    public IReadOnlyList<string> Players => _players.AsReadOnly();
-    public IEnumerable<string> PlayerLines => _playerLines.AsReadOnly();
+    public IReadOnlyList<string> Players => _players.Names;
 
-    public Game(Config config, DecksProvider decksProvider, Matchmaker matchmaker,
-        IInteractionSubscriber interactionSubscriber, PlayersInfo info)
-        : this(config, decksProvider, matchmaker, interactionSubscriber)
-    {
-        UpdatePlayers(info);
-    }
-
-    private Game(Config config, DecksProvider decksProvider, Matchmaker matchmaker,
+    public Game(Config config, DecksProvider decksProvider, PlayerRepository players, Matchmaker matchmaker,
         IInteractionSubscriber interactionSubscriber)
     {
         Status = ActionDecksStatus.BeforeDeck;
 
         _config = config;
-        _players = new PlayerRepository();
+        _players = players;
 
         _companionsSelector = new CompanionsSelector(matchmaker, Players);
         _actionDecks = decksProvider.GetActionDecks(_companionsSelector);
         _questionsDeck = decksProvider.GetQuestionDeck();
         _interactionSubscriber = interactionSubscriber;
+
+        OnPlayersChanged();
     }
 
     public Turn? TryDrawAction()
@@ -62,7 +55,7 @@ internal sealed class Game
         ActionDeck deck = _actionDecks.Peek();
         if (_shouldUpdatePossibilities)
         {
-            deck.UpdatePossibilities(_players);
+            deck.UpdatePossibilities(Players);
             _shouldUpdatePossibilities = false;
         }
         if (!deck.IsEmpty())
@@ -103,14 +96,9 @@ internal sealed class Game
             question.DescriptionEn, companions);
     }
 
-    public void UpdatePlayers(PlayersInfo info)
+    public void UpdatePlayers(List<PlayerListUpdate> updates)
     {
-        _playerLines = info.Lines;
-
-        _players.ResetWith(info.Players);
-
-        _companionsSelector.Matchmaker.Compatibility.PlayerInfos.Clear();
-        _companionsSelector.Matchmaker.Compatibility.PlayerInfos.AddAll(info.InteractabilityInfos);
+        _players.Update(updates);
 
         OnPlayersChanged();
     }
@@ -126,5 +114,4 @@ internal sealed class Game
     private readonly IInteractionSubscriber _interactionSubscriber;
     private bool _shouldUpdatePossibilities;
     private readonly CompanionsSelector _companionsSelector;
-    private List<string> _playerLines = new();
 }

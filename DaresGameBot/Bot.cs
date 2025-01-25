@@ -5,7 +5,6 @@ using DaresGameBot.Configs;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Matchmaking;
-using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using DaresGameBot.Operations;
 using DaresGameBot.Operations.Commands;
 using GoogleSheetsManager.Documents;
@@ -15,10 +14,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AbstractBot.Operations.Data;
-using DaresGameBot.Operations.Info;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using DaresGameBot.Game.Data.PlayerListUpdates;
 
 namespace DaresGameBot;
 
@@ -65,17 +64,17 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Contexts.Remove(chat.Id);
     }
 
-    internal Task UpdatePlayersAsync(Chat chat, User sender, PlayersInfo info)
+    internal Task UpdatePlayersAsync(Chat chat, User sender, List<PlayerListUpdate> updates)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
         if (game is null)
         {
-            game = StartNewGame(info);
+            game = StartNewGame(updates);
             Contexts[sender.Id] = game;
             return ReportNewGameAsync(chat, game);
         }
 
-        game.UpdatePlayers(info);
+        game.UpdatePlayers(updates);
 
         MessageTemplateText playersText =
             Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.Players));
@@ -136,17 +135,17 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return startText.SendAsync(this, chat);
     }
 
-    private Game.Data.Game StartNewGame(PlayersInfo info)
+    private Game.Data.Game StartNewGame(List<PlayerListUpdate> updates)
     {
         if (_decksProvider is null)
         {
             throw new ArgumentNullException(nameof(_decksProvider));
         }
 
-        Compatibility compatibility = new(info.InteractabilityInfos);
-        DistributedMatchmaker matchmaker = new(compatibility);
+        PlayerRepository repository = new(updates);
+        DistributedMatchmaker matchmaker = new(repository.Compatibility);
 
-        return new Game.Data.Game(Config, _decksProvider, matchmaker, matchmaker.InteractionRepository, info);
+        return new Game.Data.Game(Config, _decksProvider, repository, matchmaker, matchmaker.InteractionRepository);
     }
 
     private Task DrawActionAsync(Chat chat, Game.Data.Game game, int replyToMessageId)
