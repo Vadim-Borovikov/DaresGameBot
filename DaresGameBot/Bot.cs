@@ -18,6 +18,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using DaresGameBot.Game.Data.PlayerListUpdates;
+using DaresGameBot.Game.Matchmaking.Interactions;
 
 namespace DaresGameBot;
 
@@ -142,10 +143,16 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             throw new ArgumentNullException(nameof(_decksProvider));
         }
 
-        PlayerRepository repository = new(updates);
-        DistributedMatchmaker matchmaker = new(repository.Compatibility);
+        PlayerRepository repository = new(updates, Config.Points);
+        DistributedMatchmaker matchmaker = new(repository);
 
-        return new Game.Data.Game(Config, _decksProvider, repository, matchmaker, matchmaker.InteractionRepository);
+        List<IInteractionSubscriber> subscribers = new()
+        {
+            repository,
+            matchmaker.InteractionRepository
+        };
+
+        return new Game.Data.Game(Config, _decksProvider, repository, matchmaker, subscribers);
     }
 
     private Task DrawActionAsync(Chat chat, Game.Data.Game game, int replyToMessageId)

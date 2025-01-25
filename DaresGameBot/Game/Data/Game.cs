@@ -26,7 +26,7 @@ internal sealed class Game
     public IReadOnlyList<string> Players => _players.Names;
 
     public Game(Config config, DecksProvider decksProvider, PlayerRepository players, Matchmaker matchmaker,
-        IInteractionSubscriber interactionSubscriber)
+        List<IInteractionSubscriber> interactionSubscribers)
     {
         Status = ActionDecksStatus.BeforeDeck;
 
@@ -36,7 +36,7 @@ internal sealed class Game
         _companionsSelector = new CompanionsSelector(matchmaker, Players);
         _actionDecks = decksProvider.GetActionDecks(_companionsSelector);
         _questionsDeck = decksProvider.GetQuestionDeck();
-        _interactionSubscriber = interactionSubscriber;
+        _interactionSubscribers = interactionSubscribers;
 
         OnPlayersChanged();
     }
@@ -74,8 +74,11 @@ internal sealed class Game
 
             if (companions.Partners is not null)
             {
-                _interactionSubscriber.OnInteraction(companions.Player, companions.Partners,
-                    action.CompatablePartners);
+                foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
+                {
+                    subscriber.OnInteraction(companions.Player, companions.Partners, action.CompatablePartners,
+                        action.Tag);
+                }
             }
             return new Turn(_config.Texts, _config.ImagesFolder, action.Tag, null, action.Description,
                 action.DescriptionEn, companions, action.ImagePath);
@@ -111,7 +114,7 @@ internal sealed class Game
     private readonly Queue<ActionDeck> _actionDecks;
     private readonly QuestionDeck _questionsDeck;
     private readonly PlayerRepository _players;
-    private readonly IInteractionSubscriber _interactionSubscriber;
+    private readonly List<IInteractionSubscriber> _interactionSubscribers;
     private bool _shouldUpdatePossibilities;
     private readonly CompanionsSelector _companionsSelector;
 }

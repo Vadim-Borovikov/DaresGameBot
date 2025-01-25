@@ -5,7 +5,7 @@ namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal sealed class InteractionRepository : IInteractionSubscriber
 {
-    public void OnInteraction(string player, IReadOnlyList<string> partners, bool actionsBetweenPartners)
+    public void OnInteraction(string player, IReadOnlyList<string> partners, bool actionsBetweenPartners, string deck)
     {
         foreach (string p in partners)
         {

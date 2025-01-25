@@ -7,7 +7,7 @@ namespace DaresGameBot.Game.Matchmaking;
 
 internal abstract class Matchmaker
 {
-    protected Matchmaker(Compatibility compatibility) => _compatibility = compatibility;
+    protected Matchmaker(ICompatibility compatibility) => _compatibility = compatibility;
 
     public bool AreThereAnyMatches(string player, IEnumerable<string> all, byte amount,
         bool compatableWithEachOther)
@@ -36,5 +36,5 @@ internal abstract class Matchmaker
                          .Where(_compatibility.AreCompatable);
     }
 
-    private readonly Compatibility _compatibility;
+    private readonly ICompatibility _compatibility;
 }

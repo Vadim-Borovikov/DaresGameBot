@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using AbstractBot.Configs;
 using JetBrains.Annotations;
@@ -36,4 +37,9 @@ public class Config : ConfigWithSheets<Texts>
     [Required]
     [MinLength(1)]
     public string ImagesFolder { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public Dictionary<string, ushort> Points { get; init; } = null!;
 }

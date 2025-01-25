@@ -11,7 +11,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
 {
     public readonly InteractionRepository InteractionRepository;
 
-    public DistributedMatchmaker(Compatibility compatibility) : base(compatibility)
+    public DistributedMatchmaker(ICompatibility compatibility) : base(compatibility)
     {
         InteractionRepository = new InteractionRepository();
     }
