@@ -19,7 +19,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
     public override IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all, byte amount,
         bool compatableWithEachOther)
     {
-        List<string> choices = EnumerateCompatiblePlayers(player, all).ToList();
+        List<string> choices = EnumerateCompatablePlayers(player, all).ToList();
         if (choices.Count < amount)
         {
             return null;
@@ -27,7 +27,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
 
         if (compatableWithEachOther)
         {
-            IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatibleGroups(choices, amount);
+            IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatableGroups(choices, amount);
             List<IReadOnlyList<string>> bestGroups =
                 groups.GroupBy(g => InteractionRepository.GetInteractions(player, g))
                       .OrderBy(g => g.Key)

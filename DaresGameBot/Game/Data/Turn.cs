@@ -8,9 +8,9 @@ namespace DaresGameBot.Game.Data;
 internal sealed class Turn
 {
     public Turn(Texts texts, string imagesfolder, string tag, string descriprionRu, string? descriptionEn,
-        ActionInfo actionInfo, bool compatiblePartners, string? imagePath = null)
+        ActionInfo actionInfo, bool compatablePartners, string? imagePath = null)
         : this(texts, imagesfolder, tag, descriprionRu, descriptionEn, actionInfo.Player, actionInfo,
-            compatiblePartners, imagePath)
+            compatablePartners, imagePath)
     {
     }
 
@@ -21,13 +21,13 @@ internal sealed class Turn
     }
 
     private Turn(Texts texts, string imagesfolder, string tag, string descriprionRu, string? descriptionEn,
-        string player, ActionInfo? actionInfo = null, bool compatiblePartners = false, string? imagePath = null)
+        string player, ActionInfo? actionInfo = null, bool compatablePartners = false, string? imagePath = null)
     {
         _texts = texts;
         _imagesfolder = imagesfolder;
         _player = player;
         _actionInfo = actionInfo;
-        _compatiblePartners = compatiblePartners;
+        _compatablePartners = compatablePartners;
         _tagPart = new MessageTemplateText(tag);
         _descriprionRuPart = new MessageTemplateText(descriprionRu);
         _descriprionEnPart = descriptionEn is null ? null : new MessageTemplateText(descriptionEn);
@@ -47,7 +47,7 @@ internal sealed class Turn
         IReadOnlyList<string>? partners = _actionInfo?.Partners;
         if (partners is not null && (partners.Count != 0))
         {
-            partnersPart = GetPartnersPart(_texts, partners, _compatiblePartners);
+            partnersPart = GetPartnersPart(_texts, partners, _compatablePartners);
         }
 
         if (!string.IsNullOrWhiteSpace(_imagePath))
@@ -59,10 +59,10 @@ internal sealed class Turn
         return message.Format(_tagPart, _player, descriprionPart, partnersPart);
     }
 
-    public static string GetPartnersPart(Texts texts, IReadOnlyList<string> partners, bool compatible)
+    public static string GetPartnersPart(Texts texts, IReadOnlyList<string> partners, bool compatable)
     {
         string partnersPrefix = partners.Count > 1 ? texts.Partners : texts.Partner;
-        string separator = compatible ? texts.CompatablePartnersSeparator : texts.PartnersSeparator;
+        string separator = compatable ? texts.CompatablePartnersSeparator : texts.PartnersSeparator;
         string partnersText = string.Join(separator, partners);
         MessageTemplateText template = texts.TurnPartnersFormat.Format(partnersPrefix, partnersText);
         return template.EscapeIfNeeded();
@@ -73,7 +73,7 @@ internal sealed class Turn
     private readonly MessageTemplateText? _descriprionEnPart;
     private readonly string _player;
     private readonly ActionInfo? _actionInfo;
-    private readonly bool _compatiblePartners;
+    private readonly bool _compatablePartners;
     private readonly Texts _texts;
     private readonly string _imagesfolder;
     private readonly string? _imagePath;

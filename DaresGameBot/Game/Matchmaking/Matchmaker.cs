@@ -11,24 +11,24 @@ internal abstract class Matchmaker
 
     public bool AreThereAnyMatches(string player, IEnumerable<string> all, byte amount, bool compatableWithEachOther)
     {
-        List<string> choices = EnumerateCompatiblePlayers(player, all).ToList();
+        List<string> choices = EnumerateCompatablePlayers(player, all).ToList();
         if (choices.Count < amount)
         {
             return false;
         }
 
-        return !compatableWithEachOther || EnumerateIntercompatibleGroups(choices, amount).Any();
+        return !compatableWithEachOther || EnumerateIntercompatableGroups(choices, amount).Any();
     }
 
     public abstract IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all, byte amount,
         bool compatableWithEachOther);
 
-    protected IEnumerable<string> EnumerateCompatiblePlayers(string player, IEnumerable<string> all)
+    protected IEnumerable<string> EnumerateCompatablePlayers(string player, IEnumerable<string> all)
     {
         return all.Where(p => _compatibility.AreCompatable(p, player));
     }
 
-    protected IEnumerable<IReadOnlyList<string>> EnumerateIntercompatibleGroups(IList<string> choices, byte size)
+    protected IEnumerable<IReadOnlyList<string>> EnumerateIntercompatableGroups(IList<string> choices, byte size)
     {
         return ListHelper.EnumerateSubsets(choices, size)
                          .Select(s => s.AsReadOnly())
