@@ -58,10 +58,11 @@ internal sealed class Game
             question.DescriptionEn, player);
     }
 
-    public void UpdatePlayers(List<PlayerListUpdate> updates)
+    public ushort UpdatePlayers(List<PlayerListUpdate> updates)
     {
-        _players.UpdateList(updates);
+        ushort pointsForNewPlayers = _players.UpdateList(updates);
         _players.UpdateActions(_actionDeck);
+        return pointsForNewPlayers;
     }
 
     public void ToggleLanguages() => IncludeEn = !IncludeEn;

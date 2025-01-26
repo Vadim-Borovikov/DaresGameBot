@@ -76,12 +76,18 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             Contexts[sender.Id] = game;
             return ReportNewGameAsync(chat, game);
         }
-
-        game.UpdatePlayers(updates);
+        ushort pointsForNewPlayers = game.UpdatePlayers(updates);
 
         MessageTemplateText playersText =
             Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.Players));
-        MessageTemplateText messageText = Config.Texts.AcceptedFormat.Format(playersText);
+
+        MessageTemplateText? points = null;
+        if (pointsForNewPlayers > 0)
+        {
+            points = Config.Texts.PoinsForNewPlayersFormat.Format(pointsForNewPlayers);
+        }
+
+        MessageTemplateText messageText = Config.Texts.AcceptedFormat.Format(playersText, points);
         return messageText.SendAsync(this, chat);
     }
 

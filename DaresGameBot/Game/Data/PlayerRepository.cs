@@ -17,9 +17,10 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
 
     public void MoveNext() => _currentIndex = (_currentIndex + 1) % _names.Count;
 
-    public void UpdateList(List<PlayerListUpdate> updates)
+    public ushort UpdateList(List<PlayerListUpdate> updates)
     {
         ushort points = _infos.Count > 0 ? _infos.Values.Min(v => v.Points) : (ushort) 0;
+        bool newPlayers = false;
 
         foreach (PlayerListUpdate update in updates)
         {
@@ -33,6 +34,7 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
                     else
                     {
                         _infos[a.Name] = new PlayerInfo(a.Checker, points);
+                        newPlayers = true;
                     }
 
                     if (!_names.Contains(a.Name))
@@ -55,6 +57,8 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
                     break;
             }
         }
+
+        return newPlayers ? points : (ushort) 0;
     }
 
     public void UpdateActions(ActionDeck actionDeck)
