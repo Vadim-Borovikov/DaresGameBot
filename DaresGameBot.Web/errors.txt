@@ -1,0 +1,7 @@
+﻿26.01 21:15:36
+Telegram.Bot.Exceptions.ApiRequestException: Bad Request: BUTTON_DATA_INVALID
+   at Telegram.Bot.TelegramBotClient.MakeRequestAsync[TResponse](IRequest`1 request, CancellationToken cancellationToken)
+   at Telegram.Bot.TelegramBotClientExtensions.EditMessageTextAsync(ITelegramBotClient botClient, ChatId chatId, Int32 messageId, String text, Nullable`1 parseMode, IEnumerable`1 entities, Nullable`1 disableWebPagePreview, InlineKeyboardMarkup replyMarkup, CancellationToken cancellationToken)
+   at AbstractBot.Operations.Operation`1.TryExecuteAsync(Message message, User sender, String callbackQueryData)
+   at AbstractBot.Bots.BotBasic.UpdateAsync(Message message, User sender, String callbackQueryData)
+

@@ -33,10 +33,6 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public MessageTemplateText AcceptedFormat { get; init; } = null!;
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public MessageTemplateText PoinsForNewPlayersFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
@@ -148,4 +144,8 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string WrongArrangementLineFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public string PlayerFormat { get; init; } = null!;
 }

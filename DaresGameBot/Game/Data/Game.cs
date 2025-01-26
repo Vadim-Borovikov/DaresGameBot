@@ -15,6 +15,8 @@ internal sealed class Game
 
     public IReadOnlyList<string> Players => _players.Names;
 
+    public ushort GetPoints(string name) => _players.GetPoints(name);
+
     public Game(Config config, DecksProvider decksProvider, PlayerRepository players, Matchmaker matchmaker,
         List<IInteractionSubscriber> interactionSubscribers)
     {
@@ -68,11 +70,10 @@ internal sealed class Game
             question.DescriptionEn, player);
     }
 
-    public ushort UpdatePlayers(List<PlayerListUpdate> updates)
+    public void UpdatePlayers(List<PlayerListUpdate> updates)
     {
-        ushort pointsForNewPlayers = _players.UpdateList(updates);
+        _players.UpdateList(updates);
         _players.UpdateActions(_actionDeck);
-        return pointsForNewPlayers;
     }
 
     public void ToggleLanguages() => IncludeEn = !IncludeEn;

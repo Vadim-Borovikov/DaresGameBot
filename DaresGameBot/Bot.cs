@@ -128,18 +128,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             Contexts[sender.Id] = game;
             return ReportNewGameAsync(chat, game);
         }
-        ushort pointsForNewPlayers = game.UpdatePlayers(updates);
+        game.UpdatePlayers(updates);
 
         MessageTemplateText playersText =
-            Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.Players));
+            Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, GetPlayerList(game)));
 
-        MessageTemplateText? points = null;
-        if (pointsForNewPlayers > 0)
-        {
-            points = Config.Texts.PoinsForNewPlayersFormat.Format(pointsForNewPlayers);
-        }
-
-        MessageTemplateText messageText = Config.Texts.AcceptedFormat.Format(playersText, points);
+        MessageTemplateText messageText = Config.Texts.AcceptedFormat.Format(playersText);
         return messageText.SendAsync(this, chat);
     }
 
@@ -167,11 +161,16 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     private async Task ReportNewGameAsync(Chat chat, Game.Data.Game game)
     {
         MessageTemplateText playersText =
-            Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.Players));
+            Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, GetPlayerList(game)));
         MessageTemplateText startText = Config.Texts.NewGameFormat.Format(playersText);
         await startText.SendAsync(this, chat);
 
         await DrawActionAsync(chat, game);
+    }
+
+    private IEnumerable<string> GetPlayerList(Game.Data.Game game)
+    {
+        return game.Players.Select(p => string.Format(Config.Texts.PlayerFormat, p, game.GetPoints(p)));
     }
 
     private Game.Data.Game StartNewGame(List<PlayerListUpdate> updates)
