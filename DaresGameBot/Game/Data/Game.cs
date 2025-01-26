@@ -11,6 +11,14 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class Game
 {
+    public enum State
+    {
+        ArrangementPresented,
+        CardRevealed
+    }
+
+    public State CurrentState { get; private set; }
+
     public bool IncludeEn { get; private set; }
 
     public IReadOnlyList<string> Players => _players.Names;
@@ -36,12 +44,14 @@ internal sealed class Game
 
     public ArrangementInfo DrawArrangement()
     {
+        CurrentState = State.ArrangementPresented;
         Arrangement arrangement = _actionDeck.SelectArrangement(_players);
         return _companionsSelector.SelectCompanionsFor(_players.Current, arrangement);
     }
 
     public ActionInfo DrawAction(ArrangementInfo arrangementinfo, string tag)
     {
+        CurrentState = State.CardRevealed;
         ushort id = _actionDeck.SelectCard(arrangementinfo, tag);
         return new ActionInfo(arrangementinfo, id);
     }
@@ -65,6 +75,7 @@ internal sealed class Game
 
     public Turn DrawQuestion(string player)
     {
+        CurrentState = State.CardRevealed;
         Question question = _questionsDeck.Draw();
         return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, question.Description,
             question.DescriptionEn, player);

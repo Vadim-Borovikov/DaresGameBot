@@ -119,22 +119,30 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
     }
 
-    internal Task UpdatePlayersAsync(Chat chat, User sender, List<PlayerListUpdate> updates)
+    internal bool CanBeUpdated(User sender)
+    {
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
+        return game is null || (game.CurrentState == Game.Data.Game.State.ArrangementPresented);
+    }
+
+    internal async Task UpdatePlayersAsync(Chat chat, User sender, List<PlayerListUpdate> updates)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
         if (game is null)
         {
             game = StartNewGame(updates);
             Contexts[sender.Id] = game;
-            return ReportNewGameAsync(chat, game);
+
+            await ReportPlayersAsync(chat, game, Config.Texts.NewGameFormat);
         }
-        game.UpdatePlayers(updates);
+        else
+        {
+            game.UpdatePlayers(updates);
 
-        MessageTemplateText playersText =
-            Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, GetPlayerList(game)));
+            await ReportPlayersAsync(chat, game, Config.Texts.AcceptedFormat);
+        }
 
-        MessageTemplateText messageText = Config.Texts.AcceptedFormat.Format(playersText);
-        return messageText.SendAsync(this, chat);
+        await DrawActionAsync(chat, game);
     }
 
     internal Task OnNewGameAsync(Chat chat, User sender)
@@ -158,14 +166,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return message.SendAsync(this, chat);
     }
 
-    private async Task ReportNewGameAsync(Chat chat, Game.Data.Game game)
+    private Task ReportPlayersAsync(Chat chat, Game.Data.Game game, MessageTemplate template)
     {
         MessageTemplateText playersText =
             Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, GetPlayerList(game)));
-        MessageTemplateText startText = Config.Texts.NewGameFormat.Format(playersText);
-        await startText.SendAsync(this, chat);
 
-        await DrawActionAsync(chat, game);
+        MessageTemplate messageText = template.Format(playersText);
+        return messageText.SendAsync(this, chat);
     }
 
     private IEnumerable<string> GetPlayerList(Game.Data.Game game)
