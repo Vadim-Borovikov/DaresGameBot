@@ -4,5 +4,5 @@ namespace DaresGameBot.Game.Matchmaking.ActionCheck;
 
 internal interface IActionChecker
 {
-    public bool CanPlay(string player, CardAction action);
+    public bool CanPlay(string player, Action action);
 }

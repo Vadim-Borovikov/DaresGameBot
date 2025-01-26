@@ -41,5 +41,5 @@ public class Config : ConfigWithSheets<Texts>
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public Dictionary<string, ushort> Points { get; init; } = null!;
+    public List<OptionInfo> ActionOptions { get; init; } = null!;
 }

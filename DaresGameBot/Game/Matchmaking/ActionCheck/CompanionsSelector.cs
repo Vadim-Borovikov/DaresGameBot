@@ -1,8 +1,7 @@
 using DaresGameBot.Game.Data;
-using DaresGameBot.Game.Data.Cards;
-using DaresGameBot.Helpers;
 using System.Collections.Generic;
 using System.Linq;
+using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Game.Matchmaking.ActionCheck;
 
@@ -14,9 +13,9 @@ internal sealed class CompanionsSelector : IActionChecker
         _players = players;
     }
 
-    public bool CanPlay(string player, CardAction action)
+    public bool CanPlay(string player, Data.Cards.Action action)
     {
-        if ((action.Partners + action.Helpers) >= _players.Count)
+        if (action.Partners >= _players.Count)
         {
             return false;
         }
@@ -25,37 +24,16 @@ internal sealed class CompanionsSelector : IActionChecker
                || _matchmaker.AreThereAnyMatches(player, _players, action.Partners, action.CompatablePartners);
     }
 
-    public CompanionsInfo? TrySelectCompanionsFor(string player, CardAction action)
+    public ActionInfo SelectCompanionsFor(string player, ushort actionId, Data.Cards.Action action)
     {
-        List<string>? partners = null;
+        List<string> partners = new();
         if (action.Partners > 0)
         {
-            partners =
-                _matchmaker.EnumerateMatches(player, _players, action.Partners, action.CompatablePartners)?.ToList();
-            if (partners is null)
-            {
-                return null;
-            }
+            partners = _matchmaker.EnumerateMatches(player, _players, action.Partners, action.CompatablePartners)
+                                  .Denull("No suitable partners found")
+                                  .ToList();
         }
-
-        List<string>? helpers = null;
-        if (action.Helpers > 0)
-        {
-            List<string> choices =
-                _players.Where(p => (p != player) && (partners is null || !partners.Contains(p))).ToList();
-            helpers = RandomHelper.EnumerateUniqueItems(choices, action.Helpers)?.ToList();
-            if (helpers is null)
-            {
-                return null;
-            }
-        }
-
-        if (!action.AssignPartners)
-        {
-            partners = null;
-        }
-
-        return new CompanionsInfo(player, partners, helpers);
+        return new ActionInfo(player, partners, actionId);
     }
 
     private readonly IReadOnlyList<string> _players;

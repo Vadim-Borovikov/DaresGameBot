@@ -1,6 +1,5 @@
 using AbstractBot.Configs.MessageTemplates;
 using JetBrains.Annotations;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace DaresGameBot.Configs;
@@ -42,7 +41,11 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public MessageTemplateText TurnFormat { get; init; } = null!;
+    public MessageTemplateText TurnFormatFull { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText TurnFormatShort { get; init; } = null!;
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
@@ -73,6 +76,11 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string PartnersSeparator { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string CompatablePartnersSeparator { get; init; } = null!;
 
     [UsedImplicitly]
     [Required]
@@ -113,11 +121,6 @@ public class Texts : AbstractBot.Configs.Texts
     [MinLength(1)]
     public string LangCommandDescription { get; init; } = null!;
 
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public List<string> NoMatchesInDeckLines { get; init; } = null!;
-
     [Required]
     [MinLength(1)]
     public MessageTemplateText LangToggledToRu { get; init; } = null!;
@@ -125,4 +128,8 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public MessageTemplateText LangToggledToRuEn { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public string ActionCompleted { get; init; } = null!;
 }

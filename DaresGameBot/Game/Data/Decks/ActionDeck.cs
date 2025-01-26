@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Matchmaking.ActionCheck;
 using DaresGameBot.Helpers;
 
@@ -8,58 +8,42 @@ namespace DaresGameBot.Game.Data.Decks;
 
 internal sealed class ActionDeck
 {
-    private readonly IActionChecker _checker;
+    public IReadOnlyDictionary<ushort, Cards.Action> Cards => _all.AsReadOnly();
+    public readonly IActionChecker Checker;
 
-    public ActionDeck(IEnumerable<CardAction> source, IActionChecker checker)
+    public ActionDeck(Dictionary<ushort, Cards.Action> cards, IActionChecker checker)
     {
-        _checker = checker;
-        _cards = new List<CardAction>(source);
-        _possiblePlayers = new Dictionary<ushort, List<string>>();
+        _all = cards;
+        Checker = checker;
+        _current = new HashSet<ushort>(_all.Keys);
     }
 
-    public bool IsEmpty() => !_possiblePlayers.Any();
-
-    public void UpdatePossibilities(IEnumerable<string> players)
+    public ushort SelectCard(PlayerRepository players)
     {
-        _possiblePlayers.Clear();
-        foreach (string player in players)
-        {
-            foreach (CardAction action in _cards)
-            {
-                if (!_checker.CanPlay(player, action))
-                {
-                    continue;
-                }
-                if (!_possiblePlayers.ContainsKey(action.Id))
-                {
-                    _possiblePlayers[action.Id] = new List<string>();
-                }
-                _possiblePlayers[action.Id].Add(player);
-            }
-        }
+        List<ushort> bestIds = GetBestCards(players);
+        ushort id = RandomHelper.SelectItem(bestIds);
+        _current.Remove(id);
+        return id;
     }
 
-    public CardAction? TrySelectCardFor(string player)
+    private List<ushort> GetBestCards(PlayerRepository players)
     {
-        IEnumerable<CardAction> possibleCards = _cards.Where(c => _possiblePlayers.ContainsKey(c.Id)
-                                                                  && _possiblePlayers[c.Id].Contains(player));
+        List<ushort> result = players.EnumerateBestIdsOf(_current).ToList();
 
-        List<CardAction> bestCards = possibleCards.GroupBy(c => _possiblePlayers[c.Id].Count)
-                                                  .OrderBy(g => g.Key)
-                                                  .First()
-                                                  .ToList();
-
-        if (!bestCards.Any())
+        if (!result.Any() && (_current.Count < _all.Count))
         {
-            return null;
+            _current = new HashSet<ushort>(_all.Keys);
+            result = players.EnumerateBestIdsOf(_current).ToList();
         }
 
-        CardAction action = RandomHelper.SelectItem(bestCards);
-        _cards.Remove(action);
-        _possiblePlayers.Remove(action.Id);
-        return action;
+        if (!result.Any())
+        {
+            throw new Exception("No suitable cards found");
+        }
+
+        return result;
     }
 
-    private readonly List<CardAction> _cards;
-    private readonly Dictionary<ushort, List<string>> _possiblePlayers;
+    private HashSet<ushort> _current;
+    private readonly Dictionary<ushort, Cards.Action> _all;
 }

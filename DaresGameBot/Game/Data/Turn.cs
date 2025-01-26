@@ -7,20 +7,34 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class Turn
 {
-    public Turn(Texts texts, string imagesfolder, string tag, string? prefix, string descriprionRu,
-        string? descriptionEn, CompanionsInfo? companions = null, string? imagePath = null)
+    public Turn(Texts texts, string imagesfolder, string tag, string descriprionRu, string? descriptionEn,
+        ActionInfo actionInfo, bool compatiblePartners, string? imagePath = null)
+        : this(texts, imagesfolder, tag, descriprionRu, descriptionEn, actionInfo.Player, actionInfo,
+            compatiblePartners, imagePath)
+    {
+    }
+
+    public Turn(Texts texts, string imagesfolder, string tag, string descriprionRu, string? descriptionEn,
+        string player, string? imagePath = null)
+        : this(texts, imagesfolder, tag, descriprionRu, descriptionEn, player, null, false, imagePath)
+    {
+    }
+
+    private Turn(Texts texts, string imagesfolder, string tag, string descriprionRu, string? descriptionEn,
+        string player, ActionInfo? actionInfo = null, bool compatiblePartners = false, string? imagePath = null)
     {
         _texts = texts;
         _imagesfolder = imagesfolder;
-        _prefixPart = prefix is null ? null : new MessageTemplateText(prefix);
-        _companions = companions;
+        _player = player;
+        _actionInfo = actionInfo;
+        _compatiblePartners = compatiblePartners;
         _tagPart = new MessageTemplateText(tag);
         _descriprionRuPart = new MessageTemplateText(descriprionRu);
         _descriprionEnPart = descriptionEn is null ? null : new MessageTemplateText(descriptionEn);
         _imagePath = imagePath;
     }
 
-    public MessageTemplate GetMessage(int playersAmount, bool includeEn = false)
+    public MessageTemplate GetMessage(bool includeEn = false)
     {
         MessageTemplateText descriprionPart = _descriprionRuPart;
         if (includeEn && _descriprionEnPart is not null)
@@ -28,40 +42,39 @@ internal sealed class Turn
             descriprionPart = _texts.TurnDescriptionRuEnFormat.Format(_descriprionRuPart, _descriprionEnPart);
         }
 
-        MessageTemplateText? partnersPart = null;
-        IReadOnlyList<string>? partners = _companions?.Partners;
-        if (partners is not null && (partners.Count != 0) && (partners.Count != (playersAmount - 1)))
+        MessageTemplate message = _texts.TurnFormatFull;
+        string? partnersPart = null;
+        IReadOnlyList<string>? partners = _actionInfo?.Partners;
+        if (partners is not null && (partners.Count != 0))
         {
-            string partnersPrefix = partners.Count > 1 ? _texts.Partners : _texts.Partner;
-            string partnersText = string.Join(_texts.PartnersSeparator, partners);
-            partnersPart = _texts.TurnPartnersFormat.Format(partnersPrefix, partnersText);
+            partnersPart = GetPartnersPart(_texts, partners, _compatiblePartners);
         }
 
-        MessageTemplateText? helpersPart = null;
-        IReadOnlyList<string>? helpers = _companions?.Helpers;
-        if (helpers is not null && (helpers.Count != 0))
-        {
-            string helpersPrefix = helpers.Count > 1 ? _texts.Helpers : _texts.Helper;
-            string helpersText = string.Join(_texts.PartnersSeparator, helpers);
-            helpersPart = _texts.TurnPartnersFormat.Format(helpersPrefix, helpersText);
-        }
-
-        MessageTemplate message = _texts.TurnFormat;
         if (!string.IsNullOrWhiteSpace(_imagePath))
         {
             string path = Path.Combine(_imagesfolder, _imagePath);
             message = new MessageTemplateImage(message, path);
         }
 
-        return message.Format(_tagPart, _companions?.Player, _prefixPart, descriprionPart, partnersPart, helpersPart);
+        return message.Format(_tagPart, _player, descriprionPart, partnersPart);
+    }
+
+    public static string GetPartnersPart(Texts texts, IReadOnlyList<string> partners, bool compatible)
+    {
+        string partnersPrefix = partners.Count > 1 ? texts.Partners : texts.Partner;
+        string separator = compatible ? texts.CompatablePartnersSeparator : texts.PartnersSeparator;
+        string partnersText = string.Join(separator, partners);
+        MessageTemplateText template = texts.TurnPartnersFormat.Format(partnersPrefix, partnersText);
+        return template.EscapeIfNeeded();
     }
 
     private readonly MessageTemplateText _tagPart;
     private readonly MessageTemplateText _descriprionRuPart;
     private readonly MessageTemplateText? _descriprionEnPart;
+    private readonly string _player;
+    private readonly ActionInfo? _actionInfo;
+    private readonly bool _compatiblePartners;
     private readonly Texts _texts;
     private readonly string _imagesfolder;
-    private readonly MessageTemplateText? _prefixPart;
-    private readonly CompanionsInfo? _companions;
     private readonly string? _imagePath;
 }

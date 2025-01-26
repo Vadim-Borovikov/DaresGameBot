@@ -6,7 +6,7 @@ namespace DaresGameBot.Game.Data.Cards;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
 
-internal class Card
+internal sealed class Question
 {
     [UsedImplicitly]
     [Required]
@@ -15,7 +15,7 @@ internal class Card
 
     [UsedImplicitly]
     [SheetField(DescriptionEnTitle)]
-    public string? DescriptionEn;
+    public string DescriptionEn = null!;
 
     private const string DescriptionTitle = "Текст";
     private const string DescriptionEnTitle = "Text";

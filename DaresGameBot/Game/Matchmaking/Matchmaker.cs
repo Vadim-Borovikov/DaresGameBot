@@ -9,8 +9,7 @@ internal abstract class Matchmaker
 {
     protected Matchmaker(ICompatibility compatibility) => _compatibility = compatibility;
 
-    public bool AreThereAnyMatches(string player, IEnumerable<string> all, byte amount,
-        bool compatableWithEachOther)
+    public bool AreThereAnyMatches(string player, IEnumerable<string> all, byte amount, bool compatableWithEachOther)
     {
         List<string> choices = EnumerateCompatiblePlayers(player, all).ToList();
         if (choices.Count < amount)

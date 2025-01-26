@@ -19,6 +19,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using DaresGameBot.Game.Data.PlayerListUpdates;
 using DaresGameBot.Game.Matchmaking.Interactions;
+using DaresGameBot.Operations.Info;
 
 namespace DaresGameBot;
 
@@ -28,10 +29,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         Operations.Add(new UpdateCommand(this));
         Operations.Add(new NewCommand(this));
-        Operations.Add(new DrawActionCommand(this));
-        Operations.Add(new DrawQuestionCommand(this));
         Operations.Add(new LangCommand(this));
         Operations.Add(new UpdatePlayers(this));
+        Operations.Add(new RevealCard(this));
+        Operations.Add(new CompleteCard(this));
 
         GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
 
@@ -56,8 +57,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         await using (await StatusMessage.CreateAsync(this, chat, Config.Texts.ReadingDecks))
         {
-            List<CardAction> actions = await _actionsSheet.LoadAsync<CardAction>(Config.ActionsRange);
-            List<Card> questions = await _questionsSheet.LoadAsync<Card>(Config.QuestionsRange);
+            List<Game.Data.Cards.Action> actions =
+                await _actionsSheet.LoadAsync<Game.Data.Cards.Action>(Config.ActionsRange);
+            List<Question> questions = await _questionsSheet.LoadAsync<Question>(Config.QuestionsRange);
 
             _decksProvider = new Game.DecksProvider(actions, questions);
         }
@@ -90,18 +92,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return message.SendAsync(this, chat);
     }
 
-    internal Task DrawAsync(Chat chat, User sender, int replyToMessageId, bool action = true)
-    {
-        Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
-        if (game is null)
-        {
-            return OnNewGameAsync(chat, sender);
-        }
-
-        return
-            action ? DrawActionAsync(chat, game, replyToMessageId) : DrawQuestionAsync(chat, game, replyToMessageId);
-    }
-
     internal Task OnToggleLanguagesAsync(Chat chat, User sender)
     {
         Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
@@ -116,24 +106,14 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return message.SendAsync(this, chat);
     }
 
-    protected override KeyboardProvider GetDefaultKeyboardProvider(Chat chat)
-    {
-        Game.Data.Game? game = TryGetContext<Game.Data.Game>(chat.Id);
-
-        if (game is null || (game.Status == Game.Data.Game.ActionDecksStatus.AfterAllDecks))
-        {
-            return GetKeyboard(Config.Texts.NewGameCaption);
-        }
-
-        return GetKeyboard(Config.Texts.DrawActionCaption, Config.Texts.DrawQuestionCaption);
-    }
-
-    private Task ReportNewGameAsync(Chat chat, Game.Data.Game game)
+    private async Task ReportNewGameAsync(Chat chat, Game.Data.Game game)
     {
         MessageTemplateText playersText =
             Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, game.Players));
         MessageTemplateText startText = Config.Texts.NewGameFormat.Format(playersText);
-        return startText.SendAsync(this, chat);
+        await startText.SendAsync(this, chat);
+
+        await DrawActionAsync(chat, game);
     }
 
     private Game.Data.Game StartNewGame(List<PlayerListUpdate> updates)
@@ -143,7 +123,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             throw new ArgumentNullException(nameof(_decksProvider));
         }
 
-        PlayerRepository repository = new(updates, Config.Points);
+        PlayerRepository repository = new(updates);
         DistributedMatchmaker matchmaker = new(repository);
 
         List<IInteractionSubscriber> subscribers = new()
@@ -155,40 +135,167 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new Game.Data.Game(Config, _decksProvider, repository, matchmaker, subscribers);
     }
 
-    private Task DrawActionAsync(Chat chat, Game.Data.Game game, int replyToMessageId)
+    private Task DrawActionAsync(Chat chat, Game.Data.Game game)
     {
-        Turn? turn = game.TryDrawAction();
-        if (turn is not null)
+        ActionInfo info = game.DrawAction();
+        Game.Data.Cards.Action action = game.GetAction(info.ActionId);
+        return ShowPartnersAsync(chat, info, action);
+    }
+
+    internal Task RevealCardAsync(Chat chat, int messageId, User sender, GameButtonInfo info)
+    {
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
+        if (game is null)
         {
-            return RepotTurnAsync(chat, game, turn, replyToMessageId);
+            return OnNewGameAsync(chat, sender);
         }
 
-        return game.Status switch
+        Turn turn;
+        InlineKeyboardMarkup keyboard;
+        switch (info)
         {
-            Game.Data.Game.ActionDecksStatus.InDeck        => DrawQuestionAsync(chat, game, replyToMessageId, true),
-            Game.Data.Game.ActionDecksStatus.BeforeDeck    => Config.Texts.DeckEnded.SendAsync(this, chat),
-            Game.Data.Game.ActionDecksStatus.AfterAllDecks => Config.Texts.GameOver.SendAsync(this, chat),
-            _                                              => throw new ArgumentOutOfRangeException()
-        };
+            case GameButtonInfoQuestion question:
+                turn = game.DrawQuestion(question.Player);
+                keyboard = CreateQuestionKeyboard(question.Player);
+                break;
+            case GameButtonInfoAction action:
+                Game.Data.Cards.Action card = game.GetAction(action.ActionInfo.ActionId);
+
+                string description;
+                string descriptionEn;
+                if (action.Tag == Config.ActionOptions[0].Tag)
+                {
+                    description = card.Description0;
+                    descriptionEn = card.Description0En;
+                }
+                else if (action.Tag == Config.ActionOptions[1].Tag)
+                {
+                    description = card.Description1;
+                    descriptionEn = card.Description1En;
+                }
+                else if (action.Tag == Config.ActionOptions[2].Tag)
+                {
+                    description = card.Description2;
+                    descriptionEn = card.Description2En;
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException("Unexpected tag");
+                }
+
+                turn = new Turn(Config.Texts, Config.ImagesFolder, action.Tag, description, descriptionEn,
+                    action.ActionInfo, card.CompatablePartners, card.ImagePath);
+                keyboard = CreateActionKeyboard(action.Tag, action.ActionInfo);
+                break;
+            default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
+        }
+
+        MessageTemplate template = turn.GetMessage(game.IncludeEn);
+        ParseMode? parseMode = template.MarkdownV2 ? ParseMode.MarkdownV2 : null;
+        return EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode, replyMarkup: keyboard);
     }
 
-    private Task DrawQuestionAsync(Chat chat, Game.Data.Game game, int replyToMessageId,
-        bool forPlayerWithNoMatches = false)
+    internal Task CompleteCardAsync(Chat chat, User sender, GameButtonInfo info)
     {
-        Turn turn = game.DrawQuestion(forPlayerWithNoMatches);
-        return RepotTurnAsync(chat, game, turn, replyToMessageId);
+        Game.Data.Game? game = TryGetContext<Game.Data.Game>(sender.Id);
+        if (game is null)
+        {
+            return OnNewGameAsync(chat, sender);
+        }
+
+        switch (info)
+        {
+            case GameButtonInfoQuestion:
+                game.RegisterQuestion();
+                break;
+            case GameButtonInfoAction action:
+                OptionInfo optionInfo = Config.ActionOptions.Single(o => o.Tag == action.Tag);
+                game.RegisterAction(action.ActionInfo, optionInfo.Points);
+                break;
+            default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
+        }
+        return DrawActionAsync(chat, game);
     }
 
-    private async Task RepotTurnAsync(Chat chat, Game.Data.Game game, Turn turn, int replyToMessageId)
+    private async Task ShowPartnersAsync(Chat chat, ActionInfo info, Game.Data.Cards.Action action)
     {
-        MessageTemplate message = turn.GetMessage(game.Players.Count, game.IncludeEn);
-        message.ReplyToMessageId = replyToMessageId;
+        string partnersText = "";
+        if (info.Partners.Count > 0)
+        {
+            partnersText = Turn.GetPartnersPart(Config.Texts, info.Partners, action.CompatablePartners);
+        }
+        MessageTemplateText message = Config.Texts.TurnFormatShort.Format(info.Player, partnersText);
+        message.KeyboardProvider = CreateCardKeyboard(info);
         await message.SendAsync(this, chat);
     }
 
-    private static ReplyKeyboardMarkup GetKeyboard(params string[] buttonCaptions)
+    private InlineKeyboardMarkup CreateCardKeyboard(ActionInfo info)
     {
-        return new ReplyKeyboardMarkup(buttonCaptions.Select(c => new KeyboardButton(c)));
+        List<List<InlineKeyboardButton>> keyboard = Config.ActionOptions
+                                                          .AsEnumerable()
+                                                          .Select(o => CreateActionButton(nameof(RevealCard), o.Tag, o.Tag, info))
+                                                          .Select(CreateButtonRow)
+                                                          .ToList();
+        InlineKeyboardButton questionButton = new(Config.Texts.QuestionsTag)
+        {
+            CallbackData = nameof(RevealCard) + info.Player
+        };
+        keyboard.Insert(0, CreateButtonRow(questionButton));
+
+        return new InlineKeyboardMarkup(keyboard);
+    }
+
+    private InlineKeyboardMarkup CreateActionKeyboard(string tag, ActionInfo info)
+    {
+        List<List<InlineKeyboardButton>> keyboard = new();
+        InlineKeyboardButton questionButton = new(Config.Texts.QuestionsTag)
+        {
+            CallbackData = nameof(RevealCard) + info.Player
+        };
+        InlineKeyboardButton actionButton =
+            CreateActionButton(nameof(CompleteCard), Config.Texts.ActionCompleted, tag, info);
+
+        keyboard.Add(CreateButtonRow(questionButton));
+        keyboard.Add(CreateButtonRow(actionButton));
+
+        return new InlineKeyboardMarkup(keyboard);
+    }
+
+    private InlineKeyboardMarkup CreateQuestionKeyboard(string player)
+    {
+        List<List<InlineKeyboardButton>> keyboard = new()
+        {
+            CreateButtonRow(CreateQuestionButton(player))
+        };
+
+        return new InlineKeyboardMarkup(keyboard);
+    }
+
+    private static InlineKeyboardButton CreateActionButton(string operation, string caption, string tag,
+        ActionInfo info)
+    {
+        return new InlineKeyboardButton(caption)
+        {
+            CallbackData =
+                operation +
+                $"{tag}{GameButtonInfo.Separator}" +
+                $"{info.ActionId}{GameButtonInfo.Separator}" +
+                $"{info.Player}{GameButtonInfo.Separator}" +
+                string.Join(GameButtonInfo.Separator, info.Partners)
+        };
+    }
+
+    private InlineKeyboardButton CreateQuestionButton(string player)
+    {
+        return new InlineKeyboardButton(Config.Texts.ActionCompleted)
+        {
+            CallbackData = nameof(CompleteCard) + player
+        };
+    }
+
+    private static List<InlineKeyboardButton> CreateButtonRow(InlineKeyboardButton button)
+    {
+        return new List<InlineKeyboardButton> { button };
     }
 
     private Game.DecksProvider? _decksProvider;

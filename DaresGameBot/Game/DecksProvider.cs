@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using DaresGameBot.Game.Data.Cards;
 using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Matchmaking.ActionCheck;
@@ -8,25 +7,21 @@ namespace DaresGameBot.Game;
 
 internal sealed class DecksProvider
 {
-    public DecksProvider(IReadOnlyList<CardAction> actions, IReadOnlyList<Card> questions)
+    public DecksProvider(IReadOnlyList<Action> actions, IReadOnlyList<Question> questions)
     {
+        Dictionary<ushort, Action> actionsDict = new();
         for (ushort i = 0; i < actions.Count; i++)
         {
-            actions[i].Id = i;
+            actionsDict[i] = actions[i];
         }
+        _actions = actionsDict;
 
-        _actions = actions;
         _questions = questions;
     }
 
     public QuestionDeck GetQuestionDeck() => new(_questions);
+    public ActionDeck GetActionDeck(IActionChecker checker) => new(_actions, checker);
 
-    public Queue<ActionDeck> GetActionDecks(IActionChecker checker)
-    {
-        IEnumerable<ActionDeck> decks = _actions.GroupBy(c => c.Tag).Select(g => new ActionDeck(g, checker));
-        return new Queue<ActionDeck>(decks);
-    }
-
-    private readonly IReadOnlyList<CardAction> _actions;
-    private readonly IReadOnlyList<Card> _questions;
+    private readonly Dictionary<ushort, Action> _actions;
+    private readonly IReadOnlyList<Question> _questions;
 }

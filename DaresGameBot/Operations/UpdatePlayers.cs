@@ -17,9 +17,9 @@ internal sealed class UpdatePlayers : Operation<UpdatesInfo>
         _bot = bot;
     }
 
-    protected override bool IsInvokingBy(Message message, User sender, out UpdatesInfo? data)
+    protected override bool IsInvokingBy(Message message, User sender, out UpdatesInfo? info)
     {
-        data = null;
+        info = null;
         if (message.Type != MessageType.Text)
         {
             return false;
@@ -32,14 +32,14 @@ internal sealed class UpdatePlayers : Operation<UpdatesInfo>
             case null:
             case < 1: return false;
             default:
-                data = UpdatesInfo.From(lines);
-                return data is not null;
+                info = UpdatesInfo.From(lines);
+                return info is not null;
         }
     }
 
-    protected override Task ExecuteAsync(UpdatesInfo data, Message message, User sender)
+    protected override Task ExecuteAsync(UpdatesInfo info, Message message, User sender)
     {
-        return _bot.UpdatePlayersAsync(message.Chat, sender, data.Updates);
+        return _bot.UpdatePlayersAsync(message.Chat, sender, info.Updates);
     }
 
     private readonly Bot _bot;
