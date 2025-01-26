@@ -1,7 +1,9 @@
 using DaresGameBot.Game.Data;
 using System.Collections.Generic;
 using System.Linq;
+using DaresGameBot.Game.Data.Cards;
 using GryphonUtilities.Extensions;
+using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Matchmaking.ActionCheck;
 
@@ -13,27 +15,38 @@ internal sealed class CompanionsSelector : IActionChecker
         _players = players;
     }
 
-    public bool CanPlay(string player, Data.Cards.Action action)
+    public bool CanPlay(string player, Arrangement arrangement)
     {
-        if (action.Partners >= _players.Count)
+        if ((arrangement.Partners + arrangement.Helpers) >= _players.Count)
         {
             return false;
         }
 
-        return (action.Partners == 0)
-               || _matchmaker.AreThereAnyMatches(player, _players, action.Partners, action.CompatablePartners);
+        return (arrangement.Partners == 0)
+               || _matchmaker.AreThereAnyMatches(player, _players, arrangement.Partners,
+                   arrangement.CompatablePartners);
     }
 
-    public ActionInfo SelectCompanionsFor(string player, ushort actionId, Data.Cards.Action action)
+    public ArrangementInfo SelectCompanionsFor(string player, Arrangement arrangement)
     {
         List<string> partners = new();
-        if (action.Partners > 0)
+        if (arrangement.Partners > 0)
         {
-            partners = _matchmaker.EnumerateMatches(player, _players, action.Partners, action.CompatablePartners)
+            partners = _matchmaker.EnumerateMatches(player, _players, arrangement.Partners, arrangement.CompatablePartners)
                                   .Denull("No suitable partners found")
                                   .ToList();
         }
-        return new ActionInfo(player, partners, actionId);
+
+        List<string> helpers = new();
+        if (arrangement.Helpers > 0)
+        {
+            List<string> choices = _players.Where(p => (p != player) && !partners.Contains(p)).ToList();
+            helpers = RandomHelper.EnumerateUniqueItems(choices, arrangement.Helpers).
+                                   Denull("No suitable helpers found")
+                                   .ToList();
+        }
+
+        return new ArrangementInfo(arrangement.GetHashCode(), player, partners, helpers);
     }
 
     private readonly IReadOnlyList<string> _players;

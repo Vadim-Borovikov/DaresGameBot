@@ -55,16 +55,68 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     internal async Task UpdateDecksAsync(Chat chat)
     {
+        Contexts.Remove(chat.Id);
+
+        MessageTemplateText? errors = null;
+
         await using (await StatusMessage.CreateAsync(this, chat, Config.Texts.ReadingDecks))
         {
             List<Game.Data.Cards.Action> actions =
                 await _actionsSheet.LoadAsync<Game.Data.Cards.Action>(Config.ActionsRange);
-            List<Question> questions = await _questionsSheet.LoadAsync<Question>(Config.QuestionsRange);
 
-            _decksProvider = new Game.DecksProvider(actions, questions);
+            HashSet<string> allTags = new();
+            Dictionary<int, HashSet<string>> tags = new();
+            foreach (Game.Data.Cards.Action action in actions)
+            {
+                action.Arrangement = new Arrangement(action.Partners, action.CompatablePartners, action.Helpers);
+
+                int hash = action.Arrangement.GetHashCode();
+                allTags.Add(action.Tag);
+
+                if (!tags.ContainsKey(hash))
+                {
+                    tags[hash] = new HashSet<string>();
+                }
+                tags[hash].Add(action.Tag);
+            }
+
+            List<string> optionsTags = Config.ActionOptions.Select(o => o.Tag).ToList();
+            if (allTags.SetEquals(optionsTags))
+            {
+                List<string> errorLines = new();
+                foreach (int hash in tags.Keys)
+                {
+                    if (allTags.SetEquals(tags[hash]))
+                    {
+                        continue;
+                    }
+
+                    Game.Data.Cards.Action action = actions.First(a => a.Arrangement.GetHashCode() == hash);
+                    string line = string.Format(Config.Texts.WrongArrangementLineFormat, action.Partners,
+                        action.CompatablePartners, action.Helpers, string.Join("", tags[hash]));
+                    errorLines.Add(line);
+                }
+
+                if (errorLines.Count == 0)
+                {
+                    List<Question> questions = await _questionsSheet.LoadAsync<Question>(Config.QuestionsRange);
+                    _decksProvider = new Game.DecksProvider(actions, questions);
+                }
+                else
+                {
+                    errors = Config.Texts.WrongArrangementFormat.Format(string.Join(Environment.NewLine, errorLines));
+                }
+            }
+            else
+            {
+                errors = Config.Texts.WrongTagsFormat.Format(string.Join("", allTags), string.Join("", optionsTags));
+            }
         }
 
-        Contexts.Remove(chat.Id);
+        if (errors is not null)
+        {
+            await errors.SendAsync(this, chat);
+        }
     }
 
     internal Task UpdatePlayersAsync(Chat chat, User sender, List<PlayerListUpdate> updates)
@@ -143,9 +195,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     private Task DrawActionAsync(Chat chat, Game.Data.Game game)
     {
-        ActionInfo info = game.DrawAction();
-        Game.Data.Cards.Action action = game.GetAction(info.ActionId);
-        return ShowPartnersAsync(chat, info, action);
+        ArrangementInfo info = game.DrawArrangement();
+        Arrangement arrangement = game.GetArrangement(info.Hash);
+        return ShowPartnersAsync(chat, info, arrangement.CompatablePartners);
     }
 
     internal Task RevealCardAsync(Chat chat, int messageId, User sender, GameButtonInfo info)
@@ -164,34 +216,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 turn = game.DrawQuestion(question.Player);
                 keyboard = CreateQuestionKeyboard(question.Player);
                 break;
-            case GameButtonInfoAction action:
-                Game.Data.Cards.Action card = game.GetAction(action.ActionInfo.ActionId);
-
-                string description;
-                string descriptionEn;
-                if (action.Tag == Config.ActionOptions[0].Tag)
-                {
-                    description = card.Description0;
-                    descriptionEn = card.Description0En;
-                }
-                else if (action.Tag == Config.ActionOptions[1].Tag)
-                {
-                    description = card.Description1;
-                    descriptionEn = card.Description1En;
-                }
-                else if (action.Tag == Config.ActionOptions[2].Tag)
-                {
-                    description = card.Description2;
-                    descriptionEn = card.Description2En;
-                }
-                else
-                {
-                    throw new IndexOutOfRangeException("Unexpected tag");
-                }
-
-                turn = new Turn(Config.Texts, Config.ImagesFolder, action.Tag, description, descriptionEn,
-                    action.ActionInfo, card.CompatablePartners, card.ImagePath);
-                keyboard = CreateActionKeyboard(action.Tag, action.ActionInfo);
+            case GameButtonInfoArrangement arrangement:
+                ActionInfo actionInfo = game.DrawAction(arrangement.ArrangementInfo, arrangement.Tag);
+                Game.Data.Cards.Action card = game.GetAction(actionInfo.ActionId);
+                turn = new Turn(Config.Texts, Config.ImagesFolder, card.Tag, card.Description,
+                    card.DescriptionEn, actionInfo, card.CompatablePartners, card.ImagePath);
+                keyboard = CreateActionKeyboard(card.Tag, actionInfo);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
@@ -216,26 +246,26 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 break;
             case GameButtonInfoAction action:
                 OptionInfo optionInfo = Config.ActionOptions.Single(o => o.Tag == action.Tag);
-                game.RegisterAction(action.ActionInfo, optionInfo.Points);
+                game.RegisterAction(action.ActionInfo, optionInfo.Points, optionInfo.HelpPoints);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
         return DrawActionAsync(chat, game);
     }
 
-    private async Task ShowPartnersAsync(Chat chat, ActionInfo info, Game.Data.Cards.Action action)
+    private async Task ShowPartnersAsync(Chat chat, ArrangementInfo info, bool compatablePartners)
     {
-        string partnersText = "";
+        MessageTemplateText? partnersText = null;
         if (info.Partners.Count > 0)
         {
-            partnersText = Turn.GetPartnersPart(Config.Texts, info.Partners, action.CompatablePartners);
+            partnersText = Turn.GetPartnersPart(Config.Texts, info.Partners, compatablePartners);
         }
         MessageTemplateText message = Config.Texts.TurnFormatShort.Format(info.Player, partnersText);
         message.KeyboardProvider = CreateCardKeyboard(info);
         await message.SendAsync(this, chat);
     }
 
-    private InlineKeyboardMarkup CreateCardKeyboard(ActionInfo info)
+    private InlineKeyboardMarkup CreateCardKeyboard(ArrangementInfo info)
     {
         List<List<InlineKeyboardButton>> keyboard = Config.ActionOptions
                                                           .AsEnumerable()
@@ -256,7 +286,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         List<List<InlineKeyboardButton>> keyboard = new();
         InlineKeyboardButton questionButton = new(Config.Texts.QuestionsTag)
         {
-            CallbackData = nameof(RevealCard) + info.Player
+            CallbackData = nameof(RevealCard) + info.ArrangementInfo.Player
         };
         InlineKeyboardButton actionButton =
             CreateActionButton(nameof(CompleteCard), Config.Texts.ActionCompleted, tag, info);
@@ -284,10 +314,27 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         {
             CallbackData =
                 operation +
-                $"{tag}{GameButtonInfo.Separator}" +
-                $"{info.ActionId}{GameButtonInfo.Separator}" +
-                $"{info.Player}{GameButtonInfo.Separator}" +
-                string.Join(GameButtonInfo.Separator, info.Partners)
+                $"{tag}{GameButtonInfo.FieldSeparator}" +
+                $"{info.ActionId}{GameButtonInfo.FieldSeparator}" +
+                $"{info.ArrangementInfo.Hash}{GameButtonInfo.FieldSeparator}" +
+                $"{info.ArrangementInfo.Player}{GameButtonInfo.FieldSeparator}" +
+                $"{string.Join(GameButtonInfo.ListSeparator, info.ArrangementInfo.Partners)}{GameButtonInfo.FieldSeparator}" +
+                string.Join(GameButtonInfo.ListSeparator, info.ArrangementInfo.Helpers)
+        };
+    }
+
+    private static InlineKeyboardButton CreateActionButton(string operation, string caption, string tag,
+        ArrangementInfo info)
+    {
+        return new InlineKeyboardButton(caption)
+        {
+            CallbackData =
+                operation +
+                $"{tag}{GameButtonInfo.FieldSeparator}" +
+                $"{info.Hash}{GameButtonInfo.FieldSeparator}" +
+                $"{info.Player}{GameButtonInfo.FieldSeparator}" +
+                $"{string.Join(GameButtonInfo.ListSeparator, info.Partners)}{GameButtonInfo.FieldSeparator}" +
+                string.Join(GameButtonInfo.ListSeparator, info.Helpers)
         };
     }
 

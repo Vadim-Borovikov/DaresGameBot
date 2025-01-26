@@ -10,35 +10,27 @@ internal sealed class Action
 {
     [UsedImplicitly]
     [Required]
-    [SheetField(Description0Title)]
-    public string Description0 = null!;
-
-    [UsedImplicitly]
-    [SheetField(Description0EnTitle)]
-    public string Description0En = null!;
+    [SheetField(TagTitle)]
+    public string Tag = null!;
 
     [UsedImplicitly]
     [Required]
-    [SheetField(Description1Title)]
-    public string Description1 = null!;
+    [SheetField(DescriptionTitle)]
+    public string Description = null!;
 
     [UsedImplicitly]
-    [SheetField(Description1EnTitle)]
-    public string Description1En = null!;
-
-    [UsedImplicitly]
-    [Required]
-    [SheetField(Description2Title)]
-    public string Description2 = null!;
-
-    [UsedImplicitly]
-    [SheetField(Description2EnTitle)]
-    public string Description2En = null!;
+    [SheetField(DescriptionEnTitle)]
+    public string DescriptionEn = null!;
 
     [UsedImplicitly]
     [Required]
     [SheetField(PartnersTitle)]
     public byte Partners;
+
+    [UsedImplicitly]
+    [Required]
+    [SheetField(HelpersTitle)]
+    public byte Helpers;
 
     [UsedImplicitly]
     [SheetField(ImageTitle)]
@@ -49,13 +41,13 @@ internal sealed class Action
     [SheetField(CompatablePartnersTitle)]
     public bool CompatablePartners;
 
+    public Arrangement Arrangement = null!;
+
+    private const string TagTitle = "Символ";
+    private const string DescriptionTitle = "Текст";
+    private const string DescriptionEnTitle = "Text";
     private const string ImageTitle = "Картинка";
     private const string PartnersTitle = "Партнёры";
     private const string CompatablePartnersTitle = "Партнёры должны совмещаться друг с другом";
-    private const string Description0Title = "Текст 🤗";
-    private const string Description0EnTitle = "Text 🤗";
-    private const string Description1Title = "Текст 😘";
-    private const string Description1EnTitle = "Text 😘";
-    private const string Description2Title = "Текст 🔥";
-    private const string Description2EnTitle = "Text 🔥";
+    private const string HelpersTitle = "Помощники";
 }

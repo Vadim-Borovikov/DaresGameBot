@@ -1,13 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal sealed class InteractionRepository : IInteractionSubscriber
 {
-    public void OnInteraction(string player, IReadOnlyList<string> partners, bool actionsBetweenPartners, ushort _)
+    public void OnInteraction(string player, IEnumerable<string> partners, bool actionsBetweenPartners,
+        ushort points, IEnumerable<string> helpers, ushort helpPoints)
     {
-        foreach (string p in partners)
+        List<string> partnersList = partners.ToList();
+        foreach (string p in partnersList)
         {
             RegisterInteraction(player, p);
         }
@@ -16,7 +19,7 @@ internal sealed class InteractionRepository : IInteractionSubscriber
         {
             return;
         }
-        foreach ((string, string) pair in ListHelper.EnumeratePairs(partners))
+        foreach ((string, string) pair in ListHelper.EnumeratePairs(partnersList))
         {
             RegisterInteraction(pair.Item1, pair.Item2);
         }

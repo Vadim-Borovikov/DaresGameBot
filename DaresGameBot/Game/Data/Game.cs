@@ -11,8 +11,6 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class Game
 {
-    public Action GetAction(ushort id) => _actionDeck.Cards[id];
-
     public bool IncludeEn { get; private set; }
 
     public IReadOnlyList<string> Players => _players.Names;
@@ -31,20 +29,32 @@ internal sealed class Game
         _players.UpdateActions(_actionDeck);
     }
 
-    public ActionInfo DrawAction()
+    public Arrangement GetArrangement(int hash) => _actionDeck.GetArrangement(hash);
+    public Action GetAction(ushort id) => _actionDeck.Cards[id];
+
+    public ArrangementInfo DrawArrangement()
     {
-        ushort actionId = _actionDeck.SelectCard(_players);
-        return _companionsSelector.SelectCompanionsFor(_players.Current, actionId, _actionDeck.Cards[actionId]);
+        Arrangement arrangement = _actionDeck.SelectArrangement(_players);
+        return _companionsSelector.SelectCompanionsFor(_players.Current, arrangement);
     }
 
-    public void RegisterAction(ActionInfo info, ushort points)
+    public ActionInfo DrawAction(ArrangementInfo arrangementinfo, string tag)
+    {
+        ushort id = _actionDeck.SelectCard(arrangementinfo, tag);
+        return new ActionInfo(arrangementinfo, id);
+    }
+
+    public void RegisterAction(ActionInfo info, ushort points, ushort helpPoints)
     {
         Action action = GetAction(info.ActionId);
 
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnInteraction(info.Player, info.Partners, action.CompatablePartners, points);
+            subscriber.OnInteraction(info.ArrangementInfo.Player, info.ArrangementInfo.Partners,
+                action.CompatablePartners, points, info.ArrangementInfo.Helpers, helpPoints);
         }
+
+        _actionDeck.FoldCard(info.ActionId);
 
         _players.MoveNext();
     }

@@ -1,17 +1,13 @@
-using System.Collections.Generic;
-
 namespace DaresGameBot.Game.Data;
 
 internal sealed class ActionInfo
 {
-    public readonly string Player;
-    public readonly IReadOnlyList<string> Partners;
+    public readonly ArrangementInfo ArrangementInfo;
     public readonly ushort ActionId;
 
-    public ActionInfo(string player, IReadOnlyList<string> partners, ushort actionId)
+    public ActionInfo(ArrangementInfo arrangementInfo, ushort actionId)
     {
-        Player = player;
-        Partners = partners;
+        ArrangementInfo = arrangementInfo;
         ActionId = actionId;
     }
 }

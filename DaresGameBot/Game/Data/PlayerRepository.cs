@@ -13,6 +13,8 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
 
     public string Current => _names[_currentIndex];
 
+    public HashSet<int> PlayableArrangementsForCurrent => _infos[Current].PlayableArrangements;
+
     public PlayerRepository(List<PlayerListUpdate> updates) => UpdateList(updates);
 
     public void MoveNext() => _currentIndex = (_currentIndex + 1) % _names.Count;
@@ -65,27 +67,12 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
     {
         foreach (string name in _infos.Keys)
         {
-            _infos[name].PlayableActions =
-                new HashSet<ushort>(actionDeck.Cards
-                                              .Keys
-                                              .Where(id => actionDeck.Checker.CanPlay(name, actionDeck.Cards[id])));
+            _infos[name].PlayableArrangements =
+                new HashSet<int>(actionDeck.Cards
+                                           .Values
+                                           .Where(c => actionDeck.Checker.CanPlay(name, c.Arrangement))
+                                           .Select(c => c.Arrangement.GetHashCode()));
         }
-    }
-
-    public IEnumerable<ushort> EnumerateBestIdsOf(IEnumerable<ushort> currentCardIds)
-    {
-        HashSet<ushort> possibleCardIds = new();
-        possibleCardIds.UnionWith(currentCardIds);
-        possibleCardIds.IntersectWith(_infos[Current].PlayableActions);
-
-        if (possibleCardIds.Count == 0)
-        {
-            return possibleCardIds;
-        }
-
-        return possibleCardIds.GroupBy(id => _infos.Values.Count(i => i.PlayableActions.Contains(id)))
-                              .OrderBy(g => g.Key)
-                              .First();
     }
 
     public bool AreCompatable(string p1, string p2)
@@ -101,17 +88,23 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
         return info1.WouldInteractWith(info2) && info2.WouldInteractWith(info1);
     }
 
-    public void OnInteraction(string player, IReadOnlyList<string> partners, bool actionsBetweenPartners,
-        ushort points)
+    public void OnInteraction(string player, IEnumerable<string> partners, bool actionsBetweenPartners, ushort points,
+        IEnumerable<string> helpers, ushort helpPoints)
     {
         _infos[player].Points += points;
         foreach (string partner in partners)
         {
             _infos[partner].Points += points;
         }
+
+        foreach (string helper in helpers)
+        {
+            _infos[helper].Points += helpPoints;
+        }
     }
 
     private readonly List<string> _names = new();
     private readonly Dictionary<string, PlayerInfo> _infos = new();
     private int _currentIndex;
+
 }

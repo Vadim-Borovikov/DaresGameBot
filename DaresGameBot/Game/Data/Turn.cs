@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Configs;
 
@@ -9,7 +10,7 @@ internal sealed class Turn
 {
     public Turn(Texts texts, string imagesfolder, string tag, string descriprionRu, string? descriptionEn,
         ActionInfo actionInfo, bool compatablePartners, string? imagePath = null)
-        : this(texts, imagesfolder, tag, descriprionRu, descriptionEn, actionInfo.Player, actionInfo,
+        : this(texts, imagesfolder, tag, descriprionRu, descriptionEn, actionInfo.ArrangementInfo.Player, actionInfo,
             compatablePartners, imagePath)
     {
     }
@@ -43,11 +44,21 @@ internal sealed class Turn
         }
 
         MessageTemplate message = _texts.TurnFormatFull;
-        string? partnersPart = null;
-        IReadOnlyList<string>? partners = _actionInfo?.Partners;
-        if (partners is not null && (partners.Count != 0))
+
+        MessageTemplateText? partnersPart = null;
+        IReadOnlyList<string>? partners = _actionInfo?.ArrangementInfo.Partners;
+        if (partners is not null && partners.Any())
         {
             partnersPart = GetPartnersPart(_texts, partners, _compatablePartners);
+        }
+
+        MessageTemplateText? helpersPart = null;
+        IReadOnlyList<string>? helpers = _actionInfo?.ArrangementInfo.Helpers;
+        if (helpers is not null && helpers.Any())
+        {
+            string helpersPrefix = helpers.Count > 1 ? _texts.Helpers : _texts.Helper;
+            string helpersText = string.Join(_texts.PartnersSeparator, helpers);
+            helpersPart = _texts.TurnPartnersFormat.Format(helpersPrefix, helpersText);
         }
 
         if (!string.IsNullOrWhiteSpace(_imagePath))
@@ -56,16 +67,15 @@ internal sealed class Turn
             message = new MessageTemplateImage(message, path);
         }
 
-        return message.Format(_tagPart, _player, descriprionPart, partnersPart);
+        return message.Format(_tagPart, _player, descriprionPart, partnersPart, helpersPart);
     }
 
-    public static string GetPartnersPart(Texts texts, IReadOnlyList<string> partners, bool compatable)
+    public static MessageTemplateText GetPartnersPart(Texts texts, IReadOnlyList<string> partners, bool compatable)
     {
         string partnersPrefix = partners.Count > 1 ? texts.Partners : texts.Partner;
         string separator = compatable ? texts.CompatablePartnersSeparator : texts.PartnersSeparator;
         string partnersText = string.Join(separator, partners);
-        MessageTemplateText template = texts.TurnPartnersFormat.Format(partnersPrefix, partnersText);
-        return template.EscapeIfNeeded();
+        return texts.TurnPartnersFormat.Format(partnersPrefix, partnersText);
     }
 
     private readonly MessageTemplateText _tagPart;

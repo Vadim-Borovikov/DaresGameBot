@@ -136,4 +136,16 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string ActionCompleted { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText WrongTagsFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText WrongArrangementFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public string WrongArrangementLineFormat { get; init; } = null!;
 }

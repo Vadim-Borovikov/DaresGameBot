@@ -7,7 +7,7 @@ internal sealed class PlayerInfo
 {
     public GroupChecker GroupChecker;
     public ushort Points;
-    public HashSet<ushort> PlayableActions = new();
+    public HashSet<int> PlayableArrangements = new();
 
     public PlayerInfo(GroupChecker groupChecker, ushort points)
     {
