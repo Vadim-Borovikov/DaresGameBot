@@ -255,7 +255,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         Turn turn = game.DrawQuestion();
         MessageTemplate template = turn.GetMessage(game.IncludeEn);
-        template.KeyboardProvider = CreateQuestionKeyboard(game.CurrentPlayer);
+        template.KeyboardProvider = CreateQuestionKeyboard();
         return template;
     }
 
@@ -325,11 +325,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateQuestionKeyboard(string player)
+    private InlineKeyboardMarkup CreateQuestionKeyboard()
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CreateButtonRow(CreateQuestionButton(player))
+            CreateButtonRow(CreateQuestionButton())
         };
 
         return new InlineKeyboardMarkup(keyboard);
@@ -341,11 +341,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardButton(caption)
         {
             CallbackData =
-                operation +
-                $"{tag}{GameButtonInfo.FieldSeparator}" +
+                $"{CreateArrangementData(operation, tag, info.ArrangementInfo)}{GameButtonInfo.FieldSeparator}" +
                 $"{info.ActionId}{GameButtonInfo.FieldSeparator}" +
-                $"{info.ArrangementInfo.Hash}{GameButtonInfo.FieldSeparator}" +
-                $"{string.Join(GameButtonInfo.ListSeparator, info.ArrangementInfo.Partners)}{GameButtonInfo.FieldSeparator}" +
                 string.Join(GameButtonInfo.ListSeparator, info.Helpers)
         };
     }
@@ -355,19 +352,23 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         return new InlineKeyboardButton(caption)
         {
-            CallbackData =
-                operation +
-                $"{tag}{GameButtonInfo.FieldSeparator}" +
-                $"{info.Hash}{GameButtonInfo.FieldSeparator}" +
-                $"{string.Join(GameButtonInfo.ListSeparator, info.Partners)}"
+            CallbackData = CreateArrangementData(operation, tag, info)
         };
     }
 
-    private InlineKeyboardButton CreateQuestionButton(string player)
+    private static string CreateArrangementData(string prefix, string tag, ArrangementInfo info)
+    {
+        return prefix +
+               $"{tag}{GameButtonInfo.FieldSeparator}" +
+               $"{info.Hash}{GameButtonInfo.FieldSeparator}" +
+               $"{string.Join(GameButtonInfo.ListSeparator, info.Partners)}";
+    }
+
+    private InlineKeyboardButton CreateQuestionButton()
     {
         return new InlineKeyboardButton(Config.Texts.ActionCompleted)
         {
-            CallbackData = nameof(CompleteCard) + player
+            CallbackData = nameof(CompleteCard)
         };
     }
 

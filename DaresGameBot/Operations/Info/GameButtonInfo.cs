@@ -7,31 +7,26 @@ internal abstract class GameButtonInfo
 {
     public static GameButtonInfo? From(string callbackQueryDataCore)
     {
+        if (callbackQueryDataCore == "")
+        {
+            return new GameButtonInfoQuestion();
+        }
+
         string[] parts = callbackQueryDataCore.Split(FieldSeparator);
-        if ((parts.Length == 0) || (parts[0] == string.Empty))
+        if (parts.Length < 3)
         {
             return null;
         }
-
-        string tag;
-        int hash;
-        string[] partners;
-        ArrangementInfo info;
+        string tag = parts[0];
+        int hash = int.Parse(parts[1]);
+        string[] partners = SplitList(parts[2]);
+        ArrangementInfo info = new(hash, partners);
         switch (parts.Length)
         {
-            case 1: return new GameButtonInfoQuestion();
             case 3:
-                tag = parts[0];
-                hash = int.Parse(parts[1]);
-                partners = SplitList(parts[2]);
-                info = new ArrangementInfo(hash, partners);
                 return new GameButtonInfoArrangement(info, tag);
             case 5:
-                tag = parts[0];
-                ushort actionId = ushort.Parse(parts[1]);
-                hash = int.Parse(parts[2]);
-                partners = SplitList(parts[3]);
-                info = new ArrangementInfo(hash, partners);
+                ushort actionId = ushort.Parse(parts[3]);
                 string[] helpers = SplitList(parts[4]);
                 ActionInfo actionInfo = new(info, actionId, helpers);
                 return new GameButtonInfoAction(actionInfo, tag);
