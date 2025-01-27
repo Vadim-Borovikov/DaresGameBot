@@ -7,11 +7,13 @@ internal sealed class PlayerInfo
 {
     public GroupChecker GroupChecker;
     public ushort Points;
+    public bool Active;
     public HashSet<int> PlayableArrangements = new();
 
     public PlayerInfo(GroupChecker groupChecker, ushort points)
     {
         GroupChecker = groupChecker;
         Points = points;
+        Active = true;
     }
 }

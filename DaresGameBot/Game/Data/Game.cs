@@ -17,11 +17,13 @@ internal sealed class Game
         CardRevealed
     }
 
+    public string CurrentPlayer => _players.Current;
+
     public State CurrentState { get; private set; }
 
     public bool IncludeEn { get; private set; }
 
-    public IReadOnlyList<string> Players => _players.Names;
+    public IReadOnlyList<string> GetPlayers() => _players.GetNames();
 
     public ushort GetPoints(string name) => _players.GetPoints(name);
 
@@ -31,7 +33,7 @@ internal sealed class Game
         _config = config;
         _players = players;
 
-        _companionsSelector = new CompanionsSelector(matchmaker, Players);
+        _companionsSelector = new CompanionsSelector(matchmaker, GetPlayers());
         _actionDeck = decksProvider.GetActionDeck(_companionsSelector);
         _questionsDeck = decksProvider.GetQuestionDeck();
         _interactionSubscribers = interactionSubscribers;
@@ -42,11 +44,11 @@ internal sealed class Game
     public Arrangement GetArrangement(int hash) => _actionDeck.GetArrangement(hash);
     public Action GetAction(ushort id) => _actionDeck.Cards[id];
 
-    public ArrangementInfo DrawArrangement()
+    public ArrangementInfo? TryDrawArrangement()
     {
         CurrentState = State.ArrangementPresented;
-        Arrangement arrangement = _actionDeck.SelectArrangement(_players);
-        return _companionsSelector.SelectCompanionsFor(_players.Current, arrangement);
+        Arrangement? arrangement = _actionDeck.TrySelectArrangement(_players);
+        return arrangement is null ? null : _companionsSelector.SelectCompanionsFor(_players.Current, arrangement);
     }
 
     public ActionInfo DrawAction(ArrangementInfo arrangementinfo, string tag)
@@ -62,7 +64,7 @@ internal sealed class Game
 
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnInteraction(info.ArrangementInfo.Player, info.ArrangementInfo.Partners,
+            subscriber.OnInteraction(CurrentPlayer, info.ArrangementInfo.Partners,
                 action.CompatablePartners, points, info.ArrangementInfo.Helpers, helpPoints);
         }
 
@@ -73,12 +75,12 @@ internal sealed class Game
 
     public void RegisterQuestion() => _players.MoveNext();
 
-    public Turn DrawQuestion(string player)
+    public Turn DrawQuestion()
     {
         CurrentState = State.CardRevealed;
         Question question = _questionsDeck.Draw();
         return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, question.Description,
-            question.DescriptionEn, player);
+            question.DescriptionEn, CurrentPlayer);
     }
 
     public void UpdatePlayers(List<PlayerListUpdate> updates)

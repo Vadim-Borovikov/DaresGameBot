@@ -9,7 +9,7 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
 {
-    public IReadOnlyList<string> Names => _names.AsReadOnly();
+    public IReadOnlyList<string> GetNames() => _names.Where(n => _infos[n].Active).ToList().AsReadOnly();
 
     public string Current => _names[_currentIndex];
 
@@ -19,11 +19,18 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
 
     public PlayerRepository(List<PlayerListUpdate> updates) => UpdateList(updates);
 
-    public void MoveNext() => _currentIndex = (_currentIndex + 1) % _names.Count;
+    public void MoveNext()
+    {
+        do
+        {
+            _currentIndex = (_currentIndex + 1) % _names.Count;
+        }
+        while (!_infos[Current].Active);
+    }
 
     public void UpdateList(List<PlayerListUpdate> updates)
     {
-        ushort points = _infos.Count > 0 ? _infos.Values.Min(v => v.Points) : (ushort) 0;
+        ushort points = _infos.Count > 0 ? _infos.Values.Where(v => v.Active).Min(v => v.Points) : (ushort) 0;
 
         foreach (PlayerListUpdate update in updates)
         {
@@ -33,6 +40,11 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
                     if (_infos.ContainsKey(a.Name))
                     {
                         _infos[a.Name].GroupChecker = a.Checker;
+                        if (!_infos[a.Name].Active)
+                        {
+                            _infos[a.Name].Active = true;
+                            _infos[a.Name].Points = ushort.Max(points, _infos[a.Name].Points);
+                        }
                     }
                     else
                     {
@@ -45,17 +57,14 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
                     }
                     break;
                 case RemovePlayer r:
-                    int index = _names.IndexOf(r.Name);
-                    if (index > -1)
+                    if (_infos.ContainsKey(r.Name))
                     {
-                        _names.RemoveAt(index);
-
-                        if (_currentIndex > index)
+                        _infos[r.Name].Active = false;
+                        if (Current == r.Name)
                         {
-                            --_currentIndex;
+                            MoveNext();
                         }
                     }
-                    _infos.Remove(r.Name);
                     break;
             }
         }
@@ -63,7 +72,7 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
 
     public void UpdateActions(ActionDeck actionDeck)
     {
-        foreach (string name in _infos.Keys)
+        foreach (string name in _infos.Keys.Where(n => _infos[n].Active))
         {
             _infos[name].PlayableArrangements =
                 new HashSet<int>(actionDeck.Cards
@@ -76,6 +85,11 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
     public bool AreCompatable(string p1, string p2)
     {
         if (p1 == p2)
+        {
+            return false;
+        }
+
+        if (!_infos[p1].Active || !_infos[p2].Active)
         {
             return false;
         }

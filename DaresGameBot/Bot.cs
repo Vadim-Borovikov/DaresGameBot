@@ -142,7 +142,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             await ReportPlayersAsync(chat, game, Config.Texts.AcceptedFormat);
         }
 
-        await DrawActionAsync(chat, game);
+        await DrawActionOrQuestionAsync(chat, game);
     }
 
     internal Task OnNewGameAsync(Chat chat, User sender)
@@ -166,18 +166,20 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return message.SendAsync(this, chat);
     }
 
-    private Task ReportPlayersAsync(Chat chat, Game.Data.Game game, MessageTemplate template)
+    private async Task ReportPlayersAsync(Chat chat, Game.Data.Game game, MessageTemplate template)
     {
         MessageTemplateText playersText =
             Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, GetPlayerList(game)));
 
         MessageTemplate messageText = template.Format(playersText);
-        return messageText.SendAsync(this, chat);
+        Message message = await messageText.SendAsync(this, chat);
+        await UnpinAllChatMessagesAsync(chat);
+        await PinChatMessageAsync(chat, message.MessageId);
     }
 
     private IEnumerable<string> GetPlayerList(Game.Data.Game game)
     {
-        return game.Players.Select(p => string.Format(Config.Texts.PlayerFormat, p, game.GetPoints(p)));
+        return game.GetPlayers().Select(p => string.Format(Config.Texts.PlayerFormat, p, game.GetPoints(p)));
     }
 
     private Game.Data.Game StartNewGame(List<PlayerListUpdate> updates)
@@ -199,11 +201,16 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new Game.Data.Game(Config, _decksProvider, repository, matchmaker, subscribers);
     }
 
-    private Task DrawActionAsync(Chat chat, Game.Data.Game game)
+    private Task DrawActionOrQuestionAsync(Chat chat, Game.Data.Game game)
     {
-        ArrangementInfo info = game.DrawArrangement();
+        ArrangementInfo? info = game.TryDrawArrangement();
+        if (info is null)
+        {
+            MessageTemplate template = CreateQuestionTemplate(game);
+            return template.SendAsync(this, chat);
+        }
         Arrangement arrangement = game.GetArrangement(info.Hash);
-        return ShowPartnersAsync(chat, info, arrangement.CompatablePartners);
+        return ShowPartnersAsync(chat, game.CurrentPlayer, info, arrangement.CompatablePartners);
     }
 
     internal Task RevealCardAsync(Chat chat, int messageId, User sender, GameButtonInfo info)
@@ -214,27 +221,38 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             return OnNewGameAsync(chat, sender);
         }
 
-        Turn turn;
-        InlineKeyboardMarkup keyboard;
+        MessageTemplate template;
         switch (info)
         {
-            case GameButtonInfoQuestion question:
-                turn = game.DrawQuestion(question.Player);
-                keyboard = CreateQuestionKeyboard(question.Player);
+            case GameButtonInfoQuestion:
+                template = CreateQuestionTemplate(game);
                 break;
             case GameButtonInfoArrangement arrangement:
                 ActionInfo actionInfo = game.DrawAction(arrangement.ArrangementInfo, arrangement.Tag);
                 Game.Data.Cards.Action card = game.GetAction(actionInfo.ActionId);
-                turn = new Turn(Config.Texts, Config.ImagesFolder, card.Tag, card.Description,
-                    card.DescriptionEn, actionInfo, card.CompatablePartners, card.ImagePath);
-                keyboard = CreateActionKeyboard(card.Tag, actionInfo);
+                Turn turn = new(Config.Texts, Config.ImagesFolder, card.Tag, card.Description,
+                    card.DescriptionEn, game.CurrentPlayer, actionInfo, card.CompatablePartners, card.ImagePath);
+                template = turn.GetMessage(game.IncludeEn);
+                template.KeyboardProvider = CreateActionKeyboard(card.Tag, actionInfo);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
 
-        MessageTemplate template = turn.GetMessage(game.IncludeEn);
         ParseMode? parseMode = template.MarkdownV2 ? ParseMode.MarkdownV2 : null;
-        return EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode, replyMarkup: keyboard);
+        if (template.KeyboardProvider is null)
+        {
+            throw new InvalidOperationException();
+        }
+        return EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
+            replyMarkup: template.KeyboardProvider.Keyboard as InlineKeyboardMarkup);
+    }
+
+    private MessageTemplate CreateQuestionTemplate(Game.Data.Game game)
+    {
+        Turn turn = game.DrawQuestion();
+        MessageTemplate template = turn.GetMessage(game.IncludeEn);
+        template.KeyboardProvider = CreateQuestionKeyboard(game.CurrentPlayer);
+        return template;
     }
 
     internal Task CompleteCardAsync(Chat chat, User sender, GameButtonInfo info)
@@ -256,19 +274,19 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
-        return DrawActionAsync(chat, game);
+        return DrawActionOrQuestionAsync(chat, game);
     }
 
-    private async Task ShowPartnersAsync(Chat chat, ArrangementInfo info, bool compatablePartners)
+    private Task ShowPartnersAsync(Chat chat, string player, ArrangementInfo info, bool compatablePartners)
     {
         MessageTemplateText? partnersText = null;
         if (info.Partners.Count > 0)
         {
             partnersText = Turn.GetPartnersPart(Config.Texts, info.Partners, compatablePartners);
         }
-        MessageTemplateText message = Config.Texts.TurnFormatShort.Format(info.Player, partnersText);
+        MessageTemplateText message = Config.Texts.TurnFormatShort.Format(player, partnersText);
         message.KeyboardProvider = CreateCardKeyboard(info);
-        await message.SendAsync(this, chat);
+        return message.SendAsync(this, chat);
     }
 
     private InlineKeyboardMarkup CreateCardKeyboard(ArrangementInfo info)
@@ -280,7 +298,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                                                           .ToList();
         InlineKeyboardButton questionButton = new(Config.Texts.QuestionsTag)
         {
-            CallbackData = nameof(RevealCard) + info.Player
+            CallbackData = nameof(RevealCard)
         };
         keyboard.Insert(0, CreateButtonRow(questionButton));
 
@@ -292,7 +310,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         List<List<InlineKeyboardButton>> keyboard = new();
         InlineKeyboardButton questionButton = new(Config.Texts.QuestionsTag)
         {
-            CallbackData = nameof(RevealCard) + info.ArrangementInfo.Player
+            CallbackData = nameof(RevealCard)
         };
         InlineKeyboardButton actionButton =
             CreateActionButton(nameof(CompleteCard), Config.Texts.ActionCompleted, tag, info);
@@ -323,7 +341,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 $"{tag}{GameButtonInfo.FieldSeparator}" +
                 $"{info.ActionId}{GameButtonInfo.FieldSeparator}" +
                 $"{info.ArrangementInfo.Hash}{GameButtonInfo.FieldSeparator}" +
-                $"{info.ArrangementInfo.Player}{GameButtonInfo.FieldSeparator}" +
                 $"{string.Join(GameButtonInfo.ListSeparator, info.ArrangementInfo.Partners)}{GameButtonInfo.FieldSeparator}" +
                 string.Join(GameButtonInfo.ListSeparator, info.ArrangementInfo.Helpers)
         };
@@ -338,7 +355,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 operation +
                 $"{tag}{GameButtonInfo.FieldSeparator}" +
                 $"{info.Hash}{GameButtonInfo.FieldSeparator}" +
-                $"{info.Player}{GameButtonInfo.FieldSeparator}" +
                 $"{string.Join(GameButtonInfo.ListSeparator, info.Partners)}{GameButtonInfo.FieldSeparator}" +
                 string.Join(GameButtonInfo.ListSeparator, info.Helpers)
         };
@@ -361,5 +377,5 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     private readonly Sheet _actionsSheet;
     private readonly Sheet _questionsSheet;
 
-    private const string PlayerSeparator = ", ";
+    private static readonly string PlayerSeparator = Environment.NewLine;
 }

@@ -9,19 +9,6 @@ namespace DaresGameBot.Game.Data;
 internal sealed class Turn
 {
     public Turn(Texts texts, string imagesfolder, string tag, string descriprionRu, string? descriptionEn,
-        ActionInfo actionInfo, bool compatablePartners, string? imagePath = null)
-        : this(texts, imagesfolder, tag, descriprionRu, descriptionEn, actionInfo.ArrangementInfo.Player, actionInfo,
-            compatablePartners, imagePath)
-    {
-    }
-
-    public Turn(Texts texts, string imagesfolder, string tag, string descriprionRu, string? descriptionEn,
-        string player, string? imagePath = null)
-        : this(texts, imagesfolder, tag, descriprionRu, descriptionEn, player, null, false, imagePath)
-    {
-    }
-
-    private Turn(Texts texts, string imagesfolder, string tag, string descriprionRu, string? descriptionEn,
         string player, ActionInfo? actionInfo = null, bool compatablePartners = false, string? imagePath = null)
     {
         _texts = texts;

@@ -25,7 +25,7 @@ internal sealed class ActionDeck
 
     public Arrangement GetArrangement(int hash) => _arrangements[hash];
 
-    public Arrangement SelectArrangement(PlayerRepository players)
+    public Arrangement? TrySelectArrangement(PlayerRepository players)
     {
         Dictionary<int, ushort> arrangementAmountsInDeck = new();
         string smallestDeckTag = _current.GroupBy(id => _all[id].Tag).OrderBy(g => g.Count()).First().Key;
@@ -48,6 +48,11 @@ internal sealed class ActionDeck
         {
             arrangementAmounts[hash] =
                 arrangementAmountsInDeck.ContainsKey(hash) ? arrangementAmountsInDeck[ hash] : (ushort) 1;
+        }
+
+        if (arrangementAmounts.Count == 0)
+        {
+            return null;
         }
 
         List<int> arrangements = arrangementAmounts.SelectMany(p => Enumerable.Repeat(p.Key, p.Value)).ToList();

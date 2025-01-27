@@ -46,7 +46,7 @@ internal sealed class CompanionsSelector : IActionChecker
                                    .ToList();
         }
 
-        return new ArrangementInfo(arrangement.GetHashCode(), player, partners, helpers);
+        return new ArrangementInfo(arrangement.GetHashCode(), partners, helpers);
     }
 
     private readonly IReadOnlyList<string> _players;
