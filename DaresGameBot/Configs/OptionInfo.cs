@@ -10,9 +10,6 @@ public class OptionInfo
     public ushort Points { get; init; }
 
     [Required]
-    public ushort HelpPoints { get; init; }
-
-    [Required]
     [MinLength(1)]
     public string Tag { get; init; } = null!;
 }

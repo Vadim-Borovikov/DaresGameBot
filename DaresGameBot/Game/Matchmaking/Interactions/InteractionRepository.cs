@@ -6,8 +6,7 @@ namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal sealed class InteractionRepository : IInteractionSubscriber
 {
-    public void OnInteraction(string player, IEnumerable<string> partners, bool actionsBetweenPartners,
-        ushort points, IEnumerable<string> helpers, ushort helpPoints)
+    public void OnInteraction(string player, IEnumerable<string> partners, bool actionsBetweenPartners, ushort points)
     {
         List<string> partnersList = partners.ToList();
         foreach (string p in partnersList)

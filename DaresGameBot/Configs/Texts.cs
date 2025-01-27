@@ -70,15 +70,6 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string Helper { get; init; } = null!;
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public string Helpers { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
     public string PartnersSeparator { get; init; } = null!;
 
     [UsedImplicitly]

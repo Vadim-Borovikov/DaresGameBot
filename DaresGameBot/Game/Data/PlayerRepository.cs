@@ -84,7 +84,7 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
             _infos[name].PlayableArrangements =
                 new HashSet<int>(actionDeck.Cards
                                            .Values
-                                           .Where(c => actionDeck.Checker.CanPlay(name, c.Arrangement, c.Helpers))
+                                           .Where(c => actionDeck.Checker.CanPlay(name, c.Arrangement))
                                            .Select(c => c.Arrangement.GetHashCode()));
         }
     }
@@ -107,18 +107,12 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
         return info1.WouldInteractWith(info2) && info2.WouldInteractWith(info1);
     }
 
-    public void OnInteraction(string player, IEnumerable<string> partners, bool actionsBetweenPartners, ushort points,
-        IEnumerable<string> helpers, ushort helpPoints)
+    public void OnInteraction(string player, IEnumerable<string> partners, bool actionsBetweenPartners, ushort points)
     {
         _infos[player].Points += points;
         foreach (string partner in partners)
         {
             _infos[partner].Points += points;
-        }
-
-        foreach (string helper in helpers)
-        {
-            _infos[helper].Points += helpPoints;
         }
     }
 

@@ -28,11 +28,6 @@ internal sealed class Action
     public byte Partners;
 
     [UsedImplicitly]
-    [Required]
-    [SheetField(HelpersTitle)]
-    public byte Helpers;
-
-    [UsedImplicitly]
     [SheetField(ImageTitle)]
     public string? ImagePath;
 
@@ -49,5 +44,4 @@ internal sealed class Action
     private const string ImageTitle = "Картинка";
     private const string PartnersTitle = "Партнёры";
     private const string CompatablePartnersTitle = "Партнёры должны совмещаться друг с другом";
-    private const string HelpersTitle = "Помощники";
 }

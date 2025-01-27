@@ -39,22 +39,13 @@ internal sealed class Turn
             partnersPart = GetPartnersPart(_texts, partners, _compatablePartners);
         }
 
-        MessageTemplateText? helpersPart = null;
-        IReadOnlyList<string>? helpers = _actionInfo?.Helpers;
-        if (helpers is not null && helpers.Any())
-        {
-            string helpersPrefix = helpers.Count > 1 ? _texts.Helpers : _texts.Helper;
-            string helpersText = string.Join(_texts.PartnersSeparator, helpers);
-            helpersPart = _texts.TurnPartnersFormat.Format(helpersPrefix, helpersText);
-        }
-
         if (!string.IsNullOrWhiteSpace(_imagePath))
         {
             string path = Path.Combine(_imagesfolder, _imagePath);
             message = new MessageTemplateImage(message, path);
         }
 
-        return message.Format(_tagPart, _player, descriprionPart, partnersPart, helpersPart);
+        return message.Format(_tagPart, _player, descriprionPart, partnersPart);
     }
 
     public static MessageTemplateText GetPartnersPart(Texts texts, IReadOnlyList<string> partners, bool compatable)

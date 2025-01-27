@@ -14,9 +14,9 @@ internal sealed class CompanionsSelector : IActionChecker
         _players = players;
     }
 
-    public bool CanPlay(string player, Arrangement arrangement, byte helpers)
+    public bool CanPlay(string player, Arrangement arrangement)
     {
-        if ((arrangement.Partners + helpers) >= _players.Count)
+        if (arrangement.Partners >= _players.Count)
         {
             return false;
         }

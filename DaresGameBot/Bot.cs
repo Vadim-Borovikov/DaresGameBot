@@ -77,11 +77,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 {
                     tags[hash] = new HashSet<string>();
                 }
-
-                if (action.Helpers == 0)
-                {
-                    tags[hash].Add(action.Tag);
-                }
+                tags[hash].Add(action.Tag);
             }
 
             List<string> optionsTags = Config.ActionOptions.Select(o => o.Tag).ToList();
@@ -97,7 +93,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
                     Game.Data.Cards.Action action = actions.First(a => a.Arrangement.GetHashCode() == hash);
                     string line = string.Format(Config.Texts.WrongArrangementLineFormat, action.Partners,
-                        action.CompatablePartners, action.Helpers, string.Join("", tags[hash]));
+                        action.CompatablePartners, string.Join("", tags[hash]));
                     errorLines.Add(line);
                 }
 
@@ -274,7 +270,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 break;
             case GameButtonInfoAction action:
                 OptionInfo optionInfo = Config.ActionOptions.Single(o => o.Tag == action.Tag);
-                game.RegisterAction(action.ActionInfo, optionInfo.Points, optionInfo.HelpPoints);
+                game.RegisterAction(action.ActionInfo, optionInfo.Points);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
@@ -342,8 +338,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         {
             CallbackData =
                 $"{CreateArrangementData(operation, tag, info.ArrangementInfo)}{GameButtonInfo.FieldSeparator}" +
-                $"{info.ActionId}{GameButtonInfo.FieldSeparator}" +
-                string.Join(GameButtonInfo.ListSeparator, info.Helpers)
+                $"{info.ActionId}"
         };
     }
 

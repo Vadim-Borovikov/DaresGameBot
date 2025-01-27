@@ -25,10 +25,9 @@ internal abstract class GameButtonInfo
         {
             case 3:
                 return new GameButtonInfoArrangement(info, tag);
-            case 5:
+            case 4:
                 ushort actionId = ushort.Parse(parts[3]);
-                string[] helpers = SplitList(parts[4]);
-                ActionInfo actionInfo = new(info, actionId, helpers);
+                ActionInfo actionInfo = new(info, actionId);
                 return new GameButtonInfoAction(actionInfo, tag);
             default: return null;
         }
