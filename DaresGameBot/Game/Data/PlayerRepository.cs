@@ -56,13 +56,20 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
                         _names.Add(a.Name);
                     }
                     break;
-                case RemovePlayer r:
-                    if (_infos.ContainsKey(r.Name))
+                case TogglePlayer t:
+                    if (_infos.ContainsKey(t.Name))
                     {
-                        _infos[r.Name].Active = false;
-                        if (Current == r.Name)
+                        if (_infos[t.Name].Active)
                         {
-                            MoveNext();
+                            _infos[t.Name].Active = false;
+                            if (Current == t.Name)
+                            {
+                                MoveNext();
+                            }
+                        }
+                        else
+                        {
+                            _infos[t.Name].Active = true;
                         }
                     }
                     break;

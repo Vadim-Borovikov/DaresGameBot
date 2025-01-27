@@ -20,7 +20,7 @@ internal sealed class UpdatesInfo
             switch (parts.Length)
             {
                 case 1:
-                    update = new RemovePlayer(parts[0]);
+                    update = new TogglePlayer(parts[0]);
                     break;
                 case 3:
                     string player = parts[0];
