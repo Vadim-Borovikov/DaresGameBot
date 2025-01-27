@@ -10,11 +10,11 @@ namespace DaresGameBot.Game.Data.Decks;
 internal sealed class ActionDeck
 {
     public IReadOnlyDictionary<ushort, Cards.Action> Cards => _all.AsReadOnly();
-    public readonly IActionChecker Checker;
+
     public ActionDeck(Dictionary<ushort, Cards.Action> cards, IActionChecker checker)
     {
         _all = cards;
-        Checker = checker;
+        _checker = checker;
         _current = new HashSet<ushort>(_all.Keys);
 
         _arrangements = _all.Values
@@ -27,38 +27,11 @@ internal sealed class ActionDeck
 
     public Arrangement? TrySelectArrangement(PlayerRepository players)
     {
-        Dictionary<int, ushort> arrangementAmountsInDeck = new();
-        string smallestDeckTag = _current.GroupBy(id => _all[id].Tag).OrderBy(g => g.Count()).First().Key;
-        foreach (int hash in _current.Select(id => _all[id])
-                                     .Where(a => a.Tag == smallestDeckTag)
-                                     .Select(a => a.Arrangement.GetHashCode()))
-        {
-            if (arrangementAmountsInDeck.ContainsKey(hash))
-            {
-                ++arrangementAmountsInDeck[hash];
-            }
-            else
-            {
-                arrangementAmountsInDeck[hash] = 1;
-            }
-        }
-
-        Dictionary<int, ushort> arrangementAmounts = new();
-        foreach (int hash in players.PlayableArrangementsForCurrent)
-        {
-            arrangementAmounts[hash] =
-                arrangementAmountsInDeck.ContainsKey(hash) ? arrangementAmountsInDeck[ hash] : (ushort) 1;
-        }
-
-        if (arrangementAmounts.Count == 0)
-        {
-            return null;
-        }
-
-        List<int> arrangements = arrangementAmounts.SelectMany(p => Enumerable.Repeat(p.Key, p.Value)).ToList();
-
-        int selected = RandomHelper.SelectItem(arrangements);
-        return _arrangements[selected];
+        List<Arrangement> arrangements = _all.Values
+                                             .Select(c => c.Arrangement)
+                                             .Where(a => _checker.CanPlay(players.Current, a))
+                                             .ToList();
+        return arrangements.Count == 0 ? null : RandomHelper.SelectItem(arrangements);
     }
 
     public ushort SelectCard(ArrangementInfo arrangementInfo, string tag)
@@ -91,5 +64,6 @@ internal sealed class ActionDeck
 
     private readonly HashSet<ushort> _current;
     private readonly Dictionary<ushort, Cards.Action> _all;
+    private readonly IActionChecker _checker;
     private readonly Dictionary<int, Arrangement> _arrangements;
 }

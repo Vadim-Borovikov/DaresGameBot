@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Data.PlayerListUpdates;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Game.Matchmaking.PlayerCheck;
@@ -12,8 +11,6 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
     public IReadOnlyList<string> GetNames() => _names.Where(n => _infos[n].Active).ToList().AsReadOnly();
 
     public string Current => _names[_currentIndex];
-
-    public HashSet<int> PlayableArrangementsForCurrent => _infos[Current].PlayableArrangements;
 
     public ushort GetPoints(string name) => _infos[name].Points;
 
@@ -74,18 +71,6 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
                     }
                     break;
             }
-        }
-    }
-
-    public void UpdateActions(ActionDeck actionDeck)
-    {
-        foreach (string name in _infos.Keys.Where(n => _infos[n].Active))
-        {
-            _infos[name].PlayableArrangements =
-                new HashSet<int>(actionDeck.Cards
-                                           .Values
-                                           .Where(c => actionDeck.Checker.CanPlay(name, c.Arrangement))
-                                           .Select(c => c.Arrangement.GetHashCode()));
         }
     }
 

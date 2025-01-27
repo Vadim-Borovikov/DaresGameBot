@@ -37,8 +37,6 @@ internal sealed class Game
         _actionDeck = decksProvider.GetActionDeck(_companionsSelector);
         _questionsDeck = decksProvider.GetQuestionDeck();
         _interactionSubscribers = interactionSubscribers;
-
-        _players.UpdateActions(_actionDeck);
     }
 
     public Arrangement GetArrangement(int hash) => _actionDeck.GetArrangement(hash);
@@ -82,11 +80,7 @@ internal sealed class Game
             question.DescriptionEn, CurrentPlayer);
     }
 
-    public void UpdatePlayers(List<PlayerListUpdate> updates)
-    {
-        _players.UpdateList(updates);
-        _players.UpdateActions(_actionDeck);
-    }
+    public void UpdatePlayers(List<PlayerListUpdate> updates) => _players.UpdateList(updates);
 
     public void ToggleLanguages() => IncludeEn = !IncludeEn;
 
