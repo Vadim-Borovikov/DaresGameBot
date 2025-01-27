@@ -4,8 +4,11 @@ using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Matchmaking.ActionCheck;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using System.Collections.Generic;
+using System.Linq;
 using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Game.Data.PlayerListUpdates;
+using DaresGameBot.Helpers;
+using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Game.Data;
 
@@ -55,7 +58,18 @@ internal sealed class Game
     {
         CurrentState = State.CardRevealed;
         ushort id = _actionDeck.SelectCard(arrangementinfo, tag);
-        return new ActionInfo(arrangementinfo, id);
+        Action action = _actionDeck.Cards[id];
+        List<string> helpers = new();
+        if (action.Helpers > 0)
+        {
+            List<string> choices =
+                _players.GetNames().Where(p => (p != CurrentPlayer) && !arrangementinfo.Partners.Contains(p)).ToList();
+            helpers = RandomHelper.EnumerateUniqueItems(choices, action.Helpers).
+                                   Denull("No suitable helpers found")
+                                   .ToList();
+        }
+
+        return new ActionInfo(arrangementinfo, id, helpers);
     }
 
     public void RegisterAction(ActionInfo info, ushort points, ushort helpPoints)
@@ -64,8 +78,8 @@ internal sealed class Game
 
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnInteraction(CurrentPlayer, info.ArrangementInfo.Partners,
-                action.CompatablePartners, points, info.ArrangementInfo.Helpers, helpPoints);
+            subscriber.OnInteraction(CurrentPlayer, info.ArrangementInfo.Partners, action.CompatablePartners, points,
+                info.Helpers, helpPoints);
         }
 
         _actionDeck.FoldCard(info.ActionId);

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Game.Data.Cards;
 using GryphonUtilities.Extensions;
-using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Matchmaking.ActionCheck;
 
@@ -15,9 +14,9 @@ internal sealed class CompanionsSelector : IActionChecker
         _players = players;
     }
 
-    public bool CanPlay(string player, Arrangement arrangement)
+    public bool CanPlay(string player, Arrangement arrangement, byte helpers)
     {
-        if ((arrangement.Partners + arrangement.Helpers) >= _players.Count)
+        if ((arrangement.Partners + helpers) >= _players.Count)
         {
             return false;
         }
@@ -36,17 +35,7 @@ internal sealed class CompanionsSelector : IActionChecker
                                   .Denull("No suitable partners found")
                                   .ToList();
         }
-
-        List<string> helpers = new();
-        if (arrangement.Helpers > 0)
-        {
-            List<string> choices = _players.Where(p => (p != player) && !partners.Contains(p)).ToList();
-            helpers = RandomHelper.EnumerateUniqueItems(choices, arrangement.Helpers).
-                                   Denull("No suitable helpers found")
-                                   .ToList();
-        }
-
-        return new ArrangementInfo(arrangement.GetHashCode(), partners, helpers);
+        return new ArrangementInfo(arrangement.GetHashCode(), partners);
     }
 
     private readonly IReadOnlyList<string> _players;

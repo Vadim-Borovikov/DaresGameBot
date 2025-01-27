@@ -40,7 +40,7 @@ internal sealed class Turn
         }
 
         MessageTemplateText? helpersPart = null;
-        IReadOnlyList<string>? helpers = _actionInfo?.ArrangementInfo.Helpers;
+        IReadOnlyList<string>? helpers = _actionInfo?.Helpers;
         if (helpers is not null && helpers.Any())
         {
             string helpersPrefix = helpers.Count > 1 ? _texts.Helpers : _texts.Helper;

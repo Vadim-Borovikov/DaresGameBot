@@ -68,7 +68,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             Dictionary<int, HashSet<string>> tags = new();
             foreach (Game.Data.Cards.Action action in actions)
             {
-                action.Arrangement = new Arrangement(action.Partners, action.CompatablePartners, action.Helpers);
+                action.Arrangement = new Arrangement(action.Partners, action.CompatablePartners);
 
                 int hash = action.Arrangement.GetHashCode();
                 allTags.Add(action.Tag);
@@ -77,7 +77,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 {
                     tags[hash] = new HashSet<string>();
                 }
-                tags[hash].Add(action.Tag);
+
+                if (action.Helpers == 0)
+                {
+                    tags[hash].Add(action.Tag);
+                }
             }
 
             List<string> optionsTags = Config.ActionOptions.Select(o => o.Tag).ToList();
@@ -342,7 +346,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 $"{info.ActionId}{GameButtonInfo.FieldSeparator}" +
                 $"{info.ArrangementInfo.Hash}{GameButtonInfo.FieldSeparator}" +
                 $"{string.Join(GameButtonInfo.ListSeparator, info.ArrangementInfo.Partners)}{GameButtonInfo.FieldSeparator}" +
-                string.Join(GameButtonInfo.ListSeparator, info.ArrangementInfo.Helpers)
+                string.Join(GameButtonInfo.ListSeparator, info.Helpers)
         };
     }
 
@@ -355,8 +359,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 operation +
                 $"{tag}{GameButtonInfo.FieldSeparator}" +
                 $"{info.Hash}{GameButtonInfo.FieldSeparator}" +
-                $"{string.Join(GameButtonInfo.ListSeparator, info.Partners)}{GameButtonInfo.FieldSeparator}" +
-                string.Join(GameButtonInfo.ListSeparator, info.Helpers)
+                $"{string.Join(GameButtonInfo.ListSeparator, info.Partners)}"
         };
     }
 

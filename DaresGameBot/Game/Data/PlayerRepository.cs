@@ -84,7 +84,7 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
             _infos[name].PlayableArrangements =
                 new HashSet<int>(actionDeck.Cards
                                            .Values
-                                           .Where(c => actionDeck.Checker.CanPlay(name, c.Arrangement))
+                                           .Where(c => actionDeck.Checker.CanPlay(name, c.Arrangement, c.Helpers))
                                            .Select(c => c.Arrangement.GetHashCode()));
         }
     }

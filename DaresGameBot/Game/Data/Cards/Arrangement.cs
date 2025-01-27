@@ -4,14 +4,12 @@ internal sealed class Arrangement
 {
     public readonly byte Partners;
     public readonly bool CompatablePartners;
-    public readonly byte Helpers;
 
-    public Arrangement(byte partners, bool compatablePartners, byte helpers)
+    public Arrangement(byte partners, bool compatablePartners)
     {
         Partners = partners;
         CompatablePartners = compatablePartners;
-        Helpers = helpers;
     }
 
-    public override int GetHashCode() => System.HashCode.Combine(Partners, CompatablePartners, Helpers);
+    public override int GetHashCode() => CompatablePartners ? -Partners : Partners;
 }
