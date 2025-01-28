@@ -68,9 +68,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             Dictionary<int, HashSet<string>> tags = new();
             foreach (Game.Data.Cards.Action action in actions)
             {
-                action.Arrangement = new Arrangement(action.Partners, action.CompatablePartners);
+                action.ArrangementType = new ArrangementType(action.Partners, action.CompatablePartners);
 
-                int hash = action.Arrangement.GetHashCode();
+                int hash = action.ArrangementType.GetHashCode();
                 allTags.Add(action.Tag);
 
                 if (!tags.ContainsKey(hash))
@@ -91,7 +91,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                         continue;
                     }
 
-                    Game.Data.Cards.Action action = actions.First(a => a.Arrangement.GetHashCode() == hash);
+                    Game.Data.Cards.Action action = actions.First(a => a.ArrangementType.GetHashCode() == hash);
                     string line = string.Format(Config.Texts.WrongArrangementLineFormat, action.Partners,
                         action.CompatablePartners, string.Join("", tags[hash]));
                     errorLines.Add(line);
@@ -203,14 +203,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     private Task DrawActionOrQuestionAsync(Chat chat, Game.Data.Game game)
     {
-        ArrangementInfo? info = game.TryDrawArrangement();
-        if (info is null)
+        Arrangement? arrangement = game.TryDrawArrangement();
+        if (arrangement is null)
         {
             MessageTemplate template = CreateQuestionTemplate(game);
             return template.SendAsync(this, chat);
         }
-        Arrangement arrangement = game.GetArrangement(info.Hash);
-        return ShowPartnersAsync(chat, game.CurrentPlayer, info, arrangement.CompatablePartners);
+        return ShowPartnersAsync(chat, game.CurrentPlayer, arrangement);
     }
 
     internal Task RevealCardAsync(Chat chat, int messageId, User sender, GameButtonInfo info)
@@ -227,8 +226,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             case GameButtonInfoQuestion:
                 template = CreateQuestionTemplate(game);
                 break;
-            case GameButtonInfoArrangement arrangement:
-                ActionInfo actionInfo = game.DrawAction(arrangement.ArrangementInfo, arrangement.Tag);
+            case GameButtonInfoArrangement arrangementInfo:
+                ActionInfo actionInfo = game.DrawAction(arrangementInfo.Arrangement, arrangementInfo.Tag);
                 Game.Data.Cards.Action card = game.GetAction(actionInfo.ActionId);
                 Turn turn = new(Config.Texts, Config.ImagesFolder, card.Tag, card.Description,
                     card.DescriptionEn, game.CurrentPlayer, actionInfo, card.CompatablePartners, card.ImagePath);
@@ -277,19 +276,19 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return DrawActionOrQuestionAsync(chat, game);
     }
 
-    private Task ShowPartnersAsync(Chat chat, string player, ArrangementInfo info, bool compatablePartners)
+    private Task ShowPartnersAsync(Chat chat, string player, Arrangement arrangement)
     {
         MessageTemplateText? partnersText = null;
-        if (info.Partners.Count > 0)
+        if (arrangement.Partners.Count > 0)
         {
-            partnersText = Turn.GetPartnersPart(Config.Texts, info.Partners, compatablePartners);
+            partnersText = Turn.GetPartnersPart(Config.Texts, arrangement.Partners, arrangement.CompatablePartners);
         }
         MessageTemplateText message = Config.Texts.TurnFormatShort.Format(player, partnersText);
-        message.KeyboardProvider = CreateCardKeyboard(info);
+        message.KeyboardProvider = CreateCardKeyboard(arrangement);
         return message.SendAsync(this, chat);
     }
 
-    private InlineKeyboardMarkup CreateCardKeyboard(ArrangementInfo info)
+    private InlineKeyboardMarkup CreateCardKeyboard(Arrangement info)
     {
         List<List<InlineKeyboardButton>> keyboard = Config.ActionOptions
                                                           .AsEnumerable()
@@ -337,13 +336,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardButton(caption)
         {
             CallbackData =
-                $"{CreateArrangementData(operation, tag, info.ArrangementInfo)}{GameButtonInfo.FieldSeparator}" +
+                $"{CreateArrangementData(operation, tag, info.Arrangement)}{GameButtonInfo.FieldSeparator}" +
                 $"{info.ActionId}"
         };
     }
 
     private static InlineKeyboardButton CreateActionButton(string operation, string caption, string tag,
-        ArrangementInfo info)
+        Arrangement info)
     {
         return new InlineKeyboardButton(caption)
         {
@@ -351,12 +350,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         };
     }
 
-    private static string CreateArrangementData(string prefix, string tag, ArrangementInfo info)
+    private static string CreateArrangementData(string prefix, string tag, Arrangement arrangement)
     {
         return prefix +
                $"{tag}{GameButtonInfo.FieldSeparator}" +
-               $"{info.Hash}{GameButtonInfo.FieldSeparator}" +
-               $"{string.Join(GameButtonInfo.ListSeparator, info.Partners)}";
+               $"{string.Join(GameButtonInfo.ListSeparator, arrangement.Partners)}{GameButtonInfo.FieldSeparator}" +
+               $"{arrangement.CompatablePartners}";
     }
 
     private InlineKeyboardButton CreateQuestionButton()

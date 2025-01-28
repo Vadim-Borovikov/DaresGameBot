@@ -39,21 +39,22 @@ internal sealed class Game
         _interactionSubscribers = interactionSubscribers;
     }
 
-    public Arrangement GetArrangement(int hash) => _actionDeck.GetArrangement(hash);
     public Action GetAction(ushort id) => _actionDeck.Cards[id];
 
-    public ArrangementInfo? TryDrawArrangement()
+    public Arrangement? TryDrawArrangement()
     {
         CurrentState = State.ArrangementPresented;
-        Arrangement? arrangement = _actionDeck.TrySelectArrangement(_players);
-        return arrangement is null ? null : _companionsSelector.SelectCompanionsFor(_players.Current, arrangement);
+        ArrangementType? arrangementType = _actionDeck.TrySelectArrangement(_players);
+        return arrangementType is null
+            ? null
+            : _companionsSelector.SelectCompanionsFor(_players.Current, arrangementType.Value);
     }
 
-    public ActionInfo DrawAction(ArrangementInfo arrangementinfo, string tag)
+    public ActionInfo DrawAction(Arrangement arrangement, string tag)
     {
         CurrentState = State.CardRevealed;
-        ushort id = _actionDeck.SelectCard(arrangementinfo, tag);
-        return new ActionInfo(arrangementinfo, id);
+        ushort id = _actionDeck.SelectCard(arrangement.GetArrangementType(), tag);
+        return new ActionInfo(arrangement, id);
     }
 
     public void RegisterAction(ActionInfo info, ushort points)
@@ -62,7 +63,7 @@ internal sealed class Game
 
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnInteraction(CurrentPlayer, info.ArrangementInfo.Partners, action.CompatablePartners, points);
+            subscriber.OnInteraction(CurrentPlayer, info.Arrangement.Partners, action.CompatablePartners, points);
         }
 
         _actionDeck.FoldCard(info.ActionId);

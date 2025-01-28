@@ -4,12 +4,12 @@ namespace DaresGameBot.Operations.Info;
 
 internal sealed class GameButtonInfoArrangement : GameButtonInfo
 {
-    public readonly ArrangementInfo ArrangementInfo;
+    public readonly Arrangement Arrangement;
     public readonly string Tag;
 
-    public GameButtonInfoArrangement(ArrangementInfo arrangementInfo, string tag)
+    public GameButtonInfoArrangement(Arrangement arrangement, string tag)
     {
-        ArrangementInfo = arrangementInfo;
+        Arrangement = arrangement;
         Tag = tag;
     }
 }

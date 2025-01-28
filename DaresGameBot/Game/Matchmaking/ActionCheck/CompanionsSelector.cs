@@ -14,7 +14,7 @@ internal sealed class CompanionsSelector : IActionChecker
         _players = players;
     }
 
-    public bool CanPlay(string player, Arrangement arrangement)
+    public bool CanPlay(string player, ArrangementType arrangement)
     {
         if (arrangement.Partners >= _players.Count)
         {
@@ -26,16 +26,17 @@ internal sealed class CompanionsSelector : IActionChecker
                    arrangement.CompatablePartners);
     }
 
-    public ArrangementInfo SelectCompanionsFor(string player, Arrangement arrangement)
+    public Arrangement SelectCompanionsFor(string player, ArrangementType arrangementType)
     {
         List<string> partners = new();
-        if (arrangement.Partners > 0)
+        if (arrangementType.Partners > 0)
         {
-            partners = _matchmaker.EnumerateMatches(player, _players, arrangement.Partners, arrangement.CompatablePartners)
+            partners = _matchmaker.EnumerateMatches(player, _players, arrangementType.Partners,
+                                      arrangementType.CompatablePartners)
                                   .Denull("No suitable partners found")
                                   .ToList();
         }
-        return new ArrangementInfo(arrangement.GetHashCode(), partners);
+        return new Arrangement(partners, arrangementType.CompatablePartners);
     }
 
     private readonly IReadOnlyList<string> _players;

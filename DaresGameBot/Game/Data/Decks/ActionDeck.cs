@@ -16,28 +16,21 @@ internal sealed class ActionDeck
         _all = cards;
         _checker = checker;
         _current = new HashSet<ushort>(_all.Keys);
-
-        _arrangements = _all.Values
-                            .Select(a => a.Arrangement)
-                            .DistinctBy(a => a.GetHashCode())
-                            .ToDictionary(a => a.GetHashCode(), a => a);
     }
 
-    public Arrangement GetArrangement(int hash) => _arrangements[hash];
-
-    public Arrangement? TrySelectArrangement(PlayerRepository players)
+    public ArrangementType? TrySelectArrangement(PlayerRepository players)
     {
-        List<Arrangement> arrangements = _all.Values
-                                             .Select(c => c.Arrangement)
+        List<ArrangementType> arrangements = _all.Values
+                                             .Select(c => c.ArrangementType)
                                              .Where(a => _checker.CanPlay(players.Current, a))
                                              .ToList();
         return arrangements.Count == 0 ? null : RandomHelper.SelectItem(arrangements);
     }
 
-    public ushort SelectCard(ArrangementInfo arrangementInfo, string tag)
+    public ushort SelectCard(ArrangementType arrangementType, string tag)
     {
         List<ushort> cardIds = _current.Where(id => (_all[id].Tag == tag)
-                                                    && (_all[id].Arrangement.GetHashCode() == arrangementInfo.Hash))
+                                                    && (_all[id].ArrangementType == arrangementType))
                                        .ToList();
 
         if (!cardIds.Any())
@@ -45,7 +38,7 @@ internal sealed class ActionDeck
             foreach (ushort id in _all.Keys.Where(id => !_current.Contains(id) && (_all[id].Tag == tag)))
             {
                 _current.Add(id);
-                if (_all[id].Arrangement.GetHashCode() == arrangementInfo.Hash)
+                if (_all[id].ArrangementType == arrangementType)
                 {
                     cardIds.Add(id);
                 }
@@ -65,5 +58,4 @@ internal sealed class ActionDeck
     private readonly HashSet<ushort> _current;
     private readonly Dictionary<ushort, Cards.Action> _all;
     private readonly IActionChecker _checker;
-    private readonly Dictionary<int, Arrangement> _arrangements;
 }

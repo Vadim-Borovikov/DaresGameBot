@@ -33,7 +33,7 @@ internal sealed class Turn
         MessageTemplate message = _texts.TurnFormatFull;
 
         MessageTemplateText? partnersPart = null;
-        IReadOnlyList<string>? partners = _actionInfo?.ArrangementInfo.Partners;
+        IReadOnlyList<string>? partners = _actionInfo?.Arrangement.Partners;
         if (partners is not null && partners.Any())
         {
             partnersPart = GetPartnersPart(_texts, partners, _compatablePartners);

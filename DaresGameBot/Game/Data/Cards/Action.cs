@@ -36,7 +36,7 @@ internal sealed class Action
     [SheetField(CompatablePartnersTitle)]
     public bool CompatablePartners;
 
-    public Arrangement Arrangement = null!;
+    public ArrangementType ArrangementType;
 
     private const string TagTitle = "Символ";
     private const string DescriptionTitle = "Текст";

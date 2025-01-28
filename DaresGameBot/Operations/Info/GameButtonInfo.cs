@@ -18,16 +18,16 @@ internal abstract class GameButtonInfo
             return null;
         }
         string tag = parts[0];
-        int hash = int.Parse(parts[1]);
-        string[] partners = SplitList(parts[2]);
-        ArrangementInfo info = new(hash, partners);
+        string[] partners = SplitList(parts[1]);
+        bool compatablePartners = bool.Parse(parts[2]);
+        Arrangement arrangement = new(partners, compatablePartners);
         switch (parts.Length)
         {
             case 3:
-                return new GameButtonInfoArrangement(info, tag);
+                return new GameButtonInfoArrangement(arrangement, tag);
             case 4:
                 ushort actionId = ushort.Parse(parts[3]);
-                ActionInfo actionInfo = new(info, actionId);
+                ActionInfo actionInfo = new(arrangement, actionId);
                 return new GameButtonInfoAction(actionInfo, tag);
             default: return null;
         }

@@ -2,12 +2,12 @@ namespace DaresGameBot.Game.Data;
 
 internal sealed class ActionInfo
 {
-    public readonly ArrangementInfo ArrangementInfo;
+    public readonly Arrangement Arrangement;
     public readonly ushort ActionId;
 
-    public ActionInfo(ArrangementInfo arrangementInfo, ushort actionId)
+    public ActionInfo(Arrangement arrangement, ushort actionId)
     {
-        ArrangementInfo = arrangementInfo;
+        Arrangement = arrangement;
         ActionId = actionId;
     }
 }
