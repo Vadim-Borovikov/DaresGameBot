@@ -1,26 +1,25 @@
-﻿using DaresGameBot.Game.Data.PlayerListUpdates;
-using DaresGameBot.Game.Matchmaking.PlayerCheck;
+﻿using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DaresGameBot.Operations.Info;
+namespace DaresGameBot.Operations.Data.PlayerListUpdates;
 
-internal sealed class UpdatesInfo
+internal sealed class UpdatesData
 {
-    public readonly List<PlayerListUpdate> Updates;
+    public readonly List<PlayerListUpdateData> Datas;
 
-    private UpdatesInfo(List<PlayerListUpdate> updates) => Updates = updates;
+    private UpdatesData(List<PlayerListUpdateData> datas) => Datas = datas;
 
-    public static UpdatesInfo? From(IEnumerable<string> lines)
+    public static UpdatesData? From(IEnumerable<string> lines)
     {
-        List<PlayerListUpdate> updates = new();
+        List<PlayerListUpdateData> datas = new();
         foreach (string[] parts in lines.Select(l => l.Split(PartsSeparator)))
         {
-            PlayerListUpdate update;
+            PlayerListUpdateData data;
             switch (parts.Length)
             {
                 case 1:
-                    update = new TogglePlayer(parts[0]);
+                    data = new TogglePlayerData(parts[0]);
                     break;
                 case 3:
                     string player = parts[0];
@@ -28,15 +27,15 @@ internal sealed class UpdatesInfo
                     string[] groups = parts[2].Split(GroupsSeparator);
                     HashSet<string> compatableGroups = new(groups);
                     GroupChecker checker = new(group, new HashSet<string>(compatableGroups));
-                    update = new AddOrUpdatePlayer(player, checker);
+                    data = new AddOrUpdatePlayerData(player, checker);
                     break;
                 default: return null;
             }
 
-            updates.Add(update);
+            datas.Add(data);
         }
 
-        return new UpdatesInfo(updates);
+        return new UpdatesData(datas);
     }
 
     private const string PartsSeparator = ",";

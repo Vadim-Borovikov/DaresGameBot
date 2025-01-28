@@ -41,5 +41,5 @@ public class Config : ConfigWithSheets<Texts>
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public List<OptionInfo> ActionOptions { get; init; } = null!;
+    public List<Option> ActionOptions { get; init; } = null!;
 }

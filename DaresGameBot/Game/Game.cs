@@ -1,13 +1,14 @@
 ﻿using DaresGameBot.Configs;
-using DaresGameBot.Game.Data.Cards;
-using DaresGameBot.Game.Data.Decks;
 using DaresGameBot.Game.Matchmaking.ActionCheck;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using System.Collections.Generic;
 using DaresGameBot.Game.Matchmaking;
-using DaresGameBot.Game.Data.PlayerListUpdates;
+using DaresGameBot.Game.Decks;
+using DaresGameBot.Game.Data;
+using DaresGameBot.Game.Players;
+using DaresGameBot.Operations.Data.PlayerListUpdates;
 
-namespace DaresGameBot.Game.Data;
+namespace DaresGameBot.Game;
 
 internal sealed class Game
 {
@@ -27,7 +28,7 @@ internal sealed class Game
 
     public ushort GetPoints(string name) => _players.GetPoints(name);
 
-    public Game(Config config, DecksProvider decksProvider, PlayerRepository players, Matchmaker matchmaker,
+    public Game(Config config, DecksProvider decksProvider, Repository players, Matchmaker matchmaker,
         List<IInteractionSubscriber> interactionSubscribers)
     {
         _config = config;
@@ -39,7 +40,7 @@ internal sealed class Game
         _interactionSubscribers = interactionSubscribers;
     }
 
-    public Action GetAction(ushort id) => _actionDeck.Cards[id];
+    public ActionData GetActionData(ushort id) => _actionDeck.CardDatas[id];
 
     public Arrangement? TryDrawArrangement()
     {
@@ -53,20 +54,20 @@ internal sealed class Game
     public ActionInfo DrawAction(Arrangement arrangement, string tag)
     {
         CurrentState = State.CardRevealed;
-        ushort id = _actionDeck.SelectCard(arrangement.GetArrangementType(), tag);
-        return new ActionInfo(arrangement, id);
+        ushort id = _actionDeck.SelectCardId(arrangement.GetArrangementType(), tag);
+        return new ActionInfo(id, arrangement);
     }
 
     public void RegisterAction(ActionInfo info, ushort points)
     {
-        Action action = GetAction(info.ActionId);
+        ActionData actionData = GetActionData(info.Id);
 
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnInteraction(CurrentPlayer, info.Arrangement.Partners, action.CompatablePartners, points);
+            subscriber.OnInteraction(CurrentPlayer, info.Arrangement.Partners, actionData.CompatablePartners, points);
         }
 
-        _actionDeck.FoldCard(info.ActionId);
+        _actionDeck.Fold(info.Id);
 
         _players.MoveNext();
     }
@@ -76,19 +77,19 @@ internal sealed class Game
     public Turn DrawQuestion()
     {
         CurrentState = State.CardRevealed;
-        Question question = _questionsDeck.Draw();
-        return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, question.Description,
-            question.DescriptionEn, CurrentPlayer);
+        QuestionData questionData = _questionsDeck.Draw();
+        return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, questionData.Description,
+            questionData.DescriptionEn, CurrentPlayer);
     }
 
-    public void UpdatePlayers(List<PlayerListUpdate> updates) => _players.UpdateList(updates);
+    public void UpdatePlayers(List<PlayerListUpdateData> updateDatas) => _players.UpdateList(updateDatas);
 
     public void ToggleLanguages() => IncludeEn = !IncludeEn;
 
     private readonly Config _config;
     private readonly ActionDeck _actionDeck;
     private readonly QuestionDeck _questionsDeck;
-    private readonly PlayerRepository _players;
+    private readonly Repository _players;
     private readonly List<IInteractionSubscriber> _interactionSubscribers;
     private readonly CompanionsSelector _companionsSelector;
 }

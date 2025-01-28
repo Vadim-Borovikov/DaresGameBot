@@ -4,7 +4,7 @@ using System.Linq;
 using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Configs;
 
-namespace DaresGameBot.Game.Data;
+namespace DaresGameBot.Game;
 
 internal sealed class Turn
 {

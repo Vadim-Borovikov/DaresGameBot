@@ -1,24 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Data.Cards;
+using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.ActionCheck;
+using DaresGameBot.Game.Players;
 using DaresGameBot.Helpers;
 
-namespace DaresGameBot.Game.Data.Decks;
+namespace DaresGameBot.Game.Decks;
 
 internal sealed class ActionDeck
 {
-    public IReadOnlyDictionary<ushort, Cards.Action> Cards => _all.AsReadOnly();
+    public IReadOnlyDictionary<ushort, ActionData> CardDatas => _all.AsReadOnly();
 
-    public ActionDeck(Dictionary<ushort, Cards.Action> cards, IActionChecker checker)
+    public ActionDeck(Dictionary<ushort, ActionData> cardDatas, IActionChecker checker)
     {
-        _all = cards;
+        _all = cardDatas;
         _checker = checker;
         _current = new HashSet<ushort>(_all.Keys);
     }
 
-    public ArrangementType? TrySelectArrangement(PlayerRepository players)
+    public ArrangementType? TrySelectArrangement(Repository players)
     {
         List<ArrangementType> arrangements = _all.Values
                                              .Select(c => c.ArrangementType)
@@ -27,7 +28,7 @@ internal sealed class ActionDeck
         return arrangements.Count == 0 ? null : RandomHelper.SelectItem(arrangements);
     }
 
-    public ushort SelectCard(ArrangementType arrangementType, string tag)
+    public ushort SelectCardId(ArrangementType arrangementType, string tag)
     {
         List<ushort> cardIds = _current.Where(id => (_all[id].Tag == tag)
                                                     && (_all[id].ArrangementType == arrangementType))
@@ -53,9 +54,9 @@ internal sealed class ActionDeck
         return RandomHelper.SelectItem(cardIds);
     }
 
-    public void FoldCard(ushort id) => _current.Remove(id);
+    public void Fold(ushort id) => _current.Remove(id);
 
     private readonly HashSet<ushort> _current;
-    private readonly Dictionary<ushort, Cards.Action> _all;
+    private readonly Dictionary<ushort, ActionData> _all;
     private readonly IActionChecker _checker;
 }

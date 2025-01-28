@@ -1,6 +1,6 @@
 using DaresGameBot.Game.Matchmaking.PlayerCheck;
 
-namespace DaresGameBot.Game.Data;
+namespace DaresGameBot.Game.Players;
 
 internal sealed class PlayerInfo
 {

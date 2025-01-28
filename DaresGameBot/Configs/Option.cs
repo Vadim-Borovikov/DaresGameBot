@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace DaresGameBot.Configs;
 
 [PublicAPI]
-public class OptionInfo
+public class Option
 {
     [Required]
     public ushort Points { get; init; }

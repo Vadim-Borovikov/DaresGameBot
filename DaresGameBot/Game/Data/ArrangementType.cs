@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DaresGameBot.Game.Data.Cards;
+namespace DaresGameBot.Game.Data;
 
 internal readonly struct ArrangementType : IEquatable<ArrangementType>
 {

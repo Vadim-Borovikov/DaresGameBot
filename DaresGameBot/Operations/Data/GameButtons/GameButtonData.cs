@@ -1,15 +1,15 @@
 ﻿using System;
-using DaresGameBot.Game.Data;
+using DaresGameBot.Game;
 
-namespace DaresGameBot.Operations.Info;
+namespace DaresGameBot.Operations.Data.GameButtons;
 
-internal abstract class GameButtonInfo
+internal abstract class GameButtonData
 {
-    public static GameButtonInfo? From(string callbackQueryDataCore)
+    public static GameButtonData? From(string callbackQueryDataCore)
     {
         if (callbackQueryDataCore == "")
         {
-            return new GameButtonInfoQuestion();
+            return new GameButtonQuestionData();
         }
 
         string[] parts = callbackQueryDataCore.Split(FieldSeparator);
@@ -24,11 +24,11 @@ internal abstract class GameButtonInfo
         switch (parts.Length)
         {
             case 3:
-                return new GameButtonInfoArrangement(arrangement, tag);
+                return new GameButtonArrangementData(arrangement, tag);
             case 4:
                 ushort actionId = ushort.Parse(parts[3]);
-                ActionInfo actionInfo = new(arrangement, actionId);
-                return new GameButtonInfoAction(actionInfo, tag);
+                ActionInfo actionInfo = new(actionId, arrangement);
+                return new GameButtonActionData(actionInfo, tag);
             default: return null;
         }
     }

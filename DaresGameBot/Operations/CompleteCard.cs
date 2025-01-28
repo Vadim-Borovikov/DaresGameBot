@@ -1,11 +1,11 @@
 ﻿using System.Threading.Tasks;
 using AbstractBot.Operations;
-using DaresGameBot.Operations.Info;
+using DaresGameBot.Operations.Data.GameButtons;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class CompleteCard : Operation<GameButtonInfo>
+internal sealed class CompleteCard : Operation<GameButtonData>
 {
     protected override byte Order => 11;
 
@@ -14,22 +14,22 @@ internal sealed class CompleteCard : Operation<GameButtonInfo>
         _bot = bot;
     }
 
-    protected override bool IsInvokingBy(Message message, User sender, out GameButtonInfo? info)
+    protected override bool IsInvokingBy(Message message, User sender, out GameButtonData? data)
     {
-        info = null;
+        data = null;
         return false;
     }
 
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
-        out GameButtonInfo? info)
+        out GameButtonData? data)
     {
-        info = GameButtonInfo.From(callbackQueryDataCore);
-        return info is not null;
+        data = GameButtonData.From(callbackQueryDataCore);
+        return data is not null;
     }
 
-    protected override Task ExecuteAsync(GameButtonInfo info, Message message, User sender)
+    protected override Task ExecuteAsync(GameButtonData data, Message message, User sender)
     {
-        return _bot.CompleteCardAsync(message.Chat, sender, info);
+        return _bot.CompleteCardAsync(message.Chat, sender, data);
     }
 
     private readonly Bot _bot;

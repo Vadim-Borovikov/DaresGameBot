@@ -2,11 +2,11 @@
 using JetBrains.Annotations;
 using System.ComponentModel.DataAnnotations;
 
-namespace DaresGameBot.Game.Data.Cards;
+namespace DaresGameBot.Game.Data;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
 
-internal sealed class Action
+internal sealed class ActionData
 {
     [UsedImplicitly]
     [Required]

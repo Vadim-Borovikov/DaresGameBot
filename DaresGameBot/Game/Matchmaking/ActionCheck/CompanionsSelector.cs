@@ -1,7 +1,6 @@
-using DaresGameBot.Game.Data;
 using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Data.Cards;
+using DaresGameBot.Game.Data;
 using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Game.Matchmaking.ActionCheck;

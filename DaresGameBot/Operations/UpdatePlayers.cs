@@ -2,13 +2,13 @@
 using System.Linq;
 using System.Threading.Tasks;
 using AbstractBot.Operations;
-using DaresGameBot.Operations.Info;
+using DaresGameBot.Operations.Data.PlayerListUpdates;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class UpdatePlayers : Operation<UpdatesInfo>
+internal sealed class UpdatePlayers : Operation<UpdatesData>
 {
     protected override byte Order => 6;
 
@@ -17,9 +17,9 @@ internal sealed class UpdatePlayers : Operation<UpdatesInfo>
         _bot = bot;
     }
 
-    protected override bool IsInvokingBy(Message message, User sender, out UpdatesInfo? info)
+    protected override bool IsInvokingBy(Message message, User sender, out UpdatesData? data)
     {
-        info = null;
+        data = null;
         if (message.Type != MessageType.Text)
         {
             return false;
@@ -32,15 +32,15 @@ internal sealed class UpdatePlayers : Operation<UpdatesInfo>
             case null:
             case < 1: return false;
             default:
-                info = UpdatesInfo.From(lines);
-                return info is not null;
+                data = UpdatesData.From(lines);
+                return data is not null;
         }
     }
 
-    protected override Task ExecuteAsync(UpdatesInfo info, Message message, User sender)
+    protected override Task ExecuteAsync(UpdatesData data, Message message, User sender)
     {
         return _bot.CanBeUpdated(sender)
-            ? _bot.UpdatePlayersAsync(message.Chat, sender, info.Updates)
+            ? _bot.UpdatePlayersAsync(message.Chat, sender, data.Datas)
             : _bot.Config.Texts.Refuse.SendAsync(_bot, message.Chat);
     }
 

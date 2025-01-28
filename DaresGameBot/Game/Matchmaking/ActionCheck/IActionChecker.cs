@@ -1,4 +1,4 @@
-using DaresGameBot.Game.Data.Cards;
+using DaresGameBot.Game.Data;
 
 namespace DaresGameBot.Game.Matchmaking.ActionCheck;
 

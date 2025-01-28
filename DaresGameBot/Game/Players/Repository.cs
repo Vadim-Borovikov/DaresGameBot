@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Data.PlayerListUpdates;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Game.Matchmaking.PlayerCheck;
+using DaresGameBot.Operations.Data.PlayerListUpdates;
 
-namespace DaresGameBot.Game.Data;
+namespace DaresGameBot.Game.Players;
 
-internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
+internal sealed class Repository : ICompatibility, IInteractionSubscriber
 {
     public IReadOnlyList<string> GetNames() => _names.Where(n => _infos[n].Active).ToList().AsReadOnly();
 
@@ -14,7 +14,7 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
 
     public ushort GetPoints(string name) => _infos[name].Points;
 
-    public PlayerRepository(List<PlayerListUpdate> updates) => UpdateList(updates);
+    public Repository(List<PlayerListUpdateData> updates) => UpdateList(updates);
 
     public void MoveNext()
     {
@@ -25,15 +25,15 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
         while (!_infos[Current].Active);
     }
 
-    public void UpdateList(List<PlayerListUpdate> updates)
+    public void UpdateList(List<PlayerListUpdateData> updateDatas)
     {
-        ushort points = _infos.Count > 0 ? _infos.Values.Where(v => v.Active).Min(v => v.Points) : (ushort) 0;
+        ushort points = _infos.Count > 0 ? _infos.Values.Where(v => v.Active).Min(v => v.Points) : (ushort)0;
 
-        foreach (PlayerListUpdate update in updates)
+        foreach (PlayerListUpdateData data in updateDatas)
         {
-            switch (update)
+            switch (data)
             {
-                case AddOrUpdatePlayer a:
+                case AddOrUpdatePlayerData a:
                     if (_infos.ContainsKey(a.Name))
                     {
                         _infos[a.Name].GroupChecker = a.Checker;
@@ -53,7 +53,7 @@ internal sealed class PlayerRepository : ICompatibility, IInteractionSubscriber
                         _names.Add(a.Name);
                     }
                     break;
-                case TogglePlayer t:
+                case TogglePlayerData t:
                     if (_infos.ContainsKey(t.Name))
                     {
                         if (_infos[t.Name].Active)
