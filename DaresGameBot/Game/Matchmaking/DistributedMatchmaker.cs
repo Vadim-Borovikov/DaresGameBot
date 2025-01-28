@@ -1,70 +1,55 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Helpers;
-using GryphonUtilities.Extensions;
-using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using DaresGameBot.Game.Matchmaking.Interactions;
+using DaresGameBot.Game.Players;
 
 namespace DaresGameBot.Game.Matchmaking;
 
 internal sealed class DistributedMatchmaker : Matchmaker
 {
-    public DistributedMatchmaker(ICompatibility compatibility) : base(compatibility)
+    public DistributedMatchmaker(Repository players, IReadOnlyDictionary<string, ushort> points)
+        : base(players)
     {
-        _interactionRepository = new InteractionRepository();
+        _players = players;
+        _interactionRepository = new InteractionRepository(points);
     }
 
-    public override void OnInteraction(string player, Arrangement arrangement, string tag)
+    public override void OnInteractionPurposed(string player, Arrangement arrangement)
     {
-        _interactionRepository.OnInteraction(player, arrangement, tag);
+        _interactionRepository.OnInteractionPurposed(player, arrangement);
+    }
+    public override void OnInteractionCompleted(string player, Arrangement arrangement, string tag)
+    {
+        _interactionRepository.OnInteractionCompleted(player, arrangement, tag);
     }
 
     public override IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all, byte amount,
         bool compatableWithEachOther)
     {
-        List<string> choices = EnumerateCompatablePlayers(player, all).ToList();
-        if (choices.Count < amount)
+        IEnumerable<string> choices = EnumerateCompatablePlayers(player, all);
+        string[] shuffled = RandomHelper.Shuffle(choices);
+        if (shuffled.Length < amount)
         {
             return null;
         }
 
         if (compatableWithEachOther)
         {
-            IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatableGroups(choices, amount);
-            List<IReadOnlyList<string>> bestGroups =
-                groups.GroupBy(g => _interactionRepository.GetInteractions(player, g))
-                      .OrderBy(g => g.Key)
-                      .First()
-                      .ToList();
-            return RandomHelper.SelectItem(bestGroups);
+            IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatableGroups(shuffled, amount);
+            return groups.OrderBy(g => _interactionRepository.GetInteractions(player, g, false))
+                         .ThenByDescending(g => _interactionRepository.GetInteractions(player, g, true))
+                         .ThenBy(g => g.Sum(p => _players.GetPoints(p)))
+                         .First();
         }
 
-        List<string> bestChoices = new();
-        while (bestChoices.Count < amount)
-        {
-            int toAdd = amount - bestChoices.Count;
-
-            List<string> batch = choices.GroupBy(c => _interactionRepository.GetInteractions(player, c))
-                                        .OrderBy(g => g.Key)
-                                        .First()
-                                        .ToList();
-
-            if (batch.Count <= toAdd)
-            {
-                bestChoices.AddRange(batch);
-                foreach (string p in batch)
-                {
-                    choices.Remove(p);
-                }
-                continue;
-            }
-
-            IEnumerable<string> selection = RandomHelper.EnumerateUniqueItems(batch, toAdd).Denull("Logic error");
-            bestChoices.AddRange(selection);
-            break;
-        }
-        return bestChoices;
+        return shuffled.OrderBy(p => _interactionRepository.GetInteractions(player, p, false))
+                       .ThenByDescending(p => _interactionRepository.GetInteractions(player, p, true))
+                       .ThenBy(_players.GetPoints)
+                       .Take(amount)
+                       .ToList();
     }
 
     private readonly InteractionRepository _interactionRepository;
+    private readonly Repository _players;
 }

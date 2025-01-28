@@ -64,13 +64,21 @@ internal sealed class Game
         return new ActionInfo(id, arrangement);
     }
 
+    public void OnActionPurposed(Arrangement arrangement)
+    {
+        foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
+        {
+            subscriber.OnInteractionPurposed(CurrentPlayer, arrangement);
+        }
+    }
+
     public void OnActionCompleted(ActionInfo info)
     {
         ActionData actionData = GetActionData(info.Id);
 
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnInteraction(CurrentPlayer, info.Arrangement, actionData.Tag);
+            subscriber.OnInteractionCompleted(CurrentPlayer, info.Arrangement, actionData.Tag);
         }
 
         _actionDeck.Fold(info.Id);

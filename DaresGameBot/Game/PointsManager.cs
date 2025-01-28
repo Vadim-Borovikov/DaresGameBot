@@ -12,7 +12,7 @@ internal sealed class PointsManager : IInteractionSubscriber
         _players = players;
     }
 
-    public void OnInteraction(string player, Arrangement arrangement, string tag)
+    public void OnInteractionCompleted(string player, Arrangement arrangement, string tag)
     {
         _players.AddPoints(player, _points[tag]);
         foreach (string partner in arrangement.Partners)

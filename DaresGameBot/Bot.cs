@@ -192,20 +192,21 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
 
         Repository repository = new(updates);
-        DistributedMatchmaker matchmaker = new(repository);
-
+        DistributedMatchmaker matchmaker = new(repository, Config.Options);
         return new Game.Game(Config, _decksProvider, repository, matchmaker);
     }
 
-    private Task DrawActionOrQuestionAsync(Chat chat, Game.Game game)
+    private async Task DrawActionOrQuestionAsync(Chat chat, Game.Game game)
     {
         Arrangement? arrangement = game.TryDrawArrangement();
         if (arrangement is null)
         {
             MessageTemplate template = CreateQuestionTemplate(game);
-            return template.SendAsync(this, chat);
+            await template.SendAsync(this, chat);
+            return;
         }
-        return ShowPartnersAsync(chat, game.CurrentPlayer, arrangement);
+        await ShowPartnersAsync(chat, game.CurrentPlayer, arrangement);
+        game.OnActionPurposed(arrangement);
     }
 
     internal Task RevealCardAsync(Chat chat, int messageId, User sender, GameButtonData buttonData)
