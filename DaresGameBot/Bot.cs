@@ -101,8 +101,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
                 if (errorLines.Count == 0)
                 {
-                    List<QuestionData> questionDatas =
-                        await _questionsSheet.LoadAsync<QuestionData>(Config.QuestionsRange);
+                    List<CardData> questionDatas =
+                        await _questionsSheet.LoadAsync<CardData>(Config.QuestionsRange);
                     _decksProvider = new DecksProvider(actionDatas, questionDatas);
                 }
                 else
@@ -232,8 +232,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             case GameButtonArrangementData a:
                 ActionInfo actionInfo = game.DrawAction(a.Arrangement, a.Tag);
                 ActionData data = game.GetActionData(actionInfo.Id);
-                Turn turn = new(Config.Texts, Config.ImagesFolder, data.Tag, data.Description, data.DescriptionEn,
-                    game.CurrentPlayer, actionInfo.Arrangement, data.ImagePath);
+                Turn turn = new(Config.Texts, Config.ImagesFolder, data, game.CurrentPlayer, actionInfo.Arrangement);
                 template = turn.GetMessage(game.IncludeEn);
                 template.KeyboardProvider = CreateActionKeyboard(actionInfo);
                 break;

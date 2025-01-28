@@ -6,23 +6,23 @@ namespace DaresGameBot.Game.Decks;
 
 internal sealed class QuestionDeck
 {
-    public QuestionDeck(IReadOnlyList<QuestionData> cards)
+    public QuestionDeck(IReadOnlyList<CardData> cards)
     {
         _all = cards;
-        _current = new Queue<QuestionData>();
+        _current = new Queue<CardData>();
     }
 
-    public QuestionData Draw()
+    public CardData Draw()
     {
         if (_current.Count == 0)
         {
-            IEnumerable<QuestionData> items = RandomHelper.Shuffle(_all);
-            _current = new Queue<QuestionData>(items);
+            IEnumerable<CardData> items = RandomHelper.Shuffle(_all);
+            _current = new Queue<CardData>(items);
         }
 
         return _current.Dequeue();
     }
 
-    private readonly IReadOnlyList<QuestionData> _all;
-    private Queue<QuestionData> _current;
+    private readonly IReadOnlyList<CardData> _all;
+    private Queue<CardData> _current;
 }

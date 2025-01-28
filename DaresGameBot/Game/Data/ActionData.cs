@@ -6,21 +6,12 @@ namespace DaresGameBot.Game.Data;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
 
-internal sealed class ActionData
+internal sealed class ActionData : CardData
 {
     [UsedImplicitly]
     [Required]
     [SheetField(TagTitle)]
     public string Tag = null!;
-
-    [UsedImplicitly]
-    [Required]
-    [SheetField(DescriptionTitle)]
-    public string Description = null!;
-
-    [UsedImplicitly]
-    [SheetField(DescriptionEnTitle)]
-    public string DescriptionEn = null!;
 
     [UsedImplicitly]
     [Required]
@@ -39,8 +30,6 @@ internal sealed class ActionData
     public ArrangementType ArrangementType;
 
     private const string TagTitle = "Символ";
-    private const string DescriptionTitle = "Текст";
-    private const string DescriptionEnTitle = "Text";
     private const string ImageTitle = "Картинка";
     private const string PartnersTitle = "Партнёры";
     private const string CompatablePartnersTitle = "Партнёры должны совмещаться друг с другом";

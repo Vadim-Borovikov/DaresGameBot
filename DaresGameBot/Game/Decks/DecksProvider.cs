@@ -6,7 +6,7 @@ namespace DaresGameBot.Game.Decks;
 
 internal sealed class DecksProvider
 {
-    public DecksProvider(IReadOnlyList<ActionData> actionDatas, IReadOnlyList<QuestionData> questionDatas)
+    public DecksProvider(IReadOnlyList<ActionData> actionDatas, IReadOnlyList<CardData> questionDatas)
     {
         Dictionary<ushort, ActionData> actionsDict = new();
         for (ushort i = 0; i < actionDatas.Count; i++)
@@ -22,5 +22,5 @@ internal sealed class DecksProvider
     public ActionDeck GetActionDeck(IActionChecker checker) => new(_actionDatas, checker);
 
     private readonly Dictionary<ushort, ActionData> _actionDatas;
-    private readonly IReadOnlyList<QuestionData> _questionDatas;
+    private readonly IReadOnlyList<CardData> _questionDatas;
 }

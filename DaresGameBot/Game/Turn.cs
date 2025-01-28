@@ -1,22 +1,26 @@
 using System.IO;
 using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Configs;
+using DaresGameBot.Game.Data;
 
 namespace DaresGameBot.Game;
 
 internal sealed class Turn
 {
-    public Turn(Texts texts, string imagesfolder, string tag, string descriprionRu, string? descriptionEn,
-        string player, Arrangement? arrangement = null, string? imagePath = null)
+    public Turn(Texts texts, string imagesfolder, ActionData actionData, string player, Arrangement arrangement)
+        : this(texts, imagesfolder, actionData.Tag, actionData, player, arrangement, actionData.ImagePath)
+    {}
+
+    public Turn(Texts texts, string imagesfolder, string tag, CardData cardData, string player,
+        Arrangement? arrangement = null, string? imagePath = null)
     {
         _texts = texts;
-        _imagesfolder = imagesfolder;
         _player = player;
         _arrangement = arrangement;
         _tagPart = new MessageTemplateText(tag);
-        _descriprionRuPart = new MessageTemplateText(descriprionRu);
-        _descriprionEnPart = descriptionEn is null ? null : new MessageTemplateText(descriptionEn);
-        _imagePath = imagePath;
+        _descriprionRuPart = new MessageTemplateText(cardData.Description);
+        _descriprionEnPart = new MessageTemplateText(cardData.DescriptionEn);
+        _imagePath = string.IsNullOrWhiteSpace(imagePath) ? null : Path.Combine(imagesfolder, imagePath);
     }
 
     public MessageTemplate GetMessage(bool includeEn = false)
@@ -37,8 +41,7 @@ internal sealed class Turn
 
         if (!string.IsNullOrWhiteSpace(_imagePath))
         {
-            string path = Path.Combine(_imagesfolder, _imagePath);
-            message = new MessageTemplateImage(message, path);
+            message = new MessageTemplateImage(message, _imagePath);
         }
 
         return message.Format(_tagPart, _player, descriprionPart, partnersPart);
@@ -59,6 +62,5 @@ internal sealed class Turn
     private readonly string _player;
     private readonly Arrangement? _arrangement;
     private readonly Texts _texts;
-    private readonly string _imagesfolder;
     private readonly string? _imagePath;
 }

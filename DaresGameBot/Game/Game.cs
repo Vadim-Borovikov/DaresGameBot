@@ -77,9 +77,8 @@ internal sealed class Game
     public Turn DrawQuestion()
     {
         CurrentState = State.CardRevealed;
-        QuestionData questionData = _questionsDeck.Draw();
-        return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, questionData.Description,
-            questionData.DescriptionEn, CurrentPlayer);
+        CardData questionData = _questionsDeck.Draw();
+        return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, questionData, CurrentPlayer);
     }
 
     public void UpdatePlayers(List<PlayerListUpdateData> updateDatas) => _players.UpdateList(updateDatas);
