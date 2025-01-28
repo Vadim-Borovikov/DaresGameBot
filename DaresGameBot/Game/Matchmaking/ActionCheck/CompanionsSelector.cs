@@ -20,9 +20,7 @@ internal sealed class CompanionsSelector : IActionChecker
             return false;
         }
 
-        return (arrangementType.Partners == 0)
-               || _matchmaker.AreThereAnyMatches(player, _players, arrangementType.Partners,
-                   arrangementType.CompatablePartners);
+        return (arrangementType.Partners == 0) || _matchmaker.AreThereAnyMatches(player, _players, arrangementType);
     }
 
     public Arrangement SelectCompanionsFor(string player, ArrangementType arrangementType)
@@ -30,8 +28,7 @@ internal sealed class CompanionsSelector : IActionChecker
         List<string> partners = new();
         if (arrangementType.Partners > 0)
         {
-            partners = _matchmaker.EnumerateMatches(player, _players, arrangementType.Partners,
-                                      arrangementType.CompatablePartners)
+            partners = _matchmaker.EnumerateMatches(player, _players, arrangementType)
                                   .Denull("No suitable partners found")
                                   .ToList();
         }

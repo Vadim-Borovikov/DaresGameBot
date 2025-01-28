@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using DaresGameBot.Game.Data;
 using DaresGameBot.Helpers;
 using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using DaresGameBot.Game.Matchmaking.Interactions;
@@ -13,19 +14,20 @@ internal abstract class Matchmaker : IInteractionSubscriber
     public abstract void OnInteractionPurposed(string player, Arrangement arrangement);
     public abstract void OnInteractionCompleted(string player, Arrangement arrangement, string tag);
 
-    public bool AreThereAnyMatches(string player, IEnumerable<string> all, byte amount, bool compatableWithEachOther)
+    public bool AreThereAnyMatches(string player, IEnumerable<string> all, ArrangementType arrangementType)
     {
         List<string> choices = EnumerateCompatablePlayers(player, all).ToList();
-        if (choices.Count < amount)
+        if (choices.Count < arrangementType.Partners)
         {
             return false;
         }
 
-        return !compatableWithEachOther || EnumerateIntercompatableGroups(choices, amount).Any();
+        return !arrangementType.CompatablePartners
+               || EnumerateIntercompatableGroups(choices, arrangementType.Partners).Any();
     }
 
-    public abstract IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all, byte amount,
-        bool compatableWithEachOther);
+    public abstract IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all,
+        ArrangementType arrangementType);
 
     protected IEnumerable<string> EnumerateCompatablePlayers(string player, IEnumerable<string> all)
     {

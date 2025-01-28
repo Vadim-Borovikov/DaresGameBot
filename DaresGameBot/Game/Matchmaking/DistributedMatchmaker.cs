@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using DaresGameBot.Game.Data;
 using DaresGameBot.Helpers;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Game.Players;
@@ -24,19 +25,20 @@ internal sealed class DistributedMatchmaker : Matchmaker
         _interactionRepository.OnInteractionCompleted(player, arrangement, tag);
     }
 
-    public override IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all, byte amount,
-        bool compatableWithEachOther)
+    public override IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all,
+        ArrangementType arrangementType)
     {
         IEnumerable<string> choices = EnumerateCompatablePlayers(player, all);
         string[] shuffled = RandomHelper.Shuffle(choices);
-        if (shuffled.Length < amount)
+        if (shuffled.Length < arrangementType.Partners)
         {
             return null;
         }
 
-        if (compatableWithEachOther)
+        if (arrangementType.CompatablePartners)
         {
-            IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatableGroups(shuffled, amount);
+            IEnumerable<IReadOnlyList<string>> groups =
+                EnumerateIntercompatableGroups(shuffled, arrangementType.Partners);
             return groups.OrderBy(g => _interactionRepository.GetInteractions(player, g, false))
                          .ThenByDescending(g => _interactionRepository.GetInteractions(player, g, true))
                          .ThenBy(g => g.Sum(p => _players.GetPoints(p)))
@@ -46,7 +48,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
         return shuffled.OrderBy(p => _interactionRepository.GetInteractions(player, p, false))
                        .ThenByDescending(p => _interactionRepository.GetInteractions(player, p, true))
                        .ThenBy(_players.GetPoints)
-                       .Take(amount)
+                       .Take(arrangementType.Partners)
                        .ToList();
     }
 
