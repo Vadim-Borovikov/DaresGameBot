@@ -338,8 +338,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         return new InlineKeyboardButton(caption)
         {
-            CallbackData =
-                $"{CreateArrangementButtonData(operation, tag, info.Arrangement)}{GameButtonData.FieldSeparator}" +
+            CallbackData = operation +
+                $"{CreateArrangementButtonData(tag, info.Arrangement)}{GameButtonData.FieldSeparator}" +
                 $"{info.Id}"
         };
     }
@@ -349,16 +349,16 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         return new InlineKeyboardButton(caption)
         {
-            CallbackData = CreateArrangementButtonData(operation, tag, info)
+            CallbackData = operation + CreateArrangementButtonData(tag, info)
         };
     }
 
-    private static string CreateArrangementButtonData(string prefix, string tag, Arrangement arrangement)
+    private static string CreateArrangementButtonData(string tag, Arrangement arrangement)
     {
-        return prefix +
-               $"{tag}{GameButtonData.FieldSeparator}" +
-               $"{string.Join(GameButtonData.ListSeparator, arrangement.Partners)}{GameButtonData.FieldSeparator}" +
-               $"{arrangement.CompatablePartners}";
+        return string.Join(GameButtonData.FieldSeparator,
+            tag,
+            string.Join(GameButtonData.ListSeparator, arrangement.Partners),
+            arrangement.CompatablePartners);
     }
 
     private InlineKeyboardButton CreateQuestionButton()
