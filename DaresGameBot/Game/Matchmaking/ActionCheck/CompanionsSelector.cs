@@ -13,16 +13,16 @@ internal sealed class CompanionsSelector : IActionChecker
         _players = players;
     }
 
-    public bool CanPlay(string player, ArrangementType arrangement)
+    public bool CanPlay(string player, ArrangementType arrangementType)
     {
-        if (arrangement.Partners >= _players.Count)
+        if (arrangementType.Partners >= _players.Count)
         {
             return false;
         }
 
-        return (arrangement.Partners == 0)
-               || _matchmaker.AreThereAnyMatches(player, _players, arrangement.Partners,
-                   arrangement.CompatablePartners);
+        return (arrangementType.Partners == 0)
+               || _matchmaker.AreThereAnyMatches(player, _players, arrangementType.Partners,
+                   arrangementType.CompatablePartners);
     }
 
     public Arrangement SelectCompanionsFor(string player, ArrangementType arrangementType)

@@ -7,6 +7,7 @@ using DaresGameBot.Game.Decks;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Players;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
+using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Game;
 
@@ -46,7 +47,7 @@ internal sealed class Game
         };
     }
 
-    public ActionData GetActionData(ushort id) => _actionDeck.CardDatas[id];
+    public ActionData GetActionData(ushort id) => _actionDeck.GetCard(id);
 
     public Arrangement? TryDrawArrangement()
     {
@@ -60,7 +61,9 @@ internal sealed class Game
     public ActionInfo DrawAction(Arrangement arrangement, string tag)
     {
         CurrentState = State.CardRevealed;
-        ushort id = _actionDeck.SelectCardId(arrangement.GetArrangementType(), tag);
+        ushort id =
+            _actionDeck.GetRandomId(c => (c.Tag == tag) && (c.ArrangementType == arrangement.GetArrangementType()))
+                       .Denull("No suitable cards found");
         return new ActionInfo(id, arrangement);
     }
 
@@ -81,7 +84,7 @@ internal sealed class Game
             subscriber.OnInteractionCompleted(CurrentPlayer, info.Arrangement, actionData.Tag);
         }
 
-        _actionDeck.Fold(info.Id);
+        _actionDeck.Mark(info.Id);
 
         _players.MoveNext();
     }
