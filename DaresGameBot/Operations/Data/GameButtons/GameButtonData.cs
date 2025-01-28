@@ -13,24 +13,20 @@ internal abstract class GameButtonData
         }
 
         string[] parts = callbackQueryDataCore.Split(FieldSeparator);
-        if (parts.Length < 3)
+        if (parts.Length != 3)
         {
             return null;
         }
-        string tag = parts[0];
-        string[] partners = SplitList(parts[1]);
-        bool compatablePartners = bool.Parse(parts[2]);
+        string[] partners = SplitList(parts[0]);
+        bool compatablePartners = bool.Parse(parts[1]);
         Arrangement arrangement = new(partners, compatablePartners);
-        switch (parts.Length)
+        if (ushort.TryParse(parts[2], out ushort actionId))
         {
-            case 3:
-                return new GameButtonArrangementData(arrangement, tag);
-            case 4:
-                ushort actionId = ushort.Parse(parts[3]);
-                ActionInfo actionInfo = new(actionId, arrangement);
-                return new GameButtonActionData(actionInfo, tag);
-            default: return null;
+            ActionInfo actionInfo = new(actionId, arrangement);
+            return new GameButtonActionData(actionInfo);
         }
+        string tag = parts[2];
+        return new GameButtonArrangementData(arrangement, tag);
     }
 
     private static string[] SplitList(string s) => s == "" ? Array.Empty<string>() : s.Split(ListSeparator);

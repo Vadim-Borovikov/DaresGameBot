@@ -232,10 +232,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             case GameButtonArrangementData a:
                 ActionInfo actionInfo = game.DrawAction(a.Arrangement, a.Tag);
                 ActionData data = game.GetActionData(actionInfo.Id);
-                Turn turn = new(Config.Texts, Config.ImagesFolder, data.Tag, data.Description,
-                    data.DescriptionEn, game.CurrentPlayer, actionInfo, data.CompatablePartners, data.ImagePath);
+                Turn turn = new(Config.Texts, Config.ImagesFolder, data.Tag, data.Description, data.DescriptionEn,
+                    game.CurrentPlayer, actionInfo.Arrangement, data.ImagePath);
                 template = turn.GetMessage(game.IncludeEn);
-                template.KeyboardProvider = CreateActionKeyboard(data.Tag, actionInfo);
+                template.KeyboardProvider = CreateActionKeyboard(actionInfo);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
@@ -271,7 +271,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 game.RegisterQuestion();
                 break;
             case GameButtonActionData a:
-                Option option = Config.ActionOptions.Single(o => o.Tag == a.Tag);
+                ActionData actionData = game.GetActionData(a.ActionInfo.Id);
+                Option option = Config.ActionOptions.Single(o => o.Tag == actionData.Tag);
                 game.RegisterAction(a.ActionInfo, option.Points);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
@@ -284,7 +285,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         MessageTemplateText? partnersText = null;
         if (arrangement.Partners.Count > 0)
         {
-            partnersText = Turn.GetPartnersPart(Config.Texts, arrangement.Partners, arrangement.CompatablePartners);
+            partnersText = Turn.GetPartnersPart(Config.Texts, arrangement);
         }
         MessageTemplateText message = Config.Texts.TurnFormatShort.Format(player, partnersText);
         message.KeyboardProvider = CreateCardKeyboard(arrangement);
@@ -307,7 +308,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateActionKeyboard(string tag, ActionInfo info)
+    private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info)
     {
         List<List<InlineKeyboardButton>> keyboard = new();
         InlineKeyboardButton questionButton = new(Config.Texts.QuestionsTag)
@@ -315,7 +316,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             CallbackData = nameof(RevealCard)
         };
         InlineKeyboardButton actionButton =
-            CreateActionButton(nameof(CompleteCard), Config.Texts.ActionCompleted, tag, info);
+            CreateActionButton(nameof(CompleteCard), Config.Texts.ActionCompleted, info);
 
         keyboard.Add(CreateButtonRow(questionButton));
         keyboard.Add(CreateButtonRow(actionButton));
@@ -333,14 +334,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private static InlineKeyboardButton CreateActionButton(string operation, string caption, string tag,
-        ActionInfo info)
+    private static InlineKeyboardButton CreateActionButton(string operation, string caption, ActionInfo info)
     {
         return new InlineKeyboardButton(caption)
         {
-            CallbackData = operation +
-                $"{CreateArrangementButtonData(tag, info.Arrangement)}{GameButtonData.FieldSeparator}" +
-                $"{info.Id}"
+            CallbackData = operation
+                           + $"{CreateArrangementButtonData(info.Arrangement)}{GameButtonData.FieldSeparator}"
+                           + info.Id
         };
     }
 
@@ -349,16 +349,16 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         return new InlineKeyboardButton(caption)
         {
-            CallbackData = operation + CreateArrangementButtonData(tag, info)
+            CallbackData = operation
+                           + $"{CreateArrangementButtonData(info)}{GameButtonData.FieldSeparator}"
+                           + tag
         };
     }
 
-    private static string CreateArrangementButtonData(string tag, Arrangement arrangement)
+    private static string CreateArrangementButtonData(Arrangement arrangement)
     {
-        return string.Join(GameButtonData.FieldSeparator,
-            tag,
-            string.Join(GameButtonData.ListSeparator, arrangement.Partners),
-            arrangement.CompatablePartners);
+        return $"{string.Join(GameButtonData.ListSeparator, arrangement.Partners)}{GameButtonData.FieldSeparator}"
+               + arrangement.CompatablePartners;
     }
 
     private InlineKeyboardButton CreateQuestionButton()
