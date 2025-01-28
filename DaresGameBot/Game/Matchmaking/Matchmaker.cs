@@ -2,12 +2,15 @@
 using System.Linq;
 using DaresGameBot.Helpers;
 using DaresGameBot.Game.Matchmaking.PlayerCheck;
+using DaresGameBot.Game.Matchmaking.Interactions;
 
 namespace DaresGameBot.Game.Matchmaking;
 
-internal abstract class Matchmaker
+internal abstract class Matchmaker : IInteractionSubscriber
 {
     protected Matchmaker(ICompatibility compatibility) => _compatibility = compatibility;
+
+    public abstract void OnInteraction(string player, Arrangement arrangement, string tag);
 
     public bool AreThereAnyMatches(string player, IEnumerable<string> all, byte amount, bool compatableWithEachOther)
     {

@@ -1,24 +1,22 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal sealed class InteractionRepository : IInteractionSubscriber
 {
-    public void OnInteraction(string player, IEnumerable<string> partners, bool actionsBetweenPartners, ushort points)
+    public void OnInteraction(string player, Arrangement arrangement, string _)
     {
-        List<string> partnersList = partners.ToList();
-        foreach (string p in partnersList)
+        foreach (string p in arrangement.Partners)
         {
             RegisterInteraction(player, p);
         }
 
-        if (!actionsBetweenPartners)
+        if (!arrangement.CompatablePartners)
         {
             return;
         }
-        foreach ((string, string) pair in ListHelper.EnumeratePairs(partnersList))
+        foreach ((string, string) pair in ListHelper.EnumeratePairs(arrangement.Partners))
         {
             RegisterInteraction(pair.Item1, pair.Item2);
         }

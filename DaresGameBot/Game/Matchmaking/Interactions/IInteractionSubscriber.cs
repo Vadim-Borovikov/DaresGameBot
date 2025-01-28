@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-
-namespace DaresGameBot.Game.Matchmaking.Interactions;
+﻿namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal interface IInteractionSubscriber
 {
-    public void OnInteraction(string player, IEnumerable<string> partners, bool actionsBetweenPartners, ushort points);
+    public void OnInteraction(string player, Arrangement arrangement, string tag);
 }

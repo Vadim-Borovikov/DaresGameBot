@@ -15,7 +15,6 @@ using AbstractBot.Operations.Data;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Game;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Decks;
@@ -195,13 +194,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Repository repository = new(updates);
         DistributedMatchmaker matchmaker = new(repository);
 
-        List<IInteractionSubscriber> subscribers = new()
-        {
-            repository,
-            matchmaker.InteractionRepository
-        };
-
-        return new Game.Game(Config, _decksProvider, repository, matchmaker, subscribers);
+        return new Game.Game(Config, _decksProvider, repository, matchmaker);
     }
 
     private Task DrawActionOrQuestionAsync(Chat chat, Game.Game game)
@@ -270,9 +263,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 game.RegisterQuestion();
                 break;
             case GameButtonActionData a:
-                ActionData actionData = game.GetActionData(a.ActionInfo.Id);
-                Option option = Config.ActionOptions.Single(o => o.Tag == actionData.Tag);
-                game.RegisterAction(a.ActionInfo, option.Points);
+                game.OnActionCompleted(a.ActionInfo);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }

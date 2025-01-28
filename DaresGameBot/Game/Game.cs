@@ -28,8 +28,7 @@ internal sealed class Game
 
     public ushort GetPoints(string name) => _players.GetPoints(name);
 
-    public Game(Config config, DecksProvider decksProvider, Repository players, Matchmaker matchmaker,
-        List<IInteractionSubscriber> interactionSubscribers)
+    public Game(Config config, DecksProvider decksProvider, Repository players, Matchmaker matchmaker)
     {
         _config = config;
         _players = players;
@@ -37,7 +36,14 @@ internal sealed class Game
         _companionsSelector = new CompanionsSelector(matchmaker, GetPlayers());
         _actionDeck = decksProvider.GetActionDeck(_companionsSelector);
         _questionsDeck = decksProvider.GetQuestionDeck();
-        _interactionSubscribers = interactionSubscribers;
+
+        PointsManager pointsManager = new(config.Options, players);
+
+        _interactionSubscribers = new List<IInteractionSubscriber>
+        {
+            matchmaker,
+            pointsManager
+        };
     }
 
     public ActionData GetActionData(ushort id) => _actionDeck.CardDatas[id];
@@ -58,13 +64,13 @@ internal sealed class Game
         return new ActionInfo(id, arrangement);
     }
 
-    public void RegisterAction(ActionInfo info, ushort points)
+    public void OnActionCompleted(ActionInfo info)
     {
         ActionData actionData = GetActionData(info.Id);
 
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnInteraction(CurrentPlayer, info.Arrangement.Partners, actionData.CompatablePartners, points);
+            subscriber.OnInteraction(CurrentPlayer, info.Arrangement, actionData.Tag);
         }
 
         _actionDeck.Fold(info.Id);

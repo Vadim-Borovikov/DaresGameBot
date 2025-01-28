@@ -1,18 +1,18 @@
 using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 
 namespace DaresGameBot.Game.Players;
 
-internal sealed class Repository : ICompatibility, IInteractionSubscriber
+internal sealed class Repository : ICompatibility
 {
     public IReadOnlyList<string> GetNames() => _names.Where(n => _infos[n].Active).ToList().AsReadOnly();
 
     public string Current => _names[_currentIndex];
 
     public ushort GetPoints(string name) => _infos[name].Points;
+    public void AddPoints(string name, ushort points) => _infos[name].Points += points;
 
     public Repository(List<PlayerListUpdateData> updates) => UpdateList(updates);
 
@@ -92,17 +92,7 @@ internal sealed class Repository : ICompatibility, IInteractionSubscriber
         return info1.WouldInteractWith(info2) && info2.WouldInteractWith(info1);
     }
 
-    public void OnInteraction(string player, IEnumerable<string> partners, bool actionsBetweenPartners, ushort points)
-    {
-        _infos[player].Points += points;
-        foreach (string partner in partners)
-        {
-            _infos[partner].Points += points;
-        }
-    }
-
     private readonly List<string> _names = new();
     private readonly Dictionary<string, PlayerInfo> _infos = new();
     private int _currentIndex;
-
 }
