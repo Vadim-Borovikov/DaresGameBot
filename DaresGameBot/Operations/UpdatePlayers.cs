@@ -25,14 +25,14 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
             return false;
         }
 
-        List<string>? lines = message.Text?.Split(PlayersSeparator).Select(l => l.Trim()).ToList();
+        List<string>? lines = message.Text?.Split(_bot.Config.Texts.PlayersSeparator).Select(l => l.Trim()).ToList();
 
         switch (lines?.Count)
         {
             case null:
             case < 1: return false;
             default:
-                data = UpdatesData.From(lines);
+                data = UpdatesData.From(lines, _bot.Config.Texts);
                 return data is not null;
         }
     }
@@ -45,5 +45,4 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
     }
 
     private readonly Bot _bot;
-    private const string PlayersSeparator = "\n";
 }

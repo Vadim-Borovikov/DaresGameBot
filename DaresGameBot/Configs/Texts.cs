@@ -23,6 +23,9 @@ public class Texts : AbstractBot.Configs.Texts
     public MessageTemplateText PlayersFormat { get; init; } = null!;
     [UsedImplicitly]
     [Required]
+    public string PlayersSeparator { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
     [MinLength(1)]
     public MessageTemplateText NewGame { get; init; } = null!;
     [UsedImplicitly]
@@ -71,11 +74,19 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string PartnersSeparator { get; init; } = null!;
-
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
     public string CompatablePartnersSeparator { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string UpdatePartsSeparator { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string UpdateGroupsSeparator { get; init; } = null!;
 
     [UsedImplicitly]
     [Required]

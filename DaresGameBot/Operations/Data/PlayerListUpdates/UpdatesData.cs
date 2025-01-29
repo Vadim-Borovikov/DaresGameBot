@@ -1,6 +1,7 @@
 ﻿using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using System.Collections.Generic;
 using System.Linq;
+using DaresGameBot.Configs;
 
 namespace DaresGameBot.Operations.Data.PlayerListUpdates;
 
@@ -10,10 +11,10 @@ internal sealed class UpdatesData
 
     private UpdatesData(List<PlayerListUpdateData> datas) => Datas = datas;
 
-    public static UpdatesData? From(IEnumerable<string> lines)
+    public static UpdatesData? From(IEnumerable<string> lines, Texts texts)
     {
         List<PlayerListUpdateData> datas = new();
-        foreach (string[] parts in lines.Select(l => l.Split(PartsSeparator)))
+        foreach (string[] parts in lines.Select(l => l.Split(texts.UpdatePartsSeparator)))
         {
             PlayerListUpdateData data;
             switch (parts.Length)
@@ -24,7 +25,7 @@ internal sealed class UpdatesData
                 case 3:
                     string player = parts[0];
                     string group = parts[1];
-                    string[] groups = parts[2].Split(GroupsSeparator);
+                    string[] groups = parts[2].Split(texts.UpdateGroupsSeparator);
                     HashSet<string> compatableGroups = new(groups);
                     GroupChecker checker = new(group, new HashSet<string>(compatableGroups));
                     data = new AddOrUpdatePlayerData(player, checker);
@@ -37,7 +38,4 @@ internal sealed class UpdatesData
 
         return new UpdatesData(datas);
     }
-
-    private const string PartsSeparator = ",";
-    private const string GroupsSeparator = "+";
 }

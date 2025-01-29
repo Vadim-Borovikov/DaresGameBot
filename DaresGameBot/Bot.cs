@@ -171,7 +171,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     private async Task ReportPlayersAsync(Chat chat, Game.Game game, MessageTemplate template)
     {
         MessageTemplateText playersText =
-            Config.Texts.PlayersFormat.Format(string.Join(PlayerSeparator, GetPlayerList(game)));
+            Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, GetPlayerList(game)));
 
         MessageTemplate messageText = template.Format(playersText);
         Message message = await messageText.SendAsync(this, chat);
@@ -377,6 +377,4 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     private DecksProvider? _decksProvider;
     private readonly Sheet _actionsSheet;
     private readonly Sheet _questionsSheet;
-
-    private static readonly string PlayerSeparator = Environment.NewLine;
 }
