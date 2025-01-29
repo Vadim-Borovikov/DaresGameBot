@@ -12,7 +12,7 @@ internal abstract class Matchmaker : IInteractionSubscriber
     protected Matchmaker(ICompatibility compatibility) => _compatibility = compatibility;
 
     public abstract void OnInteractionPurposed(string player, Arrangement arrangement);
-    public abstract void OnInteractionCompleted(string player, Arrangement arrangement, string tag);
+    public abstract void OnInteractionCompleted(string player, Arrangement arrangement, string tag, bool completedFully);
 
     public bool AreThereAnyMatches(string player, IEnumerable<string> all, ArrangementType arrangementType)
     {

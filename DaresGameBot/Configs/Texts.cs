@@ -130,6 +130,10 @@ public class Texts : AbstractBot.Configs.Texts
 
     [Required]
     [MinLength(1)]
+    public string ActionCompletedPartially { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
     public MessageTemplateText WrongTagsFormat { get; init; } = null!;
 
     [Required]

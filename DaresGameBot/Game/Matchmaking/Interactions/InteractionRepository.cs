@@ -1,20 +1,26 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal sealed class InteractionRepository : IInteractionSubscriber
 {
-    public InteractionRepository(IReadOnlyDictionary<string, ushort> points) => _points = points;
+    public InteractionRepository(PointsManager pointsManager) => _pointsManager = pointsManager;
 
     public void OnInteractionPurposed(string player, Arrangement arrangement)
     {
         RegisterInteractions(player, arrangement);
     }
 
-    public void OnInteractionCompleted(string player, Arrangement arrangement, string tag)
+    public void OnInteractionCompleted(string player, Arrangement arrangement, string tag, bool completedFully)
     {
-        RegisterInteractions(player, arrangement, _points[tag]);
+        ushort? points = _pointsManager.GetPoints(tag, !completedFully);
+        if (points is null)
+        {
+            throw new NullReferenceException($"No points in config for ({tag}, {completedFully})");
+        }
+        RegisterInteractions(player, arrangement, points);
     }
 
     public ushort GetInteractions(string player, IReadOnlyList<string> players, bool completed)
@@ -76,7 +82,7 @@ internal sealed class InteractionRepository : IInteractionSubscriber
 
     private static int GetHash(string p1, string p2) => p1.GetHashCode() ^ p2.GetHashCode();
 
-    private readonly IReadOnlyDictionary<string, ushort> _points;
+    private readonly PointsManager _pointsManager;
     private readonly Dictionary<int, ushort> _interactionsPurposed = new();
     private readonly Dictionary<int, ushort> _interactionsCompleted = new();
 }

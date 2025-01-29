@@ -9,20 +9,21 @@ namespace DaresGameBot.Game.Matchmaking;
 
 internal sealed class DistributedMatchmaker : Matchmaker
 {
-    public DistributedMatchmaker(Repository players, IReadOnlyDictionary<string, ushort> points)
+    public DistributedMatchmaker(Repository players, PointsManager pointsManager)
         : base(players)
     {
         _players = players;
-        _interactionRepository = new InteractionRepository(points);
+        _interactionRepository = new InteractionRepository(pointsManager);
     }
 
     public override void OnInteractionPurposed(string player, Arrangement arrangement)
     {
         _interactionRepository.OnInteractionPurposed(player, arrangement);
     }
-    public override void OnInteractionCompleted(string player, Arrangement arrangement, string tag)
+    public override void OnInteractionCompleted(string player, Arrangement arrangement, string tag,
+        bool completedFully)
     {
-        _interactionRepository.OnInteractionCompleted(player, arrangement, tag);
+        _interactionRepository.OnInteractionCompleted(player, arrangement, tag, completedFully);
     }
 
     public override IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all,

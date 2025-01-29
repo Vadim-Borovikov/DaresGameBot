@@ -29,7 +29,8 @@ internal sealed class Game
 
     public ushort GetPoints(string name) => _players.GetPoints(name);
 
-    public Game(Config config, DecksProvider decksProvider, Repository players, Matchmaker matchmaker)
+    public Game(Config config, DecksProvider decksProvider, Repository players, PointsManager pointsManager,
+        Matchmaker matchmaker)
     {
         _config = config;
         _players = players;
@@ -37,8 +38,6 @@ internal sealed class Game
         _companionsSelector = new CompanionsSelector(matchmaker, GetPlayers());
         _actionDeck = decksProvider.GetActionDeck(_companionsSelector);
         _questionsDeck = decksProvider.GetQuestionDeck();
-
-        PointsManager pointsManager = new(config.Options, players);
 
         _interactionSubscribers = new List<IInteractionSubscriber>
         {
@@ -75,13 +74,13 @@ internal sealed class Game
         }
     }
 
-    public void OnActionCompleted(ActionInfo info)
+    public void OnActionCompleted(ActionInfo info, bool completedFully)
     {
         ActionData actionData = GetActionData(info.Id);
 
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnInteractionCompleted(CurrentPlayer, info.Arrangement, actionData.Tag);
+            subscriber.OnInteractionCompleted(CurrentPlayer, info.Arrangement, actionData.Tag, completedFully);
         }
 
         _actionDeck.Mark(info.Id);

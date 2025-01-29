@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using AbstractBot.Configs;
 using JetBrains.Annotations;
 
@@ -42,7 +41,5 @@ public class Config : ConfigWithSheets<Texts>
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public List<Option> ActionOptions { get; init; } = null!;
-
-    internal IReadOnlyDictionary<string, ushort> Options => ActionOptions.ToDictionary(o => o.Tag, o => o.Points);
+    public Dictionary<string, Option> ActionOptions { get; init; } = null!;
 }

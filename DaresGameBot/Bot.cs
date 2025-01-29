@@ -81,7 +81,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 tags[hash].Add(data.Tag);
             }
 
-            List<string> optionsTags = Config.ActionOptions.Select(o => o.Tag).ToList();
+            List<string> optionsTags = Config.ActionOptions.Keys.ToList();
             if (allTags.SetEquals(optionsTags))
             {
                 List<string> errorLines = new();
@@ -192,8 +192,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
 
         Repository repository = new(updates);
-        DistributedMatchmaker matchmaker = new(repository, Config.Options);
-        return new Game.Game(Config, _decksProvider, repository, matchmaker);
+        PointsManager pointsManager = new(Config.ActionOptions, repository);
+        DistributedMatchmaker matchmaker = new(repository, pointsManager);
+        return new Game.Game(Config, _decksProvider, repository, pointsManager, matchmaker);
     }
 
     private async Task DrawActionOrQuestionAsync(Chat chat, Game.Game game)
@@ -228,7 +229,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 ActionData data = game.GetActionData(actionInfo.Id);
                 Turn turn = new(Config.Texts, Config.ImagesFolder, data, game.CurrentPlayer, actionInfo.Arrangement);
                 template = turn.GetMessage(game.IncludeEn);
-                template.KeyboardProvider = CreateActionKeyboard(actionInfo);
+                bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
+                template.KeyboardProvider = CreateActionKeyboard(actionInfo, includePartial);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
@@ -264,7 +266,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 game.RegisterQuestion();
                 break;
             case GameButtonActionData a:
-                game.OnActionCompleted(a.ActionInfo);
+                game.OnActionCompleted(a.ActionInfo, a.CompletedFully);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
@@ -286,8 +288,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     private InlineKeyboardMarkup CreateCardKeyboard(Arrangement info)
     {
         List<List<InlineKeyboardButton>> keyboard = Config.ActionOptions
-                                                          .AsEnumerable()
-                                                          .Select(o => CreateActionButton(nameof(RevealCard), o.Tag, o.Tag, info))
+                                                          .OrderBy(o => o.Value.Points)
+                                                          .Select(o => CreateActionButton(nameof(RevealCard), o.Key, o.Key, info))
                                                           .Select(CreateButtonRow)
                                                           .ToList();
         InlineKeyboardButton questionButton = new(Config.Texts.QuestionsTag)
@@ -299,17 +301,22 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info)
+    private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info, bool includePartial)
     {
         List<List<InlineKeyboardButton>> keyboard = new();
         InlineKeyboardButton questionButton = new(Config.Texts.QuestionsTag)
         {
             CallbackData = nameof(RevealCard)
         };
-        InlineKeyboardButton actionButton =
-            CreateActionButton(nameof(CompleteCard), Config.Texts.ActionCompleted, info);
-
         keyboard.Add(CreateButtonRow(questionButton));
+
+        if (includePartial)
+        {
+            InlineKeyboardButton actionButtonPartial = CreateActionButton(nameof(CompleteCard), false, info);
+            keyboard.Add(CreateButtonRow(actionButtonPartial));
+        }
+
+        InlineKeyboardButton actionButton = CreateActionButton(nameof(CompleteCard), true, info);
         keyboard.Add(CreateButtonRow(actionButton));
 
         return new InlineKeyboardMarkup(keyboard);
@@ -325,13 +332,15 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private static InlineKeyboardButton CreateActionButton(string operation, string caption, ActionInfo info)
+    private InlineKeyboardButton CreateActionButton(string operation, bool completedFully, ActionInfo info)
     {
+        string caption = completedFully ? Config.Texts.ActionCompleted : Config.Texts.ActionCompletedPartially;
         return new InlineKeyboardButton(caption)
         {
             CallbackData = operation
                            + $"{CreateArrangementButtonData(info.Arrangement)}{GameButtonData.FieldSeparator}"
-                           + info.Id
+                           + $"{info.Id}{GameButtonData.FieldSeparator}"
+                           + completedFully
         };
     }
 

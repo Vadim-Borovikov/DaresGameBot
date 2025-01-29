@@ -10,6 +10,5 @@ public class Option
     public ushort Points { get; init; }
 
     [Required]
-    [MinLength(1)]
-    public string Tag { get; init; } = null!;
+    public ushort? PartialPoints { get; init; }
 }
