@@ -129,11 +129,11 @@ public class Texts : AbstractBot.Configs.Texts
 
     [Required]
     [MinLength(1)]
-    public MessageTemplateText WrongTagsFormat { get; init; } = null!;
+    public string WrongTagsFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
-    public MessageTemplateText WrongArrangementFormat { get; init; } = null!;
+    public string WrongArrangementFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
@@ -142,4 +142,22 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string PlayerFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText StatusMessageEndSuccess { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText StatusMessageEndFailedFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public string TagSeparator { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public string ErrorsSeparator { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string ErrorFormat { get; init; } = null!;
 }

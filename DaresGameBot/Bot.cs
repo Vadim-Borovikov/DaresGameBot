@@ -58,9 +58,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         Contexts.Remove(chat.Id);
 
-        MessageTemplateText? errors = null;
+        _decksLoadErrors.Clear();
 
-        await using (await StatusMessage.CreateAsync(this, chat, Config.Texts.ReadingDecks))
+        await using (await StatusMessage.CreateAsync(this, chat, Config.Texts.ReadingDecks, GetDecksLoadStatus))
         {
             List<ActionData> actionDatas =
                 await _actionsSheet.LoadAsync<ActionData>(Config.ActionsRange);
@@ -84,7 +84,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             List<string> optionsTags = Config.ActionOptions.Keys.ToList();
             if (allTags.SetEquals(optionsTags))
             {
-                List<string> errorLines = new();
                 foreach (int hash in tags.Keys)
                 {
                     if (allTags.SetEquals(tags[hash]))
@@ -93,31 +92,24 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                     }
 
                     ActionData data = actionDatas.First(a => a.ArrangementType.GetHashCode() == hash);
-                    string line = string.Format(Config.Texts.WrongArrangementLineFormat, data.Partners,
-                        data.CompatablePartners, string.Join("", tags[hash]));
-                    errorLines.Add(line);
+                    string line = string.Format(Config.Texts.WrongArrangementFormat, data.Partners,
+                        data.CompatablePartners, string.Join(Config.Texts.TagSeparator, tags[hash]));
+                    _decksLoadErrors.Add(line);
                 }
 
-                if (errorLines.Count == 0)
+                if (_decksLoadErrors.Count == 0)
                 {
-                    List<CardData> questionDatas =
-                        await _questionsSheet.LoadAsync<CardData>(Config.QuestionsRange);
+                    List<CardData> questionDatas = await _questionsSheet.LoadAsync<CardData>(Config.QuestionsRange);
                     _decksProvider = new DecksProvider(actionDatas, questionDatas);
-                }
-                else
-                {
-                    errors = Config.Texts.WrongArrangementFormat.Format(string.Join(Environment.NewLine, errorLines));
                 }
             }
             else
             {
-                errors = Config.Texts.WrongTagsFormat.Format(string.Join("", allTags), string.Join("", optionsTags));
+                string line = string.Format(Config.Texts.WrongTagsFormat,
+                    string.Join(Config.Texts.TagSeparator, allTags),
+                    string.Join(Config.Texts.TagSeparator, optionsTags));
+                _decksLoadErrors.Add(line);
             }
-        }
-
-        if (errors is not null)
-        {
-            await errors.SendAsync(this, chat);
         }
     }
 
@@ -166,6 +158,18 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
         MessageTemplateText message = game.IncludeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
         return message.SendAsync(this, chat);
+    }
+
+    private MessageTemplateText GetDecksLoadStatus()
+    {
+        if (_decksLoadErrors.Count == 0)
+        {
+            return Config.Texts.StatusMessageEndSuccess;
+        }
+
+        string errors = string.Join(Config.Texts.ErrorsSeparator,
+            _decksLoadErrors.Select(e => string.Format(Config.Texts.ErrorFormat, e)));
+        return Config.Texts.StatusMessageEndFailedFormat.Format(errors);
     }
 
     private async Task ReportPlayersAsync(Chat chat, Game.Game game, MessageTemplate template)
@@ -377,4 +381,5 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     private DecksProvider? _decksProvider;
     private readonly Sheet _actionsSheet;
     private readonly Sheet _questionsSheet;
+    private readonly List<string> _decksLoadErrors = new();
 }
