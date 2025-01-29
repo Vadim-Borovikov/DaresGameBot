@@ -91,27 +91,11 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string DrawActionCaption { get; init; } = null!;
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public string DrawQuestionCaption { get; init; } = null!;
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
     public string NewGameCaption { get; init; } = null!;
 
     [UsedImplicitly]
     [Required]
     public MessageTemplateText ReadingDecks { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
-    public MessageTemplateText DeckEnded { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
-    public MessageTemplateText GameOver { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
