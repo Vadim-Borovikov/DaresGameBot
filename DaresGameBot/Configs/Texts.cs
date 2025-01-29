@@ -145,10 +145,13 @@ public class Texts : AbstractBot.Configs.Texts
 
     [Required]
     [MinLength(1)]
-    public MessageTemplateText StatusMessageEndSuccess { get; init; } = null!;
+    public MessageTemplateText StatusMessageEndSuccessFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]
     public MessageTemplateText StatusMessageEndFailedFormat { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText EquipmentPrefixFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
@@ -160,4 +163,14 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string ErrorFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public string EquipmentFormat { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string EquipmentSeparatorMessage { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string EquipmentSeparatorSheet { get; init; } = null!;
 }

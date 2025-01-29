@@ -19,6 +19,7 @@ using DaresGameBot.Game;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Decks;
 using DaresGameBot.Game.Players;
+using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.GameButtons;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 
@@ -59,11 +60,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Contexts.Remove(chat.Id);
 
         _decksLoadErrors.Clear();
-
+        _decksEquipment.Clear();
         await using (await StatusMessage.CreateAsync(this, chat, Config.Texts.ReadingDecks, GetDecksLoadStatus))
         {
-            List<ActionData> actionDatas =
-                await _actionsSheet.LoadAsync<ActionData>(Config.ActionsRange);
+            List<ActionData> actionDatas = await _actionsSheet.LoadAsync<ActionData>(Config.ActionsRange);
 
             HashSet<string> allTags = new();
             Dictionary<int, HashSet<string>> tags = new();
@@ -79,6 +79,14 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                     tags[hash] = new HashSet<string>();
                 }
                 tags[hash].Add(data.Tag);
+
+                if (data.Equipment is not null && (data.Equipment.Length > 0))
+                {
+                    foreach (string item in data.Equipment.Split(Config.Texts.EquipmentSeparatorSheet))
+                    {
+                        _decksEquipment.Add(item);
+                    }
+                }
             }
 
             List<string> optionsTags = Config.ActionOptions.Keys.ToList();
@@ -164,11 +172,18 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         if (_decksLoadErrors.Count == 0)
         {
-            return Config.Texts.StatusMessageEndSuccess;
+            MessageTemplateText? equipmentPart = null;
+            if (_decksEquipment.Count > 0)
+            {
+                string equipment = TextHelper.FormatAndJoin(_decksEquipment, Config.Texts.EquipmentFormat,
+                    Config.Texts.EquipmentSeparatorMessage);
+                equipmentPart = Config.Texts.EquipmentPrefixFormat.Format(equipment);
+            }
+            return Config.Texts.StatusMessageEndSuccessFormat.Format(equipmentPart);
         }
 
-        string errors = string.Join(Config.Texts.ErrorsSeparator,
-            _decksLoadErrors.Select(e => string.Format(Config.Texts.ErrorFormat, e)));
+        string errors =
+            TextHelper.FormatAndJoin(_decksLoadErrors, Config.Texts.ErrorFormat, Config.Texts.ErrorsSeparator);
         return Config.Texts.StatusMessageEndFailedFormat.Format(errors);
     }
 
@@ -381,5 +396,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     private DecksProvider? _decksProvider;
     private readonly Sheet _actionsSheet;
     private readonly Sheet _questionsSheet;
+    private readonly HashSet<string> _decksEquipment = new();
     private readonly List<string> _decksLoadErrors = new();
 }

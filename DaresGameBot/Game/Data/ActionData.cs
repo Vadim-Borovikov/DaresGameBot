@@ -19,18 +19,23 @@ internal sealed class ActionData : CardData
     public byte Partners;
 
     [UsedImplicitly]
-    [SheetField(ImageTitle)]
-    public string? ImagePath;
-
-    [UsedImplicitly]
     [Required]
     [SheetField(CompatablePartnersTitle)]
     public bool CompatablePartners;
 
     public ArrangementType ArrangementType;
 
+    [UsedImplicitly]
+    [SheetField(ImageTitle)]
+    public string? ImagePath;
+
+    [UsedImplicitly]
+    [SheetField(EquipmentTitle)]
+    public string? Equipment;
+
     private const string TagTitle = "Символ";
-    private const string ImageTitle = "Картинка";
     private const string PartnersTitle = "Партнёры";
     private const string CompatablePartnersTitle = "Партнёры должны совмещаться друг с другом";
+    private const string ImageTitle = "Картинка";
+    private const string EquipmentTitle = "Снаряжение";
 }
