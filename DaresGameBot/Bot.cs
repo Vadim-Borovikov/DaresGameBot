@@ -235,7 +235,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
 
-        ParseMode? parseMode = template.MarkdownV2 ? ParseMode.MarkdownV2 : null;
+        ParseMode parseMode = template.MarkdownV2 ? ParseMode.MarkdownV2 : ParseMode.None;
         if (template.KeyboardProvider is null)
         {
             throw new InvalidOperationException();

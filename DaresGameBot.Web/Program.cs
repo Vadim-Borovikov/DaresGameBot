@@ -17,18 +17,14 @@ internal static class Program
         {
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-            Config? config = Configure(builder);
-            if (config is null)
-            {
-                throw new NullReferenceException("Can't load config.");
-            }
-
+            Config config = Configure(builder) ?? throw new NullReferenceException("Can't load config.");
             clock = new Clock(config.SystemTimeZoneIdLogs);
             logger = new Logger(clock);
             logger.LogStartup();
 
             IServiceCollection services = builder.Services;
-            services.AddControllersWithViews().AddNewtonsoftJson();
+            services.AddControllersWithViews();
+            services.ConfigureTelegramBotMvc();
 
             AddBotTo(services);
 
