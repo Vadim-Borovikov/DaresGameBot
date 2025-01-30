@@ -25,9 +25,10 @@ internal sealed class Repository : ICompatibility
         while (!_infos[Current].Active);
     }
 
-    public void UpdateList(List<PlayerListUpdateData> updateDatas)
+    public bool UpdateList(List<PlayerListUpdateData> updateDatas)
     {
         ushort points = _infos.Count > 0 ? _infos.Values.Where(v => v.Active).Min(v => v.Points) : (ushort)0;
+        bool changed = false;
 
         foreach (PlayerListUpdateData data in updateDatas)
         {
@@ -36,16 +37,22 @@ internal sealed class Repository : ICompatibility
                 case AddOrUpdatePlayerData a:
                     if (_infos.ContainsKey(a.Name))
                     {
-                        _infos[a.Name].GroupChecker = a.Checker;
+                        if (_infos[a.Name].GroupChecker != a.Checker)
+                        {
+                            _infos[a.Name].GroupChecker = a.Checker;
+                            changed = true;
+                        }
                         if (!_infos[a.Name].Active)
                         {
                             _infos[a.Name].Active = true;
                             _infos[a.Name].Points = ushort.Max(points, _infos[a.Name].Points);
+                            changed = true;
                         }
                     }
                     else
                     {
                         _infos[a.Name] = new PlayerInfo(a.Checker, points);
+                        changed = true;
                     }
 
                     if (!_names.Contains(a.Name))
@@ -54,24 +61,30 @@ internal sealed class Repository : ICompatibility
                     }
                     break;
                 case TogglePlayerData t:
-                    if (_infos.ContainsKey(t.Name))
+                    if (!_infos.ContainsKey(t.Name))
                     {
-                        if (_infos[t.Name].Active)
+                        break;
+                    }
+
+                    if (_infos[t.Name].Active)
+                    {
+                        _infos[t.Name].Active = false;
+                        if (Current == t.Name)
                         {
-                            _infos[t.Name].Active = false;
-                            if (Current == t.Name)
-                            {
-                                MoveNext();
-                            }
-                        }
-                        else
-                        {
-                            _infos[t.Name].Active = true;
+                            MoveNext();
                         }
                     }
+                    else
+                    {
+                        _infos[t.Name].Active = true;
+                    }
+                    changed = true;
+
                     break;
             }
         }
+
+        return changed;
     }
 
     public bool AreCompatable(string p1, string p2)

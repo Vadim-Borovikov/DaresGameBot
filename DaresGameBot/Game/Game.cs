@@ -8,6 +8,7 @@ using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Players;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 using GryphonUtilities.Extensions;
+using Telegram.Bot.Types;
 
 namespace DaresGameBot.Game;
 
@@ -18,6 +19,9 @@ internal sealed class Game
         ArrangementPresented,
         CardRevealed
     }
+
+    public Message? PlayersMessage;
+    public bool PlayersMessageShowsPoints;
 
     public string CurrentPlayer => _players.Current;
 
@@ -97,7 +101,7 @@ internal sealed class Game
         return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, questionData, CurrentPlayer);
     }
 
-    public void UpdatePlayers(List<PlayerListUpdateData> updateDatas) => _players.UpdateList(updateDatas);
+    public bool UpdatePlayers(List<PlayerListUpdateData> updateDatas) => _players.UpdateList(updateDatas);
 
     public void ToggleLanguages() => IncludeEn = !IncludeEn;
 

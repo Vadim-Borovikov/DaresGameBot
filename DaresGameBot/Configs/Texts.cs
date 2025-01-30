@@ -31,11 +31,11 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public MessageTemplateText NewGameFormat { get; init; } = null!;
+    public MessageTemplateText NewGameStart { get; init; } = null!;
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public MessageTemplateText AcceptedFormat { get; init; } = null!;
+    public MessageTemplateText Accepted { get; init; } = null!;
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
@@ -142,6 +142,9 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string PlayerFormat { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string PlayerFormatPointsPostfix { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

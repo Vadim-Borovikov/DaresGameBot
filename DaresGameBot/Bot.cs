@@ -55,6 +55,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         await UpdateDecksAsync(chat);
     }
 
+    protected override KeyboardProvider GetDefaultKeyboardProvider(Chat _) => KeyboardProvider.Same;
+
     internal async Task UpdateDecksAsync(Chat chat)
     {
         Contexts.Remove(chat.Id);
@@ -135,16 +137,28 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             game = StartNewGame(updates);
             Contexts[sender.Id] = game;
 
-            await ReportPlayersAsync(chat, game, Config.Texts.NewGameFormat);
+            await Config.Texts.NewGameStart.SendAsync(this, chat);
+            Message pin = await ReportPlayersAsync(chat, game, true);
+
+            await UnpinAllChatMessagesAsync(chat);
+            await PinChatMessageAsync(chat, pin.MessageId);
+
+            await DrawActionOrQuestionAsync(chat, game);
         }
         else
         {
-            game.UpdatePlayers(updates);
+            bool changed = game.UpdatePlayers(updates);
+            if (!changed)
+            {
+                return;
+            }
 
-            await ReportPlayersAsync(chat, game, Config.Texts.AcceptedFormat);
+            await Config.Texts.Accepted.SendAsync(this, chat);
+
+            await DrawActionOrQuestionAsync(chat, game);
+
+            await ReportPlayersAsync(chat, game, true);
         }
-
-        await DrawActionOrQuestionAsync(chat, game);
     }
 
     internal Task OnNewGameAsync(Chat chat, User sender)
@@ -187,20 +201,38 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return Config.Texts.StatusMessageEndFailedFormat.Format(errors);
     }
 
-    private async Task ReportPlayersAsync(Chat chat, Game.Game game, MessageTemplate template)
+    private async Task<Message> ReportPlayersAsync(Chat chat, Game.Game game, bool includePoints)
     {
-        MessageTemplateText playersText =
-            Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, GetPlayerList(game)));
+        IEnumerable<string> players = GetPlayerList(game, includePoints);
+        MessageTemplateText messageText =
+            Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, players));
 
-        MessageTemplate messageText = template.Format(playersText);
-        Message message = await messageText.SendAsync(this, chat);
-        await UnpinAllChatMessagesAsync(chat);
-        await PinChatMessageAsync(chat, message.MessageId);
+        if (game.PlayersMessage is null)
+        {
+            game.PlayersMessage = await messageText.SendAsync(this, chat);
+        }
+        else
+        {
+            await EditMessageTextAsync(chat, game.PlayersMessage.MessageId, messageText.EscapeIfNeeded());
+        }
+
+        game.PlayersMessageShowsPoints = includePoints;
+        return game.PlayersMessage;
     }
 
-    private IEnumerable<string> GetPlayerList(Game.Game game)
+    private IEnumerable<string> GetPlayerList(Game.Game game, bool includePoints)
     {
-        return game.GetPlayers().Select(p => string.Format(Config.Texts.PlayerFormat, p, game.GetPoints(p)));
+        return game.GetPlayers().Select(p => GetPlayerLine(p, game, includePoints));
+    }
+
+    private string GetPlayerLine(string name, Game.Game game, bool includePoints)
+    {
+        string? pointsPostfix = null;
+        if (includePoints)
+        {
+            pointsPostfix = string.Format(Config.Texts.PlayerFormatPointsPostfix, game.GetPoints(name));
+        }
+        return string.Format(Config.Texts.PlayerFormat, name, pointsPostfix);
     }
 
     private Game.Game StartNewGame(List<PlayerListUpdateData> updates)
@@ -229,12 +261,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         game.OnActionPurposed(arrangement);
     }
 
-    internal Task RevealCardAsync(Chat chat, int messageId, User sender, GameButtonData buttonData)
+    internal async Task RevealCardAsync(Chat chat, int messageId, User sender, GameButtonData buttonData)
     {
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
         {
-            return OnNewGameAsync(chat, sender);
+            await OnNewGameAsync(chat, sender);
+            return;
         }
 
         MessageTemplate template;
@@ -259,8 +292,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         {
             throw new InvalidOperationException();
         }
-        return EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
+
+        await EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
             replyMarkup: template.KeyboardProvider.Keyboard as InlineKeyboardMarkup);
+        if (game.PlayersMessageShowsPoints)
+        {
+            await ReportPlayersAsync(chat, game, false);
+        }
     }
 
     private MessageTemplate CreateQuestionTemplate(Game.Game game)
