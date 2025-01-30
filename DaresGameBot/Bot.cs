@@ -59,6 +59,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     internal async Task UpdateDecksAsync(Chat chat)
     {
+        await UnpinAllChatMessagesAsync(chat);
         Contexts.Remove(chat.Id);
 
         _decksLoadErrors.Clear();
@@ -140,7 +141,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             await Config.Texts.NewGameStart.SendAsync(this, chat);
             Message pin = await ReportPlayersAsync(chat, game, true);
 
-            await UnpinAllChatMessagesAsync(chat);
             await PinChatMessageAsync(chat, pin.MessageId);
 
             await DrawActionOrQuestionAsync(chat, game);
@@ -161,11 +161,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
     }
 
-    internal Task OnNewGameAsync(Chat chat, User sender)
+    internal async Task OnNewGameAsync(Chat chat, User sender)
     {
+        await UnpinAllChatMessagesAsync(chat);
         Contexts.Remove(sender.Id);
         MessageTemplateText message = Config.Texts.NewGame;
-        return message.SendAsync(this, chat);
+        await message.SendAsync(this, chat);
     }
 
     internal Task OnToggleLanguagesAsync(Chat chat, User sender)
