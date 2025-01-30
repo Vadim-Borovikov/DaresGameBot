@@ -44,8 +44,7 @@ internal sealed class Repository : ICompatibility
                         }
                         if (!_infos[a.Name].Active)
                         {
-                            _infos[a.Name].Active = true;
-                            _infos[a.Name].Points = ushort.Max(points, _infos[a.Name].Points);
+                            _infos[a.Name].ActivateWith(points);
                             changed = true;
                         }
                     }
@@ -76,7 +75,7 @@ internal sealed class Repository : ICompatibility
                     }
                     else
                     {
-                        _infos[t.Name].Active = true;
+                        _infos[t.Name].ActivateWith(points);
                     }
                     changed = true;
 
