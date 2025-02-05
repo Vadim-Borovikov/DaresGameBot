@@ -1,17 +1,16 @@
 using System;
-using DaresGameBot.Game.Matchmaking;
 
 namespace DaresGameBot.Game.Players;
 
 internal sealed class PlayerInfo
 {
-    public GroupChecker GroupChecker;
+    public GroupsInfo GroupInfo;
     public ushort Points;
     public bool Active;
 
-    public PlayerInfo(GroupChecker groupChecker, ushort points)
+    public PlayerInfo(GroupsInfo groupInfo, ushort points)
     {
-        GroupChecker = groupChecker;
+        GroupInfo = groupInfo;
         Points = points;
         Active = true;
     }

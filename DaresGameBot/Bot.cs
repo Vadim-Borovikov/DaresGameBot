@@ -17,6 +17,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using DaresGameBot.Game;
 using DaresGameBot.Game.Data;
+using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Game.Players;
 using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.GameButtons;
@@ -251,7 +252,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
         Repository repository = new(updates);
         PointsManager pointsManager = new(Config.ActionOptions, repository);
-        DistributedMatchmaker matchmaker = new(repository, pointsManager);
+        GroupCompatibility compatibility = new();
+        DistributedMatchmaker matchmaker = new(repository, pointsManager, compatibility);
         return new Game.Game(Config, _actionDeck, _questionsDeck, repository, pointsManager, matchmaker);
     }
 

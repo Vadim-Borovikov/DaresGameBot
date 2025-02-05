@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Game.Data;
+using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Helpers;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Game.Players;
@@ -9,8 +10,8 @@ namespace DaresGameBot.Game.Matchmaking;
 
 internal sealed class DistributedMatchmaker : Matchmaker
 {
-    public DistributedMatchmaker(Repository players, PointsManager pointsManager)
-        : base(players)
+    public DistributedMatchmaker(Repository players, PointsManager pointsManager, ICompatibility compatibility)
+        : base(players, compatibility)
     {
         _interactionRepository = new InteractionRepository(pointsManager);
     }

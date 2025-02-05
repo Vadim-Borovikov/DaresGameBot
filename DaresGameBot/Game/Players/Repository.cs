@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Matchmaking;
+using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 
@@ -38,9 +38,9 @@ internal sealed class Repository
                 case AddOrUpdatePlayerData a:
                     if (_infos.ContainsKey(a.Name))
                     {
-                        if (_infos[a.Name].GroupChecker != a.Checker)
+                        if (_infos[a.Name].GroupInfo != a.Info)
                         {
-                            _infos[a.Name].GroupChecker = a.Checker;
+                            _infos[a.Name].GroupInfo = a.Info;
                             changed = true;
                         }
                         if (!_infos[a.Name].Active)
@@ -51,7 +51,7 @@ internal sealed class Repository
                     }
                     else
                     {
-                        _infos[a.Name] = new PlayerInfo(a.Checker, points);
+                        _infos[a.Name] = new PlayerInfo(a.Info, points);
                         changed = true;
                     }
 
@@ -87,14 +87,20 @@ internal sealed class Repository
         return changed;
     }
 
-    public bool AreCompatable(string p1, string p2)
+    public bool AreCompatable(string p1, string p2, ICompatibility compatibility)
     {
-        return (p1 != p2) && Compatibility.AreCompatable(_infos[p1], _infos[p2]);
+        return (p1 != p2) && compatibility.AreCompatable(_infos[p1], _infos[p2]);
     }
 
-    public bool AreCompatable(IReadOnlyList<string> players) => ListHelper.EnumeratePairs(players).All(AreCompatable);
+    public bool AreCompatable(IReadOnlyList<string> players, ICompatibility compatibility)
+    {
+        return ListHelper.EnumeratePairs(players).All(p => AreCompatable(p, compatibility));
+    }
 
-    private bool AreCompatable((string, string) pair) => AreCompatable(pair.Item1, pair.Item2);
+    private bool AreCompatable((string, string) pair, ICompatibility compatibility)
+    {
+        return AreCompatable(pair.Item1, pair.Item2, compatibility);
+    }
 
     private readonly List<string> _names = new();
     private readonly Dictionary<string, PlayerInfo> _infos = new();
