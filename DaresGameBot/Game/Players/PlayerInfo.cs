@@ -1,5 +1,5 @@
 using System;
-using DaresGameBot.Game.Matchmaking.PlayerCheck;
+using DaresGameBot.Game.Matchmaking;
 
 namespace DaresGameBot.Game.Players;
 

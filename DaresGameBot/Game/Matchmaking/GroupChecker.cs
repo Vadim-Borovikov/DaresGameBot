@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DaresGameBot.Game.Matchmaking.PlayerCheck;
+namespace DaresGameBot.Game.Matchmaking;
 
 internal readonly struct GroupChecker : IEquatable<GroupChecker>
 {

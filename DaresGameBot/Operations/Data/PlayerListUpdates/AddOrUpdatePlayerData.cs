@@ -1,4 +1,4 @@
-﻿using DaresGameBot.Game.Matchmaking.PlayerCheck;
+﻿using DaresGameBot.Game.Matchmaking;
 
 namespace DaresGameBot.Operations.Data.PlayerListUpdates;
 

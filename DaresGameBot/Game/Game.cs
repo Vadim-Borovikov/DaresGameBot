@@ -55,9 +55,7 @@ internal sealed class Game
         CurrentState = State.ArrangementPresented;
 
         ArrangementType? arrangementType = TrySelectArrangement();
-        return arrangementType is null
-            ? null
-            : _companionsSelector.SelectCompanionsFor(_players.Current, arrangementType.Value);
+        return arrangementType is null ? null : _companionsSelector.SelectCompanionsFor(arrangementType.Value);
     }
 
     public ActionInfo DrawAction(Arrangement arrangement, string tag)
@@ -106,7 +104,7 @@ internal sealed class Game
 
     private ArrangementType? TrySelectArrangement()
     {
-        ushort? id = _actionDeck.GetRandomId(c => _companionsSelector.CanPlay(CurrentPlayer, c.ArrangementType));
+        ushort? id = _actionDeck.GetRandomId(c => _companionsSelector.CanPlay(c.ArrangementType));
         if (id is null)
         {
             return null;

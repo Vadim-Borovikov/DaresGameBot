@@ -12,7 +12,6 @@ internal sealed class DistributedMatchmaker : Matchmaker
     public DistributedMatchmaker(Repository players, PointsManager pointsManager)
         : base(players)
     {
-        _players = players;
         _interactionRepository = new InteractionRepository(pointsManager);
     }
 
@@ -26,10 +25,9 @@ internal sealed class DistributedMatchmaker : Matchmaker
         _interactionRepository.OnInteractionCompleted(player, arrangement, tag, completedFully);
     }
 
-    public override IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all,
-        ArrangementType arrangementType)
+    public override IEnumerable<string>? EnumerateMatches(ArrangementType arrangementType)
     {
-        IEnumerable<string> choices = EnumerateCompatablePlayers(player, all);
+        IEnumerable<string> choices = EnumerateCompatablePlayers();
         string[] shuffled = RandomHelper.Shuffle(choices);
         if (shuffled.Length < arrangementType.Partners)
         {
@@ -40,19 +38,18 @@ internal sealed class DistributedMatchmaker : Matchmaker
         {
             IEnumerable<IReadOnlyList<string>> groups =
                 EnumerateIntercompatableGroups(shuffled, arrangementType.Partners);
-            return groups.OrderBy(g => _interactionRepository.GetInteractions(player, g, false))
-                         .ThenByDescending(g => _interactionRepository.GetInteractions(player, g, true))
-                         .ThenBy(g => g.Sum(p => _players.GetPoints(p)))
+            return groups.OrderBy(g => _interactionRepository.GetInteractions(Players.Current, g, false))
+                         .ThenByDescending(g => _interactionRepository.GetInteractions(Players.Current, g, true))
+                         .ThenBy(g => g.Sum(p => Players.GetPoints(p)))
                          .First();
         }
 
-        return shuffled.OrderBy(p => _interactionRepository.GetInteractions(player, p, false))
-                       .ThenByDescending(p => _interactionRepository.GetInteractions(player, p, true))
-                       .ThenBy(_players.GetPoints)
+        return shuffled.OrderBy(p => _interactionRepository.GetInteractions(Players.Current, p, false))
+                       .ThenByDescending(p => _interactionRepository.GetInteractions(Players.Current, p, true))
+                       .ThenBy(Players.GetPoints)
                        .Take(arrangementType.Partners)
                        .ToList();
     }
 
     private readonly InteractionRepository _interactionRepository;
-    private readonly Repository _players;
 }

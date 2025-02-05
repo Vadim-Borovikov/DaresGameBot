@@ -13,22 +13,22 @@ internal sealed class CompanionsSelector
         _players = players;
     }
 
-    public bool CanPlay(string player, ArrangementType arrangementType)
+    public bool CanPlay(ArrangementType arrangementType)
     {
         if (arrangementType.Partners >= _players.Count)
         {
             return false;
         }
 
-        return (arrangementType.Partners == 0) || _matchmaker.AreThereAnyMatches(player, _players, arrangementType);
+        return (arrangementType.Partners == 0) || _matchmaker.AreThereAnyMatches(arrangementType);
     }
 
-    public Arrangement SelectCompanionsFor(string player, ArrangementType arrangementType)
+    public Arrangement SelectCompanionsFor(ArrangementType arrangementType)
     {
         List<string> partners = new();
         if (arrangementType.Partners > 0)
         {
-            partners = _matchmaker.EnumerateMatches(player, _players, arrangementType)
+            partners = _matchmaker.EnumerateMatches(arrangementType)
                                   .Denull("No suitable partners found")
                                   .ToList();
         }

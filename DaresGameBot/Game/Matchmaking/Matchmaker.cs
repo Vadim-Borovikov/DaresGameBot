@@ -2,21 +2,21 @@
 using System.Linq;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Helpers;
-using DaresGameBot.Game.Matchmaking.PlayerCheck;
 using DaresGameBot.Game.Matchmaking.Interactions;
 
 namespace DaresGameBot.Game.Matchmaking;
 
 internal abstract class Matchmaker : IInteractionSubscriber
 {
-    protected Matchmaker(ICompatibility compatibility) => _compatibility = compatibility;
+    protected Matchmaker(Players.Repository players) => Players = players;
 
     public abstract void OnInteractionPurposed(string player, Arrangement arrangement);
-    public abstract void OnInteractionCompleted(string player, Arrangement arrangement, string tag, bool completedFully);
+    public abstract void OnInteractionCompleted(string player, Arrangement arrangement, string tag,
+        bool completedFully);
 
-    public bool AreThereAnyMatches(string player, IEnumerable<string> all, ArrangementType arrangementType)
+    public bool AreThereAnyMatches(ArrangementType arrangementType)
     {
-        List<string> choices = EnumerateCompatablePlayers(player, all).ToList();
+        List<string> choices = EnumerateCompatablePlayers().ToList();
         if (choices.Count < arrangementType.Partners)
         {
             return false;
@@ -26,20 +26,19 @@ internal abstract class Matchmaker : IInteractionSubscriber
                || EnumerateIntercompatableGroups(choices, arrangementType.Partners).Any();
     }
 
-    public abstract IEnumerable<string>? EnumerateMatches(string player, IEnumerable<string> all,
-        ArrangementType arrangementType);
+    public abstract IEnumerable<string>? EnumerateMatches(ArrangementType arrangementType);
 
-    protected IEnumerable<string> EnumerateCompatablePlayers(string player, IEnumerable<string> all)
+    protected IEnumerable<string> EnumerateCompatablePlayers()
     {
-        return all.Where(p => _compatibility.AreCompatable(p, player));
+        return Players.GetNames().Where(p => Players.AreCompatable(p, Players.Current));
     }
 
     protected IEnumerable<IReadOnlyList<string>> EnumerateIntercompatableGroups(IList<string> choices, byte size)
     {
         return ListHelper.EnumerateSubsets(choices, size)
                          .Select(s => s.AsReadOnly())
-                         .Where(_compatibility.AreCompatable);
+                         .Where(Players.AreCompatable);
     }
 
-    private readonly ICompatibility _compatibility;
+    protected readonly Players.Repository Players;
 }

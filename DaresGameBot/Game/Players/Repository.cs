@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Matchmaking.PlayerCheck;
+using DaresGameBot.Game.Matchmaking;
+using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 
 namespace DaresGameBot.Game.Players;
 
-internal sealed class Repository : ICompatibility
+internal sealed class Repository
 {
     public IReadOnlyList<string> GetNames() => _names.Where(n => _infos[n].Active).ToList().AsReadOnly();
 
@@ -27,7 +28,7 @@ internal sealed class Repository : ICompatibility
 
     public bool UpdateList(List<PlayerListUpdateData> updateDatas)
     {
-        ushort points = _infos.Count > 0 ? _infos.Values.Where(v => v.Active).Min(v => v.Points) : (ushort)0;
+        ushort points = _infos.Count > 0 ? _infos.Values.Where(v => v.Active).Min(v => v.Points) : (ushort) 0;
         bool changed = false;
 
         foreach (PlayerListUpdateData data in updateDatas)
@@ -88,21 +89,12 @@ internal sealed class Repository : ICompatibility
 
     public bool AreCompatable(string p1, string p2)
     {
-        if (p1 == p2)
-        {
-            return false;
-        }
-
-        if (!_infos[p1].Active || !_infos[p2].Active)
-        {
-            return false;
-        }
-
-        GroupChecker info1 = _infos[p1].GroupChecker;
-        GroupChecker info2 = _infos[p2].GroupChecker;
-
-        return info1.WouldInteractWith(info2) && info2.WouldInteractWith(info1);
+        return (p1 != p2) && Compatibility.AreCompatable(_infos[p1], _infos[p2]);
     }
+
+    public bool AreCompatable(IReadOnlyList<string> players) => ListHelper.EnumeratePairs(players).All(AreCompatable);
+
+    private bool AreCompatable((string, string) pair) => AreCompatable(pair.Item1, pair.Item2);
 
     private readonly List<string> _names = new();
     private readonly Dictionary<string, PlayerInfo> _infos = new();
