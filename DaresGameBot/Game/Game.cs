@@ -1,9 +1,7 @@
 ﻿using DaresGameBot.Configs;
-using DaresGameBot.Game.Matchmaking.ActionCheck;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using System.Collections.Generic;
 using DaresGameBot.Game.Matchmaking;
-using DaresGameBot.Game.Decks;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Players;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
@@ -33,16 +31,16 @@ internal sealed class Game
 
     public ushort GetPoints(string name) => _players.GetPoints(name);
 
-    public Game(Config config, DecksProvider decksProvider, Repository players, PointsManager pointsManager,
-        Matchmaker matchmaker)
+    public Game(Config config, Deck<ActionData> actionDeck, Deck<CardData> questionsDeck, Repository players,
+        PointsManager pointsManager, Matchmaker matchmaker)
     {
         _config = config;
+        _actionDeck = actionDeck;
+        _questionsDeck = questionsDeck;
         _players = players;
 
-        _companionsSelector = new CompanionsSelector(matchmaker, GetPlayers());
-        _actionDeck = decksProvider.GetActionDeck(_companionsSelector);
-        _questionsDeck = decksProvider.GetQuestionDeck();
 
+        _companionsSelector = new CompanionsSelector(matchmaker, GetPlayers());
         _interactionSubscribers = new List<IInteractionSubscriber>
         {
             matchmaker,
@@ -55,7 +53,8 @@ internal sealed class Game
     public Arrangement? TryDrawArrangement()
     {
         CurrentState = State.ArrangementPresented;
-        ArrangementType? arrangementType = _actionDeck.TrySelectArrangement(_players);
+
+        ArrangementType? arrangementType = TrySelectArrangement();
         return arrangementType is null
             ? null
             : _companionsSelector.SelectCompanionsFor(_players.Current, arrangementType.Value);
@@ -105,9 +104,21 @@ internal sealed class Game
 
     public void ToggleLanguages() => IncludeEn = !IncludeEn;
 
+    private ArrangementType? TrySelectArrangement()
+    {
+        ushort? id = _actionDeck.GetRandomId(c => _companionsSelector.CanPlay(CurrentPlayer, c.ArrangementType));
+        if (id is null)
+        {
+            return null;
+        }
+
+        ActionData card = _actionDeck.GetCard(id.Value);
+        return card.ArrangementType;
+    }
+
     private readonly Config _config;
-    private readonly ActionDeck _actionDeck;
-    private readonly QuestionDeck _questionsDeck;
+    private readonly Deck<ActionData> _actionDeck;
+    private readonly Deck<CardData> _questionsDeck;
     private readonly Repository _players;
     private readonly List<IInteractionSubscriber> _interactionSubscribers;
     private readonly CompanionsSelector _companionsSelector;

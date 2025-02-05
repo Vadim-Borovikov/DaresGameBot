@@ -17,7 +17,6 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using DaresGameBot.Game;
 using DaresGameBot.Game.Data;
-using DaresGameBot.Game.Decks;
 using DaresGameBot.Game.Players;
 using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.GameButtons;
@@ -110,8 +109,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
                 if (_decksLoadErrors.Count == 0)
                 {
+                    _actionDeck = new Deck<ActionData>(actionDatas);
+
                     List<CardData> questionDatas = await _questionsSheet.LoadAsync<CardData>(Config.QuestionsRange);
-                    _decksProvider = new DecksProvider(actionDatas, questionDatas);
+                    _questionsDeck = new Deck<CardData>(questionDatas);
                 }
             }
             else
@@ -238,15 +239,20 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     private Game.Game StartNewGame(List<PlayerListUpdateData> updates)
     {
-        if (_decksProvider is null)
+        if (_actionDeck is null)
         {
-            throw new ArgumentNullException(nameof(_decksProvider));
+            throw new ArgumentNullException(nameof(_actionDeck));
+        }
+
+        if (_questionsDeck is null)
+        {
+            throw new ArgumentNullException(nameof(_questionsDeck));
         }
 
         Repository repository = new(updates);
         PointsManager pointsManager = new(Config.ActionOptions, repository);
         DistributedMatchmaker matchmaker = new(repository, pointsManager);
-        return new Game.Game(Config, _decksProvider, repository, pointsManager, matchmaker);
+        return new Game.Game(Config, _actionDeck, _questionsDeck, repository, pointsManager, matchmaker);
     }
 
     private async Task DrawActionOrQuestionAsync(Chat chat, Game.Game game)
@@ -432,9 +438,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new List<InlineKeyboardButton> { button };
     }
 
-    private DecksProvider? _decksProvider;
     private readonly Sheet _actionsSheet;
     private readonly Sheet _questionsSheet;
+    private Deck<ActionData>? _actionDeck;
+    private Deck<CardData>? _questionsDeck;
     private readonly HashSet<string> _decksEquipment = new();
     private readonly List<string> _decksLoadErrors = new();
 }

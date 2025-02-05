@@ -3,9 +3,9 @@ using System.Linq;
 using DaresGameBot.Game.Data;
 using GryphonUtilities.Extensions;
 
-namespace DaresGameBot.Game.Matchmaking.ActionCheck;
+namespace DaresGameBot.Game.Matchmaking;
 
-internal sealed class CompanionsSelector : IActionChecker
+internal sealed class CompanionsSelector
 {
     public CompanionsSelector(Matchmaker matchmaker, IReadOnlyList<string> players)
     {
