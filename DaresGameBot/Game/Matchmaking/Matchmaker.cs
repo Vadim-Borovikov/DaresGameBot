@@ -3,6 +3,7 @@ using System.Linq;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Helpers;
 using DaresGameBot.Game.Matchmaking.Interactions;
+using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Game.Matchmaking;
 
@@ -14,19 +15,25 @@ internal abstract class Matchmaker : IInteractionSubscriber
     public abstract void OnInteractionCompleted(string player, Arrangement arrangement, string tag,
         bool completedFully);
 
-    public bool AreThereAnyMatches(ArrangementType arrangementType)
+    public bool CanPlay(ArrangementType arrangementType)
     {
-        List<string> choices = EnumerateCompatablePlayers().ToList();
-        if (choices.Count < arrangementType.Partners)
+        if (arrangementType.Partners >= Players.GetNames().Count)
         {
             return false;
         }
 
-        return !arrangementType.CompatablePartners
-               || EnumerateIntercompatableGroups(choices, arrangementType.Partners).Any();
+        return (arrangementType.Partners == 0) || AreThereAnyMatches(arrangementType);
     }
 
-    public abstract IEnumerable<string>? EnumerateMatches(ArrangementType arrangementType);
+    public Arrangement SelectCompanionsFor(ArrangementType arrangementType)
+    {
+        List<string> partners = new();
+        if (arrangementType.Partners > 0)
+        {
+            partners = EnumerateMatches(arrangementType).Denull("No suitable partners found").ToList();
+        }
+        return new Arrangement(partners, arrangementType.CompatablePartners);
+    }
 
     protected IEnumerable<string> EnumerateCompatablePlayers()
     {
@@ -39,6 +46,20 @@ internal abstract class Matchmaker : IInteractionSubscriber
                          .Select(s => s.AsReadOnly())
                          .Where(Players.AreCompatable);
     }
+
+    private bool AreThereAnyMatches(ArrangementType arrangementType)
+    {
+        List<string> choices = EnumerateCompatablePlayers().ToList();
+        if (choices.Count < arrangementType.Partners)
+        {
+            return false;
+        }
+
+        return !arrangementType.CompatablePartners
+               || EnumerateIntercompatableGroups(choices, arrangementType.Partners).Any();
+    }
+
+    protected abstract IEnumerable<string>? EnumerateMatches(ArrangementType arrangementType);
 
     protected readonly Players.Repository Players;
 }

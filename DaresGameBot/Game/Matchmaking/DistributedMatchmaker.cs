@@ -25,7 +25,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
         _interactionRepository.OnInteractionCompleted(player, arrangement, tag, completedFully);
     }
 
-    public override IEnumerable<string>? EnumerateMatches(ArrangementType arrangementType)
+    protected override IEnumerable<string>? EnumerateMatches(ArrangementType arrangementType)
     {
         IEnumerable<string> choices = EnumerateCompatablePlayers();
         string[] shuffled = RandomHelper.Shuffle(choices);

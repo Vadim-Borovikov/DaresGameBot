@@ -27,7 +27,7 @@ internal sealed class Game
 
     public bool IncludeEn { get; private set; }
 
-    public IReadOnlyList<string> GetPlayers() => _players.GetNames();
+    public IEnumerable<string> GetPlayers() => _players.GetNames();
 
     public ushort GetPoints(string name) => _players.GetPoints(name);
 
@@ -38,12 +38,11 @@ internal sealed class Game
         _actionDeck = actionDeck;
         _questionsDeck = questionsDeck;
         _players = players;
+        _matchmaker = matchmaker;
 
-
-        _companionsSelector = new CompanionsSelector(matchmaker, GetPlayers());
         _interactionSubscribers = new List<IInteractionSubscriber>
         {
-            matchmaker,
+            _matchmaker,
             pointsManager
         };
     }
@@ -55,7 +54,7 @@ internal sealed class Game
         CurrentState = State.ArrangementPresented;
 
         ArrangementType? arrangementType = TrySelectArrangement();
-        return arrangementType is null ? null : _companionsSelector.SelectCompanionsFor(arrangementType.Value);
+        return arrangementType is null ? null : _matchmaker.SelectCompanionsFor(arrangementType.Value);
     }
 
     public ActionInfo DrawAction(Arrangement arrangement, string tag)
@@ -104,7 +103,7 @@ internal sealed class Game
 
     private ArrangementType? TrySelectArrangement()
     {
-        ushort? id = _actionDeck.GetRandomId(c => _companionsSelector.CanPlay(c.ArrangementType));
+        ushort? id = _actionDeck.GetRandomId(c => _matchmaker.CanPlay(c.ArrangementType));
         if (id is null)
         {
             return null;
@@ -119,5 +118,5 @@ internal sealed class Game
     private readonly Deck<CardData> _questionsDeck;
     private readonly Repository _players;
     private readonly List<IInteractionSubscriber> _interactionSubscribers;
-    private readonly CompanionsSelector _companionsSelector;
+    private readonly Matchmaker _matchmaker;
 }
