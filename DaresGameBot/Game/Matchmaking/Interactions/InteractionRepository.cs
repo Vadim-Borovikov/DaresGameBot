@@ -23,9 +23,9 @@ internal sealed class InteractionRepository : IInteractionSubscriber
         RegisterInteractions(player, arrangement, points);
     }
 
-    public ushort GetInteractions(string player, IReadOnlyList<string> players, bool completed)
+    public int GetInteractions(string player, IReadOnlyList<string> players, bool completed)
     {
-        ushort result = 0;
+        int result = 0;
 
         foreach (string p in players)
         {
@@ -40,9 +40,9 @@ internal sealed class InteractionRepository : IInteractionSubscriber
         return result;
     }
 
-    public ushort GetInteractions(string p1, string p2, bool completed)
+    public int GetInteractions(string p1, string p2, bool completed)
     {
-        Dictionary<string, ushort> repository = completed ? _interactionsCompleted : _interactionsPurposed;
+        Dictionary<string, int> repository = completed ? _interactionsCompleted : _interactionsPurposed;
         string key = GetKey(p1, p2);
         return repository.GetValueOrDefault(key);
     }
@@ -66,18 +66,11 @@ internal sealed class InteractionRepository : IInteractionSubscriber
 
     private void RegisterInteraction(string p1, string p2, ushort? points = null)
     {
-        Dictionary<string, ushort> repository = points is null ? _interactionsPurposed : _interactionsCompleted;
+        Dictionary<string, int> repository = points is null ? _interactionsPurposed : _interactionsCompleted;
         points ??= 1;
 
         string key = GetKey(p1, p2);
-        if (repository.ContainsKey(key))
-        {
-            repository[key] += points.Value;
-        }
-        else
-        {
-            repository[key] = points.Value;
-        }
+        repository.CreateOrAdd(key, points.Value);
     }
 
     private static string GetKey(string p1, string p2)
@@ -86,6 +79,6 @@ internal sealed class InteractionRepository : IInteractionSubscriber
     }
 
     private readonly PointsManager _pointsManager;
-    private readonly Dictionary<string, ushort> _interactionsPurposed = new();
-    private readonly Dictionary<string, ushort> _interactionsCompleted = new();
+    private readonly Dictionary<string, int> _interactionsPurposed = new();
+    private readonly Dictionary<string, int> _interactionsCompleted = new();
 }
