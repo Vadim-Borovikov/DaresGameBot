@@ -13,6 +13,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
     public DistributedMatchmaker(Repository players, PointsManager pointsManager, ICompatibility compatibility)
         : base(players, compatibility)
     {
+        _pointsManager = pointsManager;
         _interactionRepository = new InteractionRepository(pointsManager);
     }
 
@@ -41,16 +42,17 @@ internal sealed class DistributedMatchmaker : Matchmaker
                 EnumerateIntercompatableGroups(shuffled, arrangementType.Partners);
             return groups.OrderBy(g => _interactionRepository.GetInteractions(Players.Current, g, false))
                          .ThenByDescending(g => _interactionRepository.GetInteractions(Players.Current, g, true))
-                         .ThenBy(g => g.Sum(p => Players.GetPoints(p)))
+                         .ThenBy(g => g.Sum(p => _pointsManager.GetPoints(p)))
                          .First();
         }
 
         return shuffled.OrderBy(p => _interactionRepository.GetInteractions(Players.Current, p, false))
                        .ThenByDescending(p => _interactionRepository.GetInteractions(Players.Current, p, true))
-                       .ThenBy(Players.GetPoints)
+                       .ThenBy(_pointsManager.GetPoints)
                        .Take(arrangementType.Partners)
                        .ToList();
     }
 
     private readonly InteractionRepository _interactionRepository;
+    private readonly PointsManager _pointsManager;
 }

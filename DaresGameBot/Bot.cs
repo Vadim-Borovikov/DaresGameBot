@@ -250,8 +250,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             throw new ArgumentNullException(nameof(_questionsDeck));
         }
 
-        Repository repository = new(updates);
+        Repository repository = new();
         PointsManager pointsManager = new(Config.ActionOptions, repository);
+
+        pointsManager.UpdateList(updates);
+
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(repository, pointsManager, compatibility);
         return new Game.Game(Config, _actionDeck, _questionsDeck, repository, pointsManager, matchmaker);

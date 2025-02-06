@@ -15,7 +15,7 @@ internal sealed class InteractionRepository : IInteractionSubscriber
 
     public void OnInteractionCompleted(string player, Arrangement arrangement, string tag, bool completedFully)
     {
-        ushort? points = _pointsManager.GetPoints(tag, !completedFully);
+        int? points = _pointsManager.GetPoints(tag, !completedFully);
         if (points is null)
         {
             throw new NullReferenceException($"No points in config for ({tag}, {completedFully})");
@@ -47,7 +47,7 @@ internal sealed class InteractionRepository : IInteractionSubscriber
         return repository.GetValueOrDefault(key);
     }
 
-    private void RegisterInteractions(string player, Arrangement arrangement, ushort? points = null)
+    private void RegisterInteractions(string player, Arrangement arrangement, int? points = null)
     {
         foreach (string p in arrangement.Partners)
         {
@@ -64,7 +64,7 @@ internal sealed class InteractionRepository : IInteractionSubscriber
         }
     }
 
-    private void RegisterInteraction(string p1, string p2, ushort? points = null)
+    private void RegisterInteraction(string p1, string p2, int? points = null)
     {
         Dictionary<string, int> repository = points is null ? _interactionsPurposed : _interactionsCompleted;
         points ??= 1;

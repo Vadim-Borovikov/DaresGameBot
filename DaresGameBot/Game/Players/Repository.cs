@@ -12,11 +12,6 @@ internal sealed class Repository
 
     public string Current => _names[_currentIndex];
 
-    public ushort GetPoints(string name) => _infos[name].Points;
-    public void AddPoints(string name, ushort points) => _infos[name].Points += points;
-
-    public Repository(List<PlayerListUpdateData> updates) => UpdateList(updates);
-
     public void MoveNext()
     {
         do
@@ -26,65 +21,57 @@ internal sealed class Repository
         while (!_infos[Current].Active);
     }
 
-    public bool UpdateList(List<PlayerListUpdateData> updateDatas)
+    public bool AddOrUpdatePlayerData(AddOrUpdatePlayerData a)
     {
-        ushort points = _infos.Count > 0 ? _infos.Values.Where(v => v.Active).Min(v => v.Points) : (ushort) 0;
         bool changed = false;
-
-        foreach (PlayerListUpdateData data in updateDatas)
+        if (_infos.ContainsKey(a.Name))
         {
-            switch (data)
+            if (_infos[a.Name].GroupInfo != a.Info)
             {
-                case AddOrUpdatePlayerData a:
-                    if (_infos.ContainsKey(a.Name))
-                    {
-                        if (_infos[a.Name].GroupInfo != a.Info)
-                        {
-                            _infos[a.Name].GroupInfo = a.Info;
-                            changed = true;
-                        }
-                        if (!_infos[a.Name].Active)
-                        {
-                            _infos[a.Name].ActivateWith(points);
-                            changed = true;
-                        }
-                    }
-                    else
-                    {
-                        _infos[a.Name] = new PlayerInfo(a.Info, points);
-                        changed = true;
-                    }
-
-                    if (!_names.Contains(a.Name))
-                    {
-                        _names.Add(a.Name);
-                    }
-                    break;
-                case TogglePlayerData t:
-                    if (!_infos.ContainsKey(t.Name))
-                    {
-                        break;
-                    }
-
-                    if (_infos[t.Name].Active)
-                    {
-                        _infos[t.Name].Active = false;
-                        if (Current == t.Name)
-                        {
-                            MoveNext();
-                        }
-                    }
-                    else
-                    {
-                        _infos[t.Name].ActivateWith(points);
-                    }
-                    changed = true;
-
-                    break;
+                _infos[a.Name].GroupInfo = a.Info;
+                changed = true;
             }
+            if (!_infos[a.Name].Active)
+            {
+                _infos[a.Name].Active = true;
+                changed = true;
+            }
+        }
+        else
+        {
+            _infos[a.Name] = new PlayerInfo(a.Info);
+            changed = true;
+        }
+
+        if (!_names.Contains(a.Name))
+        {
+            _names.Add(a.Name);
         }
 
         return changed;
+    }
+
+    public bool TogglePlayerData(TogglePlayerData data)
+    {
+        if (!_infos.ContainsKey(data.Name))
+        {
+            return false;
+        }
+
+        if (_infos[data.Name].Active)
+        {
+            _infos[data.Name].Active = false;
+            if (Current == data.Name)
+            {
+                MoveNext();
+            }
+        }
+        else
+        {
+            _infos[data.Name].Active = true;
+        }
+
+        return true;
     }
 
     public bool AreCompatable(string p1, string p2, ICompatibility compatibility)
