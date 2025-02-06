@@ -3,22 +3,17 @@ using System.Linq;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Helpers;
-using DaresGameBot.Game.Matchmaking.Interactions;
 using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Game.Matchmaking;
 
-internal abstract class Matchmaker : IInteractionSubscriber
+internal abstract class Matchmaker
 {
     protected Matchmaker(Players.Repository players, ICompatibility compatibility)
     {
         Players = players;
         _compatibility = compatibility;
     }
-
-    public abstract void OnInteractionPurposed(string player, Arrangement arrangement);
-    public abstract void OnInteractionCompleted(string player, Arrangement arrangement, string tag,
-        bool completedFully);
 
     public bool CanPlay(ArrangementType arrangementType)
     {

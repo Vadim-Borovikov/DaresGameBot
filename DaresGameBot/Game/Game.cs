@@ -29,22 +29,21 @@ internal sealed class Game
 
     public IEnumerable<string> GetPlayers() => _players.GetNames();
 
-    public int GetPoints(string name) => _pointsManager.GetPoints(name);
+    public int GetPoints(string name) => _stats.GetPoints(name);
 
     public Game(Config config, Deck<ActionData> actionDeck, Deck<CardData> questionsDeck, Repository players,
-        PointsManager pointsManager, Matchmaker matchmaker)
+        GameStats stats, Matchmaker matchmaker)
     {
         _config = config;
         _actionDeck = actionDeck;
         _questionsDeck = questionsDeck;
         _players = players;
-        _pointsManager = pointsManager;
+        _stats = stats;
         _matchmaker = matchmaker;
 
         _interactionSubscribers = new List<IInteractionSubscriber>
         {
-            _matchmaker,
-            _pointsManager
+            _stats
         };
     }
 
@@ -98,7 +97,7 @@ internal sealed class Game
         return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, questionData, CurrentPlayer);
     }
 
-    public bool UpdatePlayers(List<PlayerListUpdateData> updateDatas) => _pointsManager.UpdateList(updateDatas);
+    public bool UpdatePlayers(List<PlayerListUpdateData> updateDatas) => _stats.UpdateList(updateDatas);
 
     public void ToggleLanguages() => IncludeEn = !IncludeEn;
 
@@ -118,7 +117,7 @@ internal sealed class Game
     private readonly Deck<ActionData> _actionDeck;
     private readonly Deck<CardData> _questionsDeck;
     private readonly Repository _players;
-    private readonly PointsManager _pointsManager;
+    private readonly GameStats _stats;
     private readonly List<IInteractionSubscriber> _interactionSubscribers;
     private readonly Matchmaker _matchmaker;
 }

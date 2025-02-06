@@ -251,13 +251,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
 
         Repository repository = new();
-        PointsManager pointsManager = new(Config.ActionOptions, repository);
+        GameStats gameStats = new(Config.ActionOptions, repository);
 
-        pointsManager.UpdateList(updates);
+        gameStats.UpdateList(updates);
 
         GroupCompatibility compatibility = new();
-        DistributedMatchmaker matchmaker = new(repository, pointsManager, compatibility);
-        return new Game.Game(Config, _actionDeck, _questionsDeck, repository, pointsManager, matchmaker);
+        DistributedMatchmaker matchmaker = new(repository, gameStats, compatibility);
+        return new Game.Game(Config, _actionDeck, _questionsDeck, repository, gameStats, matchmaker);
     }
 
     private async Task DrawActionOrQuestionAsync(Chat chat, Game.Game game)
