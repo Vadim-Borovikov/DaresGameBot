@@ -22,10 +22,22 @@ internal sealed class GameStats : IInteractionSubscriber
 
     public void OnArrangementPurposed(string player, Arrangement arrangement)
     {
-        RegisterInteractions(player, arrangement);
+        foreach (string p in arrangement.Partners)
+        {
+            RegisterProposition(player, p);
+        }
+
+        if (!arrangement.CompatablePartners)
+        {
+            return;
+        }
+        foreach ((string, string) pair in ListHelper.EnumeratePairs(arrangement.Partners))
+        {
+            RegisterProposition(pair.Item1, pair.Item2);
+        }
     }
 
-    public void OnActionCompleted(string player, ushort id, IReadOnlyList<string> partners, bool fully)
+    public void OnActionCompleted(string player, ushort id, IEnumerable<string> partners, bool fully)
     {
         ActionData data = _actions.GetCard(id);
         int? points = GetPoints(data.Tag, fully);
@@ -33,9 +45,6 @@ internal sealed class GameStats : IInteractionSubscriber
         {
             throw new NullReferenceException($"No points in config for ({data.Tag}, {fully})");
         }
-
-        Arrangement arrangement = new(partners, data.CompatablePartners);
-        RegisterInteractions(player, arrangement, points);
 
         _points.CreateOrAdd(player, points.Value);
         foreach (string partner in partners)
@@ -80,18 +89,17 @@ internal sealed class GameStats : IInteractionSubscriber
         return changed;
     }
 
-    public int GetInteractions(string player, IReadOnlyList<string> players, bool completed)
+    public int GetPropositions(string player, IReadOnlyList<string> players)
     {
-        return players.Sum(p => GetInteractions(player, p, completed))
+        return players.Sum(p => GetPropositions(player, p))
                + ListHelper.EnumeratePairs(players)
-                           .Sum(pair => GetInteractions(pair.Item1, pair.Item2, completed));
+                           .Sum(pair => GetPropositions(pair.Item1, pair.Item2));
     }
 
-    public int GetInteractions(string p1, string p2, bool completed)
+    public int GetPropositions(string p1, string p2)
     {
-        Dictionary<string, int> repository = completed ? _interactionsCompleted : _interactionsPurposed;
         string key = GetKey(p1, p2);
-        return repository.GetValueOrDefault(key);
+        return _propositions.GetValueOrDefault(key);
     }
 
     private int? GetPoints(string tag, bool completedFully)
@@ -108,30 +116,10 @@ internal sealed class GameStats : IInteractionSubscriber
         _points[name] = Math.Max(_points.GetValueOrDefault(name), points);
     }
 
-    private void RegisterInteractions(string player, Arrangement arrangement, int? points = null)
+    private void RegisterProposition(string p1, string p2)
     {
-        foreach (string p in arrangement.Partners)
-        {
-            RegisterInteraction(player, p, points);
-        }
-
-        if (!arrangement.CompatablePartners)
-        {
-            return;
-        }
-        foreach ((string, string) pair in ListHelper.EnumeratePairs(arrangement.Partners))
-        {
-            RegisterInteraction(pair.Item1, pair.Item2, points);
-        }
-    }
-
-    private void RegisterInteraction(string p1, string p2, int? points = null)
-    {
-        Dictionary<string, int> repository = points is null ? _interactionsPurposed : _interactionsCompleted;
-        points ??= 1;
-
         string key = GetKey(p1, p2);
-        repository.CreateOrAdd(key, points.Value);
+        _propositions.CreateOrAdd(key, 1);
     }
 
     private static string GetKey(string p1, string p2)
@@ -143,6 +131,5 @@ internal sealed class GameStats : IInteractionSubscriber
     private readonly Deck<ActionData> _actions;
     private readonly Players.Repository _players;
     private readonly Dictionary<string, int> _points = new();
-    private readonly Dictionary<string, int> _interactionsPurposed = new();
-    private readonly Dictionary<string, int> _interactionsCompleted = new();
+    private readonly Dictionary<string, int> _propositions = new();
 }

@@ -24,21 +24,15 @@ internal sealed class DistributedMatchmaker : Matchmaker
             return null;
         }
 
-        if (arrangementType.CompatablePartners)
+        if (!arrangementType.CompatablePartners)
         {
-            IEnumerable<IReadOnlyList<string>> groups =
-                EnumerateIntercompatableGroups(shuffled, arrangementType.Partners);
-            return groups.OrderBy(g => _gameStats.GetInteractions(Players.Current, g, false))
-                         .ThenByDescending(g => _gameStats.GetInteractions(Players.Current, g, true))
-                         .ThenBy(g => g.Sum(p => _gameStats.Points[p]))
-                         .First();
+            return shuffled.OrderBy(p => _gameStats.GetPropositions(Players.Current, p))
+                           .Take(arrangementType.Partners);
         }
 
-        return shuffled.OrderBy(p => _gameStats.GetInteractions(Players.Current, p, false))
-                       .ThenByDescending(p => _gameStats.GetInteractions(Players.Current, p, true))
-                       .ThenBy(p => _gameStats.Points[p])
-                       .Take(arrangementType.Partners)
-                       .ToList();
+        IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatableGroups(shuffled, arrangementType.Partners);
+        return groups.OrderBy(g => _gameStats.GetPropositions(Players.Current, g))
+                     .First();
     }
 
     private readonly GameStats _gameStats;

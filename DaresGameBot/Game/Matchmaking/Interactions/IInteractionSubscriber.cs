@@ -5,5 +5,5 @@ namespace DaresGameBot.Game.Matchmaking.Interactions;
 internal interface IInteractionSubscriber
 {
     public void OnArrangementPurposed(string player, Arrangement arrangement);
-    public void OnActionCompleted(string player, ushort id, IReadOnlyList<string> partners, bool fully);
+    public void OnActionCompleted(string player, ushort id, IEnumerable<string> partners, bool fully);
 }
