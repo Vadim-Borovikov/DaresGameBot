@@ -30,13 +30,13 @@ internal sealed class DistributedMatchmaker : Matchmaker
                 EnumerateIntercompatableGroups(shuffled, arrangementType.Partners);
             return groups.OrderBy(g => _gameStats.GetInteractions(Players.Current, g, false))
                          .ThenByDescending(g => _gameStats.GetInteractions(Players.Current, g, true))
-                         .ThenBy(g => g.Sum(p => _gameStats.GetPoints(p)))
+                         .ThenBy(g => g.Sum(p => _gameStats.Points[p]))
                          .First();
         }
 
         return shuffled.OrderBy(p => _gameStats.GetInteractions(Players.Current, p, false))
                        .ThenByDescending(p => _gameStats.GetInteractions(Players.Current, p, true))
-                       .ThenBy(_gameStats.GetPoints)
+                       .ThenBy(p => _gameStats.Points[p])
                        .Take(arrangementType.Partners)
                        .ToList();
     }

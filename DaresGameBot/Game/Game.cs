@@ -1,9 +1,7 @@
-﻿using DaresGameBot.Configs;
-using DaresGameBot.Game.Matchmaking.Interactions;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Game.Data;
-using DaresGameBot.Game.Players;
+using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 using GryphonUtilities.Extensions;
 using Telegram.Bot.Types;
@@ -14,94 +12,37 @@ internal sealed class Game
 {
     public enum State
     {
-        ArrangementPresented,
+        ArrangementPurposed,
         CardRevealed
     }
+
+    public readonly Players.Repository Players;
+    public readonly GameStats Stats;
 
     public Message? PlayersMessage;
     public bool PlayersMessageShowsPoints;
 
-    public string CurrentPlayer => _players.Current;
-
     public State CurrentState { get; private set; }
 
-    public bool IncludeEn { get; private set; }
-
-    public IEnumerable<string> GetPlayers() => _players.GetNames();
-
-    public int GetPoints(string name) => _stats.GetPoints(name);
-
-    public Game(Config config, Deck<ActionData> actionDeck, Deck<CardData> questionsDeck, Repository players,
-        GameStats stats, Matchmaker matchmaker)
+    public Game(Deck<ActionData> actionDeck, Deck<CardData> questionsDeck, Players.Repository players, GameStats stats,
+        Matchmaker matchmaker)
     {
-        _config = config;
         _actionDeck = actionDeck;
         _questionsDeck = questionsDeck;
-        _players = players;
-        _stats = stats;
+        Players = players;
+        Stats = stats;
         _matchmaker = matchmaker;
 
         _interactionSubscribers = new List<IInteractionSubscriber>
         {
-            _stats
+            Stats
         };
     }
 
     public ActionData GetActionData(ushort id) => _actionDeck.GetCard(id);
+    public CardData GetQuestionData(ushort id) => _questionsDeck.GetCard(id);
 
     public Arrangement? TryDrawArrangement()
-    {
-        CurrentState = State.ArrangementPresented;
-
-        ArrangementType? arrangementType = TrySelectArrangement();
-        return arrangementType is null ? null : _matchmaker.SelectCompanionsFor(arrangementType.Value);
-    }
-
-    public ActionInfo DrawAction(Arrangement arrangement, string tag)
-    {
-        CurrentState = State.CardRevealed;
-        ushort id =
-            _actionDeck.GetRandomId(c => (c.Tag == tag) && (c.ArrangementType == arrangement.GetArrangementType()))
-                       .Denull("No suitable cards found");
-        return new ActionInfo(id, arrangement);
-    }
-
-    public void OnActionPurposed(Arrangement arrangement)
-    {
-        foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
-        {
-            subscriber.OnInteractionPurposed(CurrentPlayer, arrangement);
-        }
-    }
-
-    public void OnActionCompleted(ActionInfo info, bool completedFully)
-    {
-        ActionData actionData = GetActionData(info.Id);
-
-        foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
-        {
-            subscriber.OnInteractionCompleted(CurrentPlayer, info.Arrangement, actionData.Tag, completedFully);
-        }
-
-        _actionDeck.Mark(info.Id);
-
-        _players.MoveNext();
-    }
-
-    public void RegisterQuestion() => _players.MoveNext();
-
-    public Turn DrawQuestion()
-    {
-        CurrentState = State.CardRevealed;
-        CardData questionData = _questionsDeck.Draw();
-        return new Turn(_config.Texts, _config.ImagesFolder, _config.Texts.QuestionsTag, questionData, CurrentPlayer);
-    }
-
-    public bool UpdatePlayers(List<PlayerListUpdateData> updateDatas) => _stats.UpdateList(updateDatas);
-
-    public void ToggleLanguages() => IncludeEn = !IncludeEn;
-
-    private ArrangementType? TrySelectArrangement()
     {
         ushort? id = _actionDeck.GetRandomId(c => _matchmaker.CanPlay(c.ArrangementType));
         if (id is null)
@@ -110,14 +51,74 @@ internal sealed class Game
         }
 
         ActionData card = _actionDeck.GetCard(id.Value);
-        return card.ArrangementType;
+        Arrangement arrangement = _matchmaker.SelectCompanionsFor(card.ArrangementType);
+
+        CurrentState = State.ArrangementPurposed;
+        OnArrangementPurposed(arrangement);
+
+        return arrangement;
     }
 
-    private readonly Config _config;
+    public ushort DrawQuestion()
+    {
+        ushort id = _questionsDeck.GetRandomId().Denull("No question found!");
+        _questionsDeck.Mark(id);
+
+        CurrentState = State.CardRevealed;
+
+        return id;
+    }
+
+    public ActionInfo DrawAction(Arrangement arrangement, string tag)
+    {
+        ushort id =
+            _actionDeck.GetRandomId(c => (c.Tag == tag) && (c.ArrangementType == arrangement.GetArrangementType()))
+                       .Denull("No suitable cards found");
+        ActionInfo info = new(id, arrangement);
+
+        CurrentState = State.CardRevealed;
+
+        return info;
+    }
+
+    public void CompleteQuestion(ushort id)
+    {
+        _questionsDeck.Mark(id);
+
+        StartNewTurn();
+    }
+
+    public void CompleteAction(ActionInfo info, bool fully)
+    {
+        _actionDeck.Mark(info.Id);
+
+        StartNewTurn();
+
+        OnActionCompleted(info, fully);
+    }
+
+    private void StartNewTurn() => Players.MoveNext();
+
+    private void OnArrangementPurposed(Arrangement arrangement)
+    {
+        foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
+        {
+            subscriber.OnArrangementPurposed(Players.Current, arrangement);
+        }
+    }
+
+    private void OnActionCompleted(ActionInfo info, bool fully)
+    {
+        foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
+        {
+            subscriber.OnActionCompleted(Players.Current, info.Id, info.Arrangement.Partners, fully);
+        }
+    }
+
+    public bool UpdatePlayers(List<PlayerListUpdateData> updateDatas) => Stats.UpdateList(updateDatas);
+
     private readonly Deck<ActionData> _actionDeck;
     private readonly Deck<CardData> _questionsDeck;
-    private readonly Repository _players;
-    private readonly GameStats _stats;
     private readonly List<IInteractionSubscriber> _interactionSubscribers;
     private readonly Matchmaker _matchmaker;
 }

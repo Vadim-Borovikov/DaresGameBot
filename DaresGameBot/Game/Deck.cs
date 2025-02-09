@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Helpers;
-using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Game;
 
@@ -33,14 +32,6 @@ internal sealed class Deck<T>
     }
 
     public void Mark(ushort id) => ++_uses[id];
-
-    public T Draw()
-    {
-        ushort id = GetRandomId().Denull("No cards found!");
-        T card = GetCard(id);
-        Mark(id);
-        return card;
-    }
 
     private readonly Dictionary<ushort, T> _cards = new();
     private readonly Dictionary<ushort, uint> _uses = new();

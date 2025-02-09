@@ -129,7 +129,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     internal bool CanBeUpdated(User sender)
     {
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
-        return game is null || (game.CurrentState == Game.Game.State.ArrangementPresented);
+        return game is null || (game.CurrentState == Game.Game.State.ArrangementPurposed);
     }
 
     internal async Task UpdatePlayersAsync(Chat chat, User sender, List<PlayerListUpdateData> updates)
@@ -179,9 +179,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             return OnNewGameAsync(chat, sender);
         }
 
-        game.ToggleLanguages();
+        _includeEn = !_includeEn;
 
-        MessageTemplateText message = game.IncludeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
+        MessageTemplateText message = _includeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
         return message.SendAsync(this, chat);
     }
 
@@ -206,7 +206,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     private async Task<Message> ReportPlayersAsync(Chat chat, Game.Game game, bool includePoints)
     {
-        IEnumerable<string> players = GetPlayerList(game, includePoints);
+        IEnumerable<string> players = game.Players.GetNames().Select(p => GetPlayerLine(p, game, includePoints));
         MessageTemplateText messageText =
             Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, players));
 
@@ -223,17 +223,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return game.PlayersMessage;
     }
 
-    private IEnumerable<string> GetPlayerList(Game.Game game, bool includePoints)
-    {
-        return game.GetPlayers().Select(p => GetPlayerLine(p, game, includePoints));
-    }
-
     private string GetPlayerLine(string name, Game.Game game, bool includePoints)
     {
         string? pointsPostfix = null;
         if (includePoints)
         {
-            pointsPostfix = string.Format(Config.Texts.PlayerFormatPointsPostfix, game.GetPoints(name));
+            pointsPostfix = string.Format(Config.Texts.PlayerFormatPointsPostfix, game.Stats.Points[name]);
         }
         return string.Format(Config.Texts.PlayerFormat, name, pointsPostfix);
     }
@@ -251,13 +246,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
 
         Repository repository = new();
-        GameStats gameStats = new(Config.ActionOptions, repository);
+        GameStats gameStats = new(Config.ActionOptions, _actionDeck, repository);
 
         gameStats.UpdateList(updates);
 
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(repository, gameStats, compatibility);
-        return new Game.Game(Config, _actionDeck, _questionsDeck, repository, gameStats, matchmaker);
+        return new Game.Game(_actionDeck, _questionsDeck, repository, gameStats, matchmaker);
     }
 
     private async Task DrawActionOrQuestionAsync(Chat chat, Game.Game game)
@@ -265,12 +260,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Arrangement? arrangement = game.TryDrawArrangement();
         if (arrangement is null)
         {
-            MessageTemplate template = CreateQuestionTemplate(game);
+            MessageTemplate template = DrawQuestionAndCreateTemplate(game);
             await template.SendAsync(this, chat);
             return;
         }
-        await ShowPartnersAsync(chat, game.CurrentPlayer, arrangement);
-        game.OnActionPurposed(arrangement);
+        await ShowPartnersAsync(chat, game.Players.Current, arrangement);
     }
 
     internal async Task RevealCardAsync(Chat chat, int messageId, User sender, GameButtonData buttonData)
@@ -286,13 +280,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         switch (buttonData)
         {
             case GameButtonQuestionData:
-                template = CreateQuestionTemplate(game);
+                template = DrawQuestionAndCreateTemplate(game);
                 break;
             case GameButtonArrangementData a:
                 ActionInfo actionInfo = game.DrawAction(a.Arrangement, a.Tag);
                 ActionData data = game.GetActionData(actionInfo.Id);
-                Turn turn = new(Config.Texts, Config.ImagesFolder, data, game.CurrentPlayer, actionInfo.Arrangement);
-                template = turn.GetMessage(game.IncludeEn);
+                Turn turn = new(Config.Texts, Config.ImagesFolder, data, game.Players.Current, actionInfo.Arrangement);
+                template = turn.GetMessage(_includeEn);
                 bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
                 template.KeyboardProvider = CreateActionKeyboard(actionInfo, includePartial);
                 break;
@@ -313,11 +307,14 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
     }
 
-    private MessageTemplate CreateQuestionTemplate(Game.Game game)
+    private MessageTemplate DrawQuestionAndCreateTemplate(Game.Game game)
     {
-        Turn turn = game.DrawQuestion();
-        MessageTemplate template = turn.GetMessage(game.IncludeEn);
-        template.KeyboardProvider = CreateQuestionKeyboard();
+        ushort id = game.DrawQuestion();
+        CardData questionData = game.GetQuestionData(id);
+        Turn turn =
+            new(Config.Texts, Config.ImagesFolder, Config.Texts.QuestionsTag, questionData, game.Players.Current);
+        MessageTemplate template = turn.GetMessage(_includeEn);
+        template.KeyboardProvider = CreateQuestionKeyboard(id);
         return template;
     }
 
@@ -331,11 +328,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
         switch (data)
         {
-            case GameButtonQuestionData:
-                game.RegisterQuestion();
+            case GameButtonQuestionData q:
+                game.CompleteQuestion(q.Id);
                 break;
             case GameButtonActionData a:
-                game.OnActionCompleted(a.ActionInfo, a.CompletedFully);
+                game.CompleteAction(a.ActionInfo, a.CompletedFully);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
@@ -391,11 +388,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateQuestionKeyboard()
+    private InlineKeyboardMarkup CreateQuestionKeyboard(ushort id)
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CreateButtonRow(CreateQuestionButton())
+            CreateButtonRow(CreateQuestionButton(id))
         };
 
         return new InlineKeyboardMarkup(keyboard);
@@ -430,11 +427,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                + arrangement.CompatablePartners;
     }
 
-    private InlineKeyboardButton CreateQuestionButton()
+    private InlineKeyboardButton CreateQuestionButton(ushort id)
     {
         return new InlineKeyboardButton(Config.Texts.ActionCompleted)
         {
-            CallbackData = nameof(CompleteCard)
+            CallbackData = nameof(CompleteCard) + id
         };
     }
 
@@ -449,4 +446,5 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     private Deck<CardData>? _questionsDeck;
     private readonly HashSet<string> _decksEquipment = new();
     private readonly List<string> _decksLoadErrors = new();
+    private bool _includeEn;
 }

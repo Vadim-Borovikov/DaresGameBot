@@ -1,8 +1,9 @@
-﻿namespace DaresGameBot.Game.Matchmaking.Interactions;
+﻿using System.Collections.Generic;
+
+namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal interface IInteractionSubscriber
 {
-    public void OnInteractionPurposed(string player, Arrangement arrangement) { }
-
-    public void OnInteractionCompleted(string player, Arrangement arrangement, string tag, bool completedFully) { }
+    public void OnArrangementPurposed(string player, Arrangement arrangement);
+    public void OnActionCompleted(string player, ushort id, IReadOnlyList<string> partners, bool fully);
 }

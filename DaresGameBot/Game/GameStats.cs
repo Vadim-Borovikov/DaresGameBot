@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Configs;
+using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Interactions;
-using DaresGameBot.Game.Players;
 using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 
@@ -11,35 +11,38 @@ namespace DaresGameBot.Game;
 
 internal sealed class GameStats : IInteractionSubscriber
 {
-    public GameStats(Dictionary<string, Option> actionOptions, Repository players)
+    public IReadOnlyDictionary<string, int> Points => _points.AsReadOnly();
+
+    public GameStats(Dictionary<string, Option> actionOptions, Deck<ActionData> actions, Players.Repository players)
     {
         _actionOptions = actionOptions;
+        _actions = actions;
         _players = players;
     }
 
-    public void OnInteractionPurposed(string player, Arrangement arrangement)
+    public void OnArrangementPurposed(string player, Arrangement arrangement)
     {
         RegisterInteractions(player, arrangement);
     }
 
-    public void OnInteractionCompleted(string player, Arrangement arrangement, string tag, bool completedFully)
+    public void OnActionCompleted(string player, ushort id, IReadOnlyList<string> partners, bool fully)
     {
-        int? points = GetPoints(tag, completedFully);
+        ActionData data = _actions.GetCard(id);
+        int? points = GetPoints(data.Tag, fully);
         if (points is null)
         {
-            throw new NullReferenceException($"No points in config for ({tag}, {completedFully})");
+            throw new NullReferenceException($"No points in config for ({data.Tag}, {fully})");
         }
 
+        Arrangement arrangement = new(partners, data.CompatablePartners);
         RegisterInteractions(player, arrangement, points);
 
         _points.CreateOrAdd(player, points.Value);
-        foreach (string partner in arrangement.Partners)
+        foreach (string partner in partners)
         {
             _points.CreateOrAdd(partner, points.Value);
         }
     }
-
-    public int GetPoints(string name) => _points[name];
 
     public bool UpdateList(List<PlayerListUpdateData> updateDatas)
     {
@@ -137,7 +140,8 @@ internal sealed class GameStats : IInteractionSubscriber
     }
 
     private readonly Dictionary<string, Option> _actionOptions;
-    private readonly Repository _players;
+    private readonly Deck<ActionData> _actions;
+    private readonly Players.Repository _players;
     private readonly Dictionary<string, int> _points = new();
     private readonly Dictionary<string, int> _interactionsPurposed = new();
     private readonly Dictionary<string, int> _interactionsCompleted = new();

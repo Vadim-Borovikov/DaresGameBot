@@ -7,16 +7,15 @@ internal abstract class GameButtonData
 {
     public static GameButtonData? From(string callbackQueryDataCore)
     {
-        if (callbackQueryDataCore == "")
+        string[] parts = callbackQueryDataCore.Split(FieldSeparator);
+        switch (parts.Length)
         {
-            return new GameButtonQuestionData();
+            case 1:
+                ushort questionId = ushort.Parse(parts[0]);
+                return new GameButtonQuestionData(questionId);
+            case < 3: return null;
         }
 
-        string[] parts = callbackQueryDataCore.Split(FieldSeparator);
-        if (parts.Length < 3)
-        {
-            return null;
-        }
         string[] partners = SplitList(parts[0]);
         bool compatablePartners = bool.Parse(parts[1]);
         Arrangement arrangement = new(partners, compatablePartners);
