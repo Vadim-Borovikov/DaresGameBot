@@ -121,7 +121,7 @@ public class Texts : AbstractBot.Configs.Texts
 
     [Required]
     [MinLength(1)]
-    public string ActionCompleted { get; init; } = null!;
+    public string Completed { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

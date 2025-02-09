@@ -11,8 +11,9 @@ internal abstract class GameButtonData
         switch (parts.Length)
         {
             case 1:
-                ushort questionId = ushort.Parse(parts[0]);
-                return new GameButtonQuestionData(questionId);
+                return ushort.TryParse(parts[0], out ushort questionId)
+                    ? new GameButtonCompleteQuestionData(questionId)
+                    : new GameButtonRevealQuestionData();
             case < 3: return null;
         }
 

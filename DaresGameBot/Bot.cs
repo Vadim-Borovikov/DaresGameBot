@@ -145,7 +145,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
             await PinChatMessageAsync(chat, pin.MessageId);
 
-            await DrawActionOrQuestionAsync(chat, game);
+            await DrawArrangementAsync(chat, game);
         }
         else
         {
@@ -157,7 +157,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
             await Config.Texts.Accepted.SendAsync(this, chat);
 
-            await DrawActionOrQuestionAsync(chat, game);
+            await DrawArrangementAsync(chat, game);
 
             await ReportPlayersAsync(chat, game, true);
         }
@@ -255,7 +255,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new Game.Game(_actionDeck, _questionsDeck, repository, gameStats, matchmaker);
     }
 
-    private async Task DrawActionOrQuestionAsync(Chat chat, Game.Game game)
+    private async Task DrawArrangementAsync(Chat chat, Game.Game game)
     {
         Arrangement? arrangement = game.TryDrawArrangement();
         if (arrangement is null)
@@ -264,7 +264,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             await template.SendAsync(this, chat);
             return;
         }
-        await ShowPartnersAsync(chat, game.Players.Current, arrangement);
+        await ShowArrangementAsync(chat, game.Players.Current, arrangement);
     }
 
     internal async Task RevealCardAsync(Chat chat, int messageId, User sender, GameButtonData buttonData)
@@ -279,7 +279,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         MessageTemplate template;
         switch (buttonData)
         {
-            case GameButtonQuestionData:
+            case GameButtonRevealQuestionData:
                 template = DrawQuestionAndCreateTemplate(game);
                 break;
             case GameButtonArrangementData a:
@@ -328,7 +328,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
         switch (data)
         {
-            case GameButtonQuestionData q:
+            case GameButtonCompleteQuestionData q:
                 game.CompleteQuestion(q.Id);
                 break;
             case GameButtonActionData a:
@@ -336,10 +336,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
-        return DrawActionOrQuestionAsync(chat, game);
+        return DrawArrangementAsync(chat, game);
     }
 
-    private Task ShowPartnersAsync(Chat chat, string player, Arrangement arrangement)
+    private Task ShowArrangementAsync(Chat chat, string player, Arrangement arrangement)
     {
         MessageTemplateText? partnersText = null;
         if (arrangement.Partners.Count > 0)
@@ -347,43 +347,39 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             partnersText = Turn.GetPartnersPart(Config.Texts, arrangement);
         }
         MessageTemplateText message = Config.Texts.TurnFormatShort.Format(player, partnersText);
-        message.KeyboardProvider = CreateCardKeyboard(arrangement);
+        message.KeyboardProvider = CreateArrangementKeyboard(arrangement);
         return message.SendAsync(this, chat);
     }
 
-    private InlineKeyboardMarkup CreateCardKeyboard(Arrangement info)
+    private InlineKeyboardMarkup CreateArrangementKeyboard(Arrangement arrangement)
     {
-        List<List<InlineKeyboardButton>> keyboard = Config.ActionOptions
-                                                          .OrderBy(o => o.Value.Points)
-                                                          .Select(o => CreateActionButton(nameof(RevealCard), o.Key, o.Key, info))
-                                                          .Select(CreateButtonRow)
-                                                          .ToList();
-        InlineKeyboardButton questionButton = new(Config.Texts.QuestionsTag)
+        List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CallbackData = nameof(RevealCard)
+            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag)
         };
-        keyboard.Insert(0, CreateButtonRow(questionButton));
+
+        keyboard.AddRange(Config.ActionOptions
+                                .OrderBy(o => o.Value.Points)
+                                .Select(o => CreateOneButtonRow<RevealCard>(o.Key,
+                                    string.Join(GameButtonData.ListSeparator, arrangement.Partners),
+                                    arrangement.CompatablePartners, o.Key)));
 
         return new InlineKeyboardMarkup(keyboard);
     }
 
     private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info, bool includePartial)
     {
-        List<List<InlineKeyboardButton>> keyboard = new();
-        InlineKeyboardButton questionButton = new(Config.Texts.QuestionsTag)
+        List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CallbackData = nameof(RevealCard)
+            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag),
+            CreateActionButtonRow(info, true)
         };
-        keyboard.Add(CreateButtonRow(questionButton));
 
         if (includePartial)
         {
-            InlineKeyboardButton actionButtonPartial = CreateActionButton(nameof(CompleteCard), false, info);
-            keyboard.Add(CreateButtonRow(actionButtonPartial));
+            List<InlineKeyboardButton> partialRow = CreateActionButtonRow(info, false);
+            keyboard.Insert(1, partialRow);
         }
-
-        InlineKeyboardButton actionButton = CreateActionButton(nameof(CompleteCard), true, info);
-        keyboard.Add(CreateButtonRow(actionButton));
 
         return new InlineKeyboardMarkup(keyboard);
     }
@@ -392,52 +388,34 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CreateButtonRow(CreateQuestionButton(id))
+            CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, id)
         };
 
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardButton CreateActionButton(string operation, bool completedFully, ActionInfo info)
+    private List<InlineKeyboardButton> CreateActionButtonRow(ActionInfo info, bool fully)
     {
-        string caption = completedFully ? Config.Texts.ActionCompleted : Config.Texts.ActionCompletedPartially;
+        string caption = fully ? Config.Texts.Completed : Config.Texts.ActionCompletedPartially;
+        return CreateOneButtonRow<CompleteCard>(caption,
+            string.Join(GameButtonData.ListSeparator, info.Arrangement.Partners), info.Arrangement.CompatablePartners,
+            info.Id, fully);
+    }
+
+    private static List<InlineKeyboardButton> CreateOneButtonRow<TData>(string caption, params object[] args)
+    {
+        return new List<InlineKeyboardButton>
+        {
+            CreateButton<TData>(caption, args)
+        };
+    }
+
+    private static InlineKeyboardButton CreateButton<TData>(string caption, params object[] fields)
+    {
         return new InlineKeyboardButton(caption)
         {
-            CallbackData = operation
-                           + $"{CreateArrangementButtonData(info.Arrangement)}{GameButtonData.FieldSeparator}"
-                           + $"{info.Id}{GameButtonData.FieldSeparator}"
-                           + completedFully
+            CallbackData = typeof(TData).Name + string.Join(GameButtonData.FieldSeparator, fields)
         };
-    }
-
-    private static InlineKeyboardButton CreateActionButton(string operation, string caption, string tag,
-        Arrangement info)
-    {
-        return new InlineKeyboardButton(caption)
-        {
-            CallbackData = operation
-                           + $"{CreateArrangementButtonData(info)}{GameButtonData.FieldSeparator}"
-                           + tag
-        };
-    }
-
-    private static string CreateArrangementButtonData(Arrangement arrangement)
-    {
-        return $"{string.Join(GameButtonData.ListSeparator, arrangement.Partners)}{GameButtonData.FieldSeparator}"
-               + arrangement.CompatablePartners;
-    }
-
-    private InlineKeyboardButton CreateQuestionButton(ushort id)
-    {
-        return new InlineKeyboardButton(Config.Texts.ActionCompleted)
-        {
-            CallbackData = nameof(CompleteCard) + id
-        };
-    }
-
-    private static List<InlineKeyboardButton> CreateButtonRow(InlineKeyboardButton button)
-    {
-        return new List<InlineKeyboardButton> { button };
     }
 
     private readonly Sheet _actionsSheet;
