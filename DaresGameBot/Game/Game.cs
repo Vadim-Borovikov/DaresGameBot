@@ -96,9 +96,9 @@ internal sealed class Game
     {
         _actionDeck.Mark(info.Id);
 
-        StartNewTurn();
-
         OnActionCompleted(info, fully);
+
+        StartNewTurn();
     }
 
     private void StartNewTurn() => Players.MoveNext();
