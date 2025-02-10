@@ -7,13 +7,13 @@ namespace DaresGameBot.Operations.Commands;
 
 internal sealed class NewCommand : CommandSimple
 {
-    protected override byte Order => 2;
+    protected override byte Order => 3;
 
     public NewCommand(Bot bot) : base(bot, "new", bot.Config.Texts.NewGameCaption) => _bot = bot;
 
     protected override Task ExecuteAsync(Message message, User sender)
     {
-        return _bot.OnEndGameRequesedAsync(message.Chat, sender, EndGameData.ActionAfterGameEnds.StartNewGame);
+        return _bot.OnEndGameRequesedAsync(message.Chat, sender, ConfirmEndData.ActionAfterGameEnds.StartNewGame);
     }
 
     private readonly Bot _bot;

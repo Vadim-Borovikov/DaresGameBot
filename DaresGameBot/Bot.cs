@@ -35,7 +35,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Operations.Add(new RevealCard(this));
         Operations.Add(new CompleteCard(this));
         Operations.Add(new UpdatePlayers(this));
-        Operations.Add(new EndGame(this));
+        Operations.Add(new ConfirmEnd(this));
 
         GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
 
@@ -112,7 +112,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
     }
 
-    internal Task OnEndGameRequesedAsync(Chat chat, User sender, EndGameData.ActionAfterGameEnds after)
+    internal Task OnEndGameRequesedAsync(Chat chat, User sender, ConfirmEndData.ActionAfterGameEnds after)
     {
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
@@ -125,7 +125,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return template.SendAsync(this, chat);
     }
 
-    internal async Task OnEndGameConfirmedAsync(Chat chat, User sender, EndGameData.ActionAfterGameEnds after)
+    internal async Task OnEndGameConfirmedAsync(Chat chat, User sender, ConfirmEndData.ActionAfterGameEnds after)
     {
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
@@ -214,13 +214,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return DrawArrangementAsync(chat, game);
     }
 
-    private Task DoRequestedActionAsync(Chat chat, EndGameData.ActionAfterGameEnds after)
+    private Task DoRequestedActionAsync(Chat chat, ConfirmEndData.ActionAfterGameEnds after)
     {
         return after switch
         {
-            EndGameData.ActionAfterGameEnds.StartNewGame => StartNewGameAsync(chat),
-            EndGameData.ActionAfterGameEnds.UpdateCards  => UpdateDecksAsync(chat),
-            _                                => throw new ArgumentOutOfRangeException(nameof(after), after, null)
+            ConfirmEndData.ActionAfterGameEnds.StartNewGame => StartNewGameAsync(chat),
+            ConfirmEndData.ActionAfterGameEnds.UpdateCards  => UpdateDecksAsync(chat),
+            _ => throw new ArgumentOutOfRangeException(nameof(after), after, null)
         };
     }
 
@@ -450,11 +450,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateEndGameConfirmationKeyboard(EndGameData.ActionAfterGameEnds after)
+    private InlineKeyboardMarkup CreateEndGameConfirmationKeyboard(ConfirmEndData.ActionAfterGameEnds after)
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CreateOneButtonRow<EndGame>(Config.Texts.Completed, after)
+            CreateOneButtonRow<ConfirmEnd>(Config.Texts.Completed, after)
         };
 
         return new InlineKeyboardMarkup(keyboard);

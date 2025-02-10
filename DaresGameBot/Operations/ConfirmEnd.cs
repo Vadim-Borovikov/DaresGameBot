@@ -5,26 +5,26 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class EndGame : Operation<EndGameData>
+internal sealed class ConfirmEnd : Operation<ConfirmEndData>
 {
     protected override byte Order => 8;
 
-    public EndGame(Bot bot) : base(bot) => _bot = bot;
+    public ConfirmEnd(Bot bot) : base(bot) => _bot = bot;
 
-    protected override bool IsInvokingBy(Message message, User sender, out EndGameData? data)
+    protected override bool IsInvokingBy(Message message, User sender, out ConfirmEndData? data)
     {
         data = null;
         return false;
     }
 
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
-        out EndGameData? data)
+        out ConfirmEndData? data)
     {
-        data = EndGameData.From(callbackQueryDataCore);
+        data = ConfirmEndData.From(callbackQueryDataCore);
         return data is not null;
     }
 
-    protected override Task ExecuteAsync(EndGameData data, Message message, User sender)
+    protected override Task ExecuteAsync(ConfirmEndData data, Message message, User sender)
     {
         return _bot.OnEndGameConfirmedAsync(message.Chat, sender, data.After);
     }
