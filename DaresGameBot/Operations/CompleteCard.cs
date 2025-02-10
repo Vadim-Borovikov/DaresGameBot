@@ -7,7 +7,7 @@ namespace DaresGameBot.Operations;
 
 internal sealed class CompleteCard : Operation<GameButtonData>
 {
-    protected override byte Order => 11;
+    protected override byte Order => 4;
 
     public CompleteCard(Bot bot) : base(bot)
     {
