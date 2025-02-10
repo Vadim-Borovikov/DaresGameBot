@@ -22,6 +22,7 @@ using DaresGameBot.Game.Players;
 using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.GameButtons;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
+using static DaresGameBot.Operations.Data.GameButtons.EndGameData;
 
 namespace DaresGameBot;
 
@@ -35,6 +36,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Operations.Add(new RevealCard(this));
         Operations.Add(new CompleteCard(this));
         Operations.Add(new UpdatePlayers(this));
+        Operations.Add(new EndGame(this));
 
         GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
 
@@ -57,7 +59,180 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     protected override KeyboardProvider GetDefaultKeyboardProvider(Chat _) => KeyboardProvider.Same;
 
-    internal async Task UpdateDecksAsync(Chat chat)
+    internal bool CanBeUpdated(User sender)
+    {
+        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
+        return game is null || (game.CurrentState == Game.Game.State.ArrangementPurposed);
+    }
+
+    internal async Task UpdatePlayersAsync(Chat chat, User sender, List<PlayerListUpdateData> updates)
+    {
+        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
+        if (game is null)
+        {
+            List<string> toggled = updates.OfType<TogglePlayerData>().Select(t => t.Name).ToList();
+            if (toggled.Any())
+            {
+                await ReportUnknownToggleAsync(chat,  toggled);
+                return;
+            }
+
+            game = StartNewGame(updates);
+            Contexts[sender.Id] = game;
+
+            await Config.Texts.NewGameStart.SendAsync(this, chat);
+            Message pin = await ReportPlayersAsync(chat, game, true);
+
+            await PinChatMessageAsync(chat, pin.MessageId);
+
+            await DrawArrangementAsync(chat, game);
+        }
+        else
+        {
+            HashSet<string> toggled = new(updates.OfType<TogglePlayerData>().Select(t => t.Name));
+            toggled.ExceptWith(game.Players.AllNames);
+
+            if (toggled.Any())
+            {
+                await ReportUnknownToggleAsync(chat,  toggled);
+                return;
+            }
+
+            bool changed = game.UpdatePlayers(updates);
+            if (!changed)
+            {
+                await Config.Texts.NothingChanges.SendAsync(this, chat);
+                return;
+            }
+
+            await Config.Texts.Accepted.SendAsync(this, chat);
+
+            await DrawArrangementAsync(chat, game);
+
+            await ReportPlayersAsync(chat, game, true);
+        }
+    }
+
+    internal Task OnEndGameRequesedAsync(Chat chat, User sender, ActionAfterGameEnds after)
+    {
+        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
+        if (game is null)
+        {
+            return DoRequestedActionAsync(chat, sender, after);
+        }
+
+        MessageTemplateText template = Config.Texts.EndGameWarning;
+        template.KeyboardProvider = CreateEndGameConfirmationKeyboard(after);
+        return template.SendAsync(this, chat);
+    }
+
+    internal Task OnEndGameConfirmedAsync(Chat chat, User sender, ActionAfterGameEnds after)
+    {
+        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
+        if (game is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        Contexts.Remove(sender.Id);
+
+        return DoRequestedActionAsync(chat, sender, after);
+    }
+
+    internal Task OnToggleLanguagesAsync(Chat chat, User sender)
+    {
+        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
+        if (game is null)
+        {
+            return StartNewGameAsync(chat, sender);
+        }
+
+        game.ToggleEn();
+
+        MessageTemplateText message = game.IncludeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
+        return message.SendAsync(this, chat);
+    }
+
+    internal async Task RevealCardAsync(Chat chat, int messageId, User sender, RevealCardData revealData)
+    {
+        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
+        if (game is null)
+        {
+            await StartNewGameAsync(chat, sender);
+            return;
+        }
+
+        MessageTemplate template;
+        switch (revealData)
+        {
+            case RevealQuestionData:
+                template = DrawQuestionAndCreateTemplate(game);
+                break;
+            case RevealActionData a:
+                ActionInfo actionInfo = game.DrawAction(a.Arrangement, a.Tag);
+                ActionData data = game.GetActionData(actionInfo.Id);
+                Turn turn = new(Config.Texts, Config.ImagesFolder, data, game.Players.Current, actionInfo.Arrangement);
+                template = turn.GetMessage(game.IncludeEn);
+                bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
+                template.KeyboardProvider = CreateActionKeyboard(actionInfo, includePartial);
+                break;
+            default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
+        }
+
+        ParseMode parseMode = template.MarkdownV2 ? ParseMode.MarkdownV2 : ParseMode.None;
+        if (template.KeyboardProvider is null)
+        {
+            throw new InvalidOperationException();
+        }
+
+        await EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
+            replyMarkup: template.KeyboardProvider.Keyboard as InlineKeyboardMarkup);
+        if (game.PlayersMessageShowsPoints)
+        {
+            await ReportPlayersAsync(chat, game, false);
+        }
+    }
+
+    internal Task CompleteCardAsync(Chat chat, User sender, CompleteCardData data)
+    {
+        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
+        if (game is null)
+        {
+            return StartNewGameAsync(chat, sender);
+        }
+
+        switch (data)
+        {
+            case CompleteQuestionData q:
+                game.CompleteQuestion(q.Id);
+                break;
+            case CompleteActionData a:
+                game.CompleteAction(a.ActionInfo, a.CompletedFully);
+                break;
+            default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
+        }
+        return DrawArrangementAsync(chat, game);
+    }
+
+    private Task DoRequestedActionAsync(Chat chat, User sender, ActionAfterGameEnds after)
+    {
+        return after switch
+        {
+            ActionAfterGameEnds.StartNewGame => StartNewGameAsync(chat, sender),
+            ActionAfterGameEnds.UpdateCards  => UpdateDecksAsync(chat),
+            _                                => throw new ArgumentOutOfRangeException(nameof(after), after, null)
+        };
+    }
+
+    private async Task StartNewGameAsync(Chat chat, User sender)
+    {
+        await UnpinAllChatMessagesAsync(chat);
+        Contexts.Remove(sender.Id);
+        MessageTemplateText message = Config.Texts.NewGame;
+        await message.SendAsync(this, chat);
+    }
+
+    private async Task UpdateDecksAsync(Chat chat)
     {
         await UnpinAllChatMessagesAsync(chat);
         Contexts.Remove(chat.Id);
@@ -124,143 +299,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 _decksLoadErrors.Add(line);
             }
         }
-    }
-
-    internal bool CanBeUpdated(User sender)
-    {
-        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
-        return game is null || (game.CurrentState == Game.Game.State.ArrangementPurposed);
-    }
-
-    internal async Task UpdatePlayersAsync(Chat chat, User sender, List<PlayerListUpdateData> updates)
-    {
-        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
-        if (game is null)
-        {
-            List<string> toggled = updates.OfType<TogglePlayerData>().Select(t => t.Name).ToList();
-            if (toggled.Any())
-            {
-                await ReportUnknownToggleAsync(chat,  toggled);
-                return;
-            }
-
-            game = StartNewGame(updates);
-            Contexts[sender.Id] = game;
-
-            await Config.Texts.NewGameStart.SendAsync(this, chat);
-            Message pin = await ReportPlayersAsync(chat, game, true);
-
-            await PinChatMessageAsync(chat, pin.MessageId);
-
-            await DrawArrangementAsync(chat, game);
-        }
-        else
-        {
-            HashSet<string> toggled = new(updates.OfType<TogglePlayerData>().Select(t => t.Name));
-            toggled.ExceptWith(game.Players.AllNames);
-
-            if (toggled.Any())
-            {
-                await ReportUnknownToggleAsync(chat,  toggled);
-                return;
-            }
-
-            bool changed = game.UpdatePlayers(updates);
-            if (!changed)
-            {
-                await Config.Texts.NothingChanges.SendAsync(this, chat);
-                return;
-            }
-
-            await Config.Texts.Accepted.SendAsync(this, chat);
-
-            await DrawArrangementAsync(chat, game);
-
-            await ReportPlayersAsync(chat, game, true);
-        }
-    }
-
-    internal async Task OnNewGameAsync(Chat chat, User sender)
-    {
-        await UnpinAllChatMessagesAsync(chat);
-        Contexts.Remove(sender.Id);
-        MessageTemplateText message = Config.Texts.NewGame;
-        await message.SendAsync(this, chat);
-    }
-
-    internal Task OnToggleLanguagesAsync(Chat chat, User sender)
-    {
-        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
-        if (game is null)
-        {
-            return OnNewGameAsync(chat, sender);
-        }
-
-        game.ToggleEn();
-
-        MessageTemplateText message = game.IncludeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
-        return message.SendAsync(this, chat);
-    }
-
-    internal async Task RevealCardAsync(Chat chat, int messageId, User sender, RevealCardData revealData)
-    {
-        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
-        if (game is null)
-        {
-            await OnNewGameAsync(chat, sender);
-            return;
-        }
-
-        MessageTemplate template;
-        switch (revealData)
-        {
-            case RevealQuestionData:
-                template = DrawQuestionAndCreateTemplate(game);
-                break;
-            case RevealActionData a:
-                ActionInfo actionInfo = game.DrawAction(a.Arrangement, a.Tag);
-                ActionData data = game.GetActionData(actionInfo.Id);
-                Turn turn = new(Config.Texts, Config.ImagesFolder, data, game.Players.Current, actionInfo.Arrangement);
-                template = turn.GetMessage(game.IncludeEn);
-                bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
-                template.KeyboardProvider = CreateActionKeyboard(actionInfo, includePartial);
-                break;
-            default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
-        }
-
-        ParseMode parseMode = template.MarkdownV2 ? ParseMode.MarkdownV2 : ParseMode.None;
-        if (template.KeyboardProvider is null)
-        {
-            throw new InvalidOperationException();
-        }
-
-        await EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
-            replyMarkup: template.KeyboardProvider.Keyboard as InlineKeyboardMarkup);
-        if (game.PlayersMessageShowsPoints)
-        {
-            await ReportPlayersAsync(chat, game, false);
-        }
-    }
-
-    internal Task CompleteCardAsync(Chat chat, User sender, CompleteCardData data)
-    {
-        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
-        if (game is null)
-        {
-            return OnNewGameAsync(chat, sender);
-        }
-
-        switch (data)
-        {
-            case CompleteQuestionData q:
-                game.CompleteQuestion(q.Id);
-                break;
-            case CompleteActionData a:
-                game.CompleteAction(a.ActionInfo, a.CompletedFully);
-                break;
-            default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
-        }
-        return DrawArrangementAsync(chat, game);
     }
 
     private MessageTemplateText GetDecksLoadStatus()
@@ -413,6 +451,16 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         List<List<InlineKeyboardButton>> keyboard = new()
         {
             CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, id)
+        };
+
+        return new InlineKeyboardMarkup(keyboard);
+    }
+
+    private InlineKeyboardMarkup CreateEndGameConfirmationKeyboard(ActionAfterGameEnds after)
+    {
+        List<List<InlineKeyboardButton>> keyboard = new()
+        {
+            CreateOneButtonRow<EndGame>(Config.Texts.Completed, after)
         };
 
         return new InlineKeyboardMarkup(keyboard);

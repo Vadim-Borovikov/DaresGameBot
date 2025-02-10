@@ -187,4 +187,8 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string UnknownToggleNamesSeparator { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText EndGameWarning { get; init; } = null!;
 }
