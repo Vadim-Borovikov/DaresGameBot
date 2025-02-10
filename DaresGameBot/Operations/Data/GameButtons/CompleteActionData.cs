@@ -2,12 +2,12 @@
 
 namespace DaresGameBot.Operations.Data.GameButtons;
 
-internal sealed class GameButtonActionData : GameButtonData
+internal sealed class CompleteActionData : CompleteCardData
 {
     public readonly ActionInfo ActionInfo;
     public readonly bool CompletedFully;
 
-    public GameButtonActionData(ActionInfo actionInfo, bool completedFully)
+    public CompleteActionData(ActionInfo actionInfo, bool completedFully)
     {
         ActionInfo = actionInfo;
         CompletedFully = completedFully;

@@ -5,26 +5,26 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class CompleteCard : Operation<GameButtonData>
+internal sealed class CompleteCard : Operation<CompleteCardData>
 {
     protected override byte Order => 4;
 
     public CompleteCard(Bot bot) : base(bot) => _bot = bot;
 
-    protected override bool IsInvokingBy(Message message, User sender, out GameButtonData? data)
+    protected override bool IsInvokingBy(Message message, User sender, out CompleteCardData? data)
     {
         data = null;
         return false;
     }
 
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
-        out GameButtonData? data)
+        out CompleteCardData? data)
     {
-        data = GameButtonData.From(callbackQueryDataCore);
+        data = CompleteCardData.From(callbackQueryDataCore);
         return data is not null;
     }
 
-    protected override Task ExecuteAsync(GameButtonData data, Message message, User sender)
+    protected override Task ExecuteAsync(CompleteCardData data, Message message, User sender)
     {
         return _bot.CompleteCardAsync(message.Chat, sender, data);
     }

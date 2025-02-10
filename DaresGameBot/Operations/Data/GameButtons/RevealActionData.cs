@@ -2,12 +2,12 @@
 
 namespace DaresGameBot.Operations.Data.GameButtons;
 
-internal sealed class GameButtonArrangementData : GameButtonData
+internal sealed class RevealActionData : RevealCardData
 {
     public readonly Arrangement Arrangement;
     public readonly string Tag;
 
-    public GameButtonArrangementData(Arrangement arrangement, string tag)
+    public RevealActionData(Arrangement arrangement, string tag)
     {
         Arrangement = arrangement;
         Tag = tag;

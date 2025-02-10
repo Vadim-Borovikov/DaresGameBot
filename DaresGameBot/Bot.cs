@@ -291,7 +291,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         await ShowArrangementAsync(chat, game.Players.Current, arrangement);
     }
 
-    internal async Task RevealCardAsync(Chat chat, int messageId, User sender, GameButtonData buttonData)
+    internal async Task RevealCardAsync(Chat chat, int messageId, User sender, RevealCardData revealData)
     {
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
@@ -301,12 +301,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
 
         MessageTemplate template;
-        switch (buttonData)
+        switch (revealData)
         {
-            case GameButtonRevealQuestionData:
+            case RevealQuestionData:
                 template = DrawQuestionAndCreateTemplate(game);
                 break;
-            case GameButtonArrangementData a:
+            case RevealActionData a:
                 ActionInfo actionInfo = game.DrawAction(a.Arrangement, a.Tag);
                 ActionData data = game.GetActionData(actionInfo.Id);
                 Turn turn = new(Config.Texts, Config.ImagesFolder, data, game.Players.Current, actionInfo.Arrangement);
@@ -342,7 +342,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return template;
     }
 
-    internal Task CompleteCardAsync(Chat chat, User sender, GameButtonData data)
+    internal Task CompleteCardAsync(Chat chat, User sender, CompleteCardData data)
     {
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
@@ -352,10 +352,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
         switch (data)
         {
-            case GameButtonCompleteQuestionData q:
+            case CompleteQuestionData q:
                 game.CompleteQuestion(q.Id);
                 break;
-            case GameButtonActionData a:
+            case CompleteActionData a:
                 game.CompleteAction(a.ActionInfo, a.CompletedFully);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
