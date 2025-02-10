@@ -10,7 +10,7 @@ namespace DaresGameBot.Operations;
 
 internal sealed class UpdatePlayers : Operation<UpdatesData>
 {
-    protected override byte Order => 6;
+    protected override byte Order => 5;
 
     public UpdatePlayers(Bot bot) : base(bot, bot.Config.Texts.UpdatePlayersOperationDescription) => _bot = bot;
 
