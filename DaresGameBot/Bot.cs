@@ -22,7 +22,6 @@ using DaresGameBot.Game.Players;
 using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.GameButtons;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
-using static DaresGameBot.Operations.Data.GameButtons.EndGameData;
 
 namespace DaresGameBot;
 
@@ -113,12 +112,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
     }
 
-    internal Task OnEndGameRequesedAsync(Chat chat, User sender, ActionAfterGameEnds after)
+    internal Task OnEndGameRequesedAsync(Chat chat, User sender, EndGameData.ActionAfterGameEnds after)
     {
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
         {
-            return DoRequestedActionAsync(chat, sender, after);
+            return DoRequestedActionAsync(chat, after);
         }
 
         MessageTemplateText template = Config.Texts.EndGameWarning;
@@ -126,17 +125,18 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return template.SendAsync(this, chat);
     }
 
-    internal Task OnEndGameConfirmedAsync(Chat chat, User sender, ActionAfterGameEnds after)
+    internal async Task OnEndGameConfirmedAsync(Chat chat, User sender, EndGameData.ActionAfterGameEnds after)
     {
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
         {
-            return Task.CompletedTask;
+            return;
         }
 
+        await UnpinAllChatMessagesAsync(chat);
         Contexts.Remove(sender.Id);
 
-        return DoRequestedActionAsync(chat, sender, after);
+        await DoRequestedActionAsync(chat, after);
     }
 
     internal Task OnToggleLanguagesAsync(Chat chat, User sender)
@@ -144,7 +144,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
         {
-            return StartNewGameAsync(chat, sender);
+            return StartNewGameAsync(chat);
         }
 
         game.ToggleEn();
@@ -158,7 +158,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
         {
-            await StartNewGameAsync(chat, sender);
+            await StartNewGameAsync(chat);
             return;
         }
 
@@ -198,7 +198,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
         {
-            return StartNewGameAsync(chat, sender);
+            return StartNewGameAsync(chat);
         }
 
         switch (data)
@@ -214,23 +214,17 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return DrawArrangementAsync(chat, game);
     }
 
-    private Task DoRequestedActionAsync(Chat chat, User sender, ActionAfterGameEnds after)
+    private Task DoRequestedActionAsync(Chat chat, EndGameData.ActionAfterGameEnds after)
     {
         return after switch
         {
-            ActionAfterGameEnds.StartNewGame => StartNewGameAsync(chat, sender),
-            ActionAfterGameEnds.UpdateCards  => UpdateDecksAsync(chat),
+            EndGameData.ActionAfterGameEnds.StartNewGame => StartNewGameAsync(chat),
+            EndGameData.ActionAfterGameEnds.UpdateCards  => UpdateDecksAsync(chat),
             _                                => throw new ArgumentOutOfRangeException(nameof(after), after, null)
         };
     }
 
-    private async Task StartNewGameAsync(Chat chat, User sender)
-    {
-        await UnpinAllChatMessagesAsync(chat);
-        Contexts.Remove(sender.Id);
-        MessageTemplateText message = Config.Texts.NewGame;
-        await message.SendAsync(this, chat);
-    }
+    private Task StartNewGameAsync(Chat chat) => Config.Texts.NewGame.SendAsync(this, chat);
 
     private async Task UpdateDecksAsync(Chat chat)
     {
@@ -378,16 +372,16 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new Game.Game(_actionDeck, _questionsDeck, repository, gameStats, matchmaker);
     }
 
-    private async Task DrawArrangementAsync(Chat chat, Game.Game game)
+    private Task DrawArrangementAsync(Chat chat, Game.Game game)
     {
         Arrangement? arrangement = game.TryDrawArrangement();
-        if (arrangement is null)
+        if (arrangement is not null)
         {
-            MessageTemplate template = DrawQuestionAndCreateTemplate(game);
-            await template.SendAsync(this, chat);
-            return;
+            return ShowArrangementAsync(chat, game.Players.Current, arrangement);
         }
-        await ShowArrangementAsync(chat, game.Players.Current, arrangement);
+
+        MessageTemplate template = DrawQuestionAndCreateTemplate(game);
+        return template.SendAsync(this, chat);
     }
 
     private MessageTemplate DrawQuestionAndCreateTemplate(Game.Game game)
@@ -456,7 +450,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateEndGameConfirmationKeyboard(ActionAfterGameEnds after)
+    private InlineKeyboardMarkup CreateEndGameConfirmationKeyboard(EndGameData.ActionAfterGameEnds after)
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
