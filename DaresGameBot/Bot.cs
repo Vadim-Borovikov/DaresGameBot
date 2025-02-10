@@ -137,6 +137,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
         {
+            List<string> toggled = updates.OfType<TogglePlayerData>().Select(t => t.Name).ToList();
+            if (toggled.Any())
+            {
+                await ReportUnknownToggleAsync(chat,  toggled);
+                return;
+            }
+
             game = StartNewGame(updates);
             Contexts[sender.Id] = game;
 
@@ -149,9 +156,19 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         }
         else
         {
+            HashSet<string> toggled = new(updates.OfType<TogglePlayerData>().Select(t => t.Name));
+            toggled.ExceptWith(game.Players.AllNames);
+
+            if (toggled.Any())
+            {
+                await ReportUnknownToggleAsync(chat,  toggled);
+                return;
+            }
+
             bool changed = game.UpdatePlayers(updates);
             if (!changed)
             {
+                await Config.Texts.NothingChanges.SendAsync(this, chat);
                 return;
             }
 
@@ -204,9 +221,16 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return Config.Texts.StatusMessageEndFailedFormat.Format(errors);
     }
 
+    private Task ReportUnknownToggleAsync(Chat chat, IEnumerable<string> names)
+    {
+        string text = string.Join(Config.Texts.UnknownToggleNamesSeparator, names);
+        MessageTemplateText template = Config.Texts.UnknownToggleFormat.Format(text);
+        return template.SendAsync(this, chat);
+    }
+
     private async Task<Message> ReportPlayersAsync(Chat chat, Game.Game game, bool includePoints)
     {
-        IEnumerable<string> players = game.Players.GetNames().Select(p => GetPlayerLine(p, game, includePoints));
+        IEnumerable<string> players = game.Players.GetActiveNames().Select(p => GetPlayerLine(p, game, includePoints));
         MessageTemplateText messageText =
             Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, players));
 

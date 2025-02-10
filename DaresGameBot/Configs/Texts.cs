@@ -176,4 +176,15 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string EquipmentSeparatorSheet { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText UnknownToggleFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText NothingChanges { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string UnknownToggleNamesSeparator { get; init; } = null!;
 }

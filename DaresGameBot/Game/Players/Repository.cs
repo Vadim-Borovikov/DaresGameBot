@@ -8,7 +8,8 @@ namespace DaresGameBot.Game.Players;
 
 internal sealed class Repository
 {
-    public IReadOnlyList<string> GetNames() => _names.Where(n => _infos[n].Active).ToList().AsReadOnly();
+    public IEnumerable<string> GetActiveNames() => _names.Where(n => _infos[n].Active);
+    public IEnumerable<string> AllNames => _names;
 
     public string Current => _names[_currentIndex];
 

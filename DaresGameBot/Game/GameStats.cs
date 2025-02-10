@@ -63,7 +63,7 @@ internal sealed class GameStats : IInteractionSubscriber
             switch (data)
             {
                 case AddOrUpdatePlayerData a:
-                    if (!_players.GetNames().Contains(a.Name))
+                    if (!_players.GetActiveNames().Contains(a.Name))
                     {
                         EnsureMinPoints(a.Name, minPoints);
                     }
@@ -74,7 +74,7 @@ internal sealed class GameStats : IInteractionSubscriber
                 case TogglePlayerData t:
                     if (_players.TogglePlayerData(t))
                     {
-                        if (_players.GetNames().Contains(t.Name))
+                        if (_players.GetActiveNames().Contains(t.Name))
                         {
                             EnsureMinPoints(t.Name, minPoints);
                         }
