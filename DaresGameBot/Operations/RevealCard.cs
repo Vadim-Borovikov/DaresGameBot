@@ -9,10 +9,7 @@ internal sealed class RevealCard : Operation<GameButtonData>
 {
     protected override byte Order => 3;
 
-    public RevealCard(Bot bot) : base(bot)
-    {
-        _bot = bot;
-    }
+    public RevealCard(Bot bot) : base(bot) => _bot = bot;
 
     protected override bool IsInvokingBy(Message message, User sender, out GameButtonData? data)
     {

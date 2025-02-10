@@ -12,10 +12,7 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
 {
     protected override byte Order => 7;
 
-    public UpdatePlayers(Bot bot) : base(bot, bot.Config.Texts.UpdatePlayersOperationDescription)
-    {
-        _bot = bot;
-    }
+    public UpdatePlayers(Bot bot) : base(bot, bot.Config.Texts.UpdatePlayersOperationDescription) => _bot = bot;
 
     protected override bool IsInvokingBy(Message message, User sender, out UpdatesData? data)
     {

@@ -9,10 +9,7 @@ internal sealed class CompleteCard : Operation<GameButtonData>
 {
     protected override byte Order => 4;
 
-    public CompleteCard(Bot bot) : base(bot)
-    {
-        _bot = bot;
-    }
+    public CompleteCard(Bot bot) : base(bot) => _bot = bot;
 
     protected override bool IsInvokingBy(Message message, User sender, out GameButtonData? data)
     {
