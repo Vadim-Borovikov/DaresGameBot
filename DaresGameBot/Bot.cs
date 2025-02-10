@@ -196,9 +196,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             return OnNewGameAsync(chat, sender);
         }
 
-        _includeEn = !_includeEn;
+        game.ToggleEn();
 
-        MessageTemplateText message = _includeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
+        MessageTemplateText message = game.IncludeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
         return message.SendAsync(this, chat);
     }
 
@@ -310,7 +310,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
                 ActionInfo actionInfo = game.DrawAction(a.Arrangement, a.Tag);
                 ActionData data = game.GetActionData(actionInfo.Id);
                 Turn turn = new(Config.Texts, Config.ImagesFolder, data, game.Players.Current, actionInfo.Arrangement);
-                template = turn.GetMessage(_includeEn);
+                template = turn.GetMessage(game.IncludeEn);
                 bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
                 template.KeyboardProvider = CreateActionKeyboard(actionInfo, includePartial);
                 break;
@@ -337,7 +337,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         CardData questionData = game.GetQuestionData(id);
         Turn turn =
             new(Config.Texts, Config.ImagesFolder, Config.Texts.QuestionsTag, questionData, game.Players.Current);
-        MessageTemplate template = turn.GetMessage(_includeEn);
+        MessageTemplate template = turn.GetMessage(game.IncludeEn);
         template.KeyboardProvider = CreateQuestionKeyboard(id);
         return template;
     }
@@ -448,5 +448,4 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     private Deck<CardData>? _questionsDeck;
     private readonly HashSet<string> _decksEquipment = new();
     private readonly List<string> _decksLoadErrors = new();
-    private bool _includeEn;
 }

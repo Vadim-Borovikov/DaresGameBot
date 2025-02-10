@@ -19,6 +19,8 @@ internal sealed class Game
     public readonly Players.Repository Players;
     public readonly GameStats Stats;
 
+    public bool IncludeEn { get; private set; }
+
     public Message? PlayersMessage;
     public bool PlayersMessageShowsPoints;
 
@@ -41,6 +43,8 @@ internal sealed class Game
 
     public ActionData GetActionData(ushort id) => _actionDeck.GetCard(id);
     public CardData GetQuestionData(ushort id) => _questionsDeck.GetCard(id);
+
+    public void ToggleEn() => IncludeEn = !IncludeEn;
 
     public Arrangement? TryDrawArrangement()
     {
