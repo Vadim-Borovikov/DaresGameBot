@@ -29,12 +29,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 {
     public Bot(Config config) : base(config)
     {
-        Operations.Add(new UpdateCommand(this));
         Operations.Add(new NewCommand(this));
+        Operations.Add(new UpdateCommand(this));
         Operations.Add(new LangCommand(this));
-        Operations.Add(new UpdatePlayers(this));
         Operations.Add(new RevealCard(this));
         Operations.Add(new CompleteCard(this));
+        Operations.Add(new UpdatePlayers(this));
 
         GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
 
@@ -202,6 +202,67 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return message.SendAsync(this, chat);
     }
 
+    internal async Task RevealCardAsync(Chat chat, int messageId, User sender, RevealCardData revealData)
+    {
+        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
+        if (game is null)
+        {
+            await OnNewGameAsync(chat, sender);
+            return;
+        }
+
+        MessageTemplate template;
+        switch (revealData)
+        {
+            case RevealQuestionData:
+                template = DrawQuestionAndCreateTemplate(game);
+                break;
+            case RevealActionData a:
+                ActionInfo actionInfo = game.DrawAction(a.Arrangement, a.Tag);
+                ActionData data = game.GetActionData(actionInfo.Id);
+                Turn turn = new(Config.Texts, Config.ImagesFolder, data, game.Players.Current, actionInfo.Arrangement);
+                template = turn.GetMessage(game.IncludeEn);
+                bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
+                template.KeyboardProvider = CreateActionKeyboard(actionInfo, includePartial);
+                break;
+            default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
+        }
+
+        ParseMode parseMode = template.MarkdownV2 ? ParseMode.MarkdownV2 : ParseMode.None;
+        if (template.KeyboardProvider is null)
+        {
+            throw new InvalidOperationException();
+        }
+
+        await EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
+            replyMarkup: template.KeyboardProvider.Keyboard as InlineKeyboardMarkup);
+        if (game.PlayersMessageShowsPoints)
+        {
+            await ReportPlayersAsync(chat, game, false);
+        }
+    }
+
+    internal Task CompleteCardAsync(Chat chat, User sender, CompleteCardData data)
+    {
+        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
+        if (game is null)
+        {
+            return OnNewGameAsync(chat, sender);
+        }
+
+        switch (data)
+        {
+            case CompleteQuestionData q:
+                game.CompleteQuestion(q.Id);
+                break;
+            case CompleteActionData a:
+                game.CompleteAction(a.ActionInfo, a.CompletedFully);
+                break;
+            default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
+        }
+        return DrawArrangementAsync(chat, game);
+    }
+
     private MessageTemplateText GetDecksLoadStatus()
     {
         if (_decksLoadErrors.Count == 0)
@@ -291,46 +352,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         await ShowArrangementAsync(chat, game.Players.Current, arrangement);
     }
 
-    internal async Task RevealCardAsync(Chat chat, int messageId, User sender, RevealCardData revealData)
-    {
-        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
-        if (game is null)
-        {
-            await OnNewGameAsync(chat, sender);
-            return;
-        }
-
-        MessageTemplate template;
-        switch (revealData)
-        {
-            case RevealQuestionData:
-                template = DrawQuestionAndCreateTemplate(game);
-                break;
-            case RevealActionData a:
-                ActionInfo actionInfo = game.DrawAction(a.Arrangement, a.Tag);
-                ActionData data = game.GetActionData(actionInfo.Id);
-                Turn turn = new(Config.Texts, Config.ImagesFolder, data, game.Players.Current, actionInfo.Arrangement);
-                template = turn.GetMessage(game.IncludeEn);
-                bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
-                template.KeyboardProvider = CreateActionKeyboard(actionInfo, includePartial);
-                break;
-            default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
-        }
-
-        ParseMode parseMode = template.MarkdownV2 ? ParseMode.MarkdownV2 : ParseMode.None;
-        if (template.KeyboardProvider is null)
-        {
-            throw new InvalidOperationException();
-        }
-
-        await EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
-            replyMarkup: template.KeyboardProvider.Keyboard as InlineKeyboardMarkup);
-        if (game.PlayersMessageShowsPoints)
-        {
-            await ReportPlayersAsync(chat, game, false);
-        }
-    }
-
     private MessageTemplate DrawQuestionAndCreateTemplate(Game.Game game)
     {
         ushort id = game.DrawQuestion();
@@ -340,27 +361,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         MessageTemplate template = turn.GetMessage(game.IncludeEn);
         template.KeyboardProvider = CreateQuestionKeyboard(id);
         return template;
-    }
-
-    internal Task CompleteCardAsync(Chat chat, User sender, CompleteCardData data)
-    {
-        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
-        if (game is null)
-        {
-            return OnNewGameAsync(chat, sender);
-        }
-
-        switch (data)
-        {
-            case CompleteQuestionData q:
-                game.CompleteQuestion(q.Id);
-                break;
-            case CompleteActionData a:
-                game.CompleteAction(a.ActionInfo, a.CompletedFully);
-                break;
-            default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
-        }
-        return DrawArrangementAsync(chat, game);
     }
 
     private Task ShowArrangementAsync(Chat chat, string player, Arrangement arrangement)
