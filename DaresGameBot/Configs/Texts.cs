@@ -73,7 +73,7 @@ public class Texts : AbstractBot.Configs.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string PartnersSeparator { get; init; } = null!;
+    public string DefaultSeparator { get; init; } = null!;
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
@@ -184,9 +184,6 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public MessageTemplateText NothingChanges { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string UnknownToggleNamesSeparator { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

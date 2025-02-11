@@ -316,7 +316,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     private Task ReportUnknownToggleAsync(Chat chat, IEnumerable<string> names)
     {
-        string text = string.Join(Config.Texts.UnknownToggleNamesSeparator, names);
+        string text = string.Join(Config.Texts.DefaultSeparator, names);
         MessageTemplateText template = Config.Texts.UnknownToggleFormat.Format(text);
         return template.SendAsync(this, chat);
     }

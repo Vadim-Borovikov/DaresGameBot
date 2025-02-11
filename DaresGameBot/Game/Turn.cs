@@ -50,8 +50,7 @@ internal sealed class Turn
     public static MessageTemplateText GetPartnersPart(Texts texts, Arrangement arrangement)
     {
         string partnersPrefix = arrangement.Partners.Count > 1 ? texts.Partners : texts.Partner;
-        string separator =
-            arrangement.CompatablePartners ? texts.CompatablePartnersSeparator : texts.PartnersSeparator;
+        string separator = arrangement.CompatablePartners ? texts.CompatablePartnersSeparator : texts.DefaultSeparator;
         string partnersText = string.Join(separator, arrangement.Partners);
         return texts.TurnPartnersFormat.Format(partnersPrefix, partnersText);
     }
