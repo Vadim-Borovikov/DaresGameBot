@@ -27,11 +27,13 @@ internal sealed class DistributedMatchmaker : Matchmaker
         if (!arrangementType.CompatablePartners)
         {
             return shuffled.OrderBy(p => _gameStats.GetPropositions(Players.Current, p))
+                           .ThenBy(_gameStats.GetPropositions)
                            .Take(arrangementType.Partners);
         }
 
         IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatableGroups(shuffled, arrangementType.Partners);
         return groups.OrderBy(g => _gameStats.GetPropositions(Players.Current, g))
+                     .ThenBy(g => g.Sum(_gameStats.GetPropositions))
                      .First();
     }
 

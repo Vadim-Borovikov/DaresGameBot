@@ -22,8 +22,11 @@ internal sealed class GameStats : IInteractionSubscriber
 
     public void OnArrangementPurposed(string player, Arrangement arrangement)
     {
+        RegisterProposition(player);
+
         foreach (string p in arrangement.Partners)
         {
+            RegisterProposition(p);
             RegisterProposition(player, p);
         }
 
@@ -89,17 +92,19 @@ internal sealed class GameStats : IInteractionSubscriber
         return changed;
     }
 
-    public int GetPropositions(string player, IReadOnlyList<string> players)
-    {
-        return players.Sum(p => GetPropositions(player, p))
-               + ListHelper.EnumeratePairs(players)
-                           .Sum(pair => GetPropositions(pair.Item1, pair.Item2));
-    }
+    public int GetPropositions(string player) => _propositions.GetValueOrDefault(player);
 
     public int GetPropositions(string p1, string p2)
     {
         string key = GetKey(p1, p2);
         return _propositions.GetValueOrDefault(key);
+    }
+
+    public int GetPropositions(string player, IReadOnlyList<string> players)
+    {
+        return players.Sum(p => GetPropositions(player, p))
+               + ListHelper.EnumeratePairs(players)
+                           .Sum(pair => GetPropositions(pair.Item1, pair.Item2));
     }
 
     private int? GetPoints(string tag, bool completedFully)
@@ -116,10 +121,12 @@ internal sealed class GameStats : IInteractionSubscriber
         _points[name] = Math.Max(_points.GetValueOrDefault(name), points);
     }
 
+    private void RegisterProposition(string key) => _propositions.CreateOrAdd(key, 1);
+
     private void RegisterProposition(string p1, string p2)
     {
         string key = GetKey(p1, p2);
-        _propositions.CreateOrAdd(key, 1);
+        RegisterProposition(key);
     }
 
     private static string GetKey(string p1, string p2)
