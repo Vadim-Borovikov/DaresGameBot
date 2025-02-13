@@ -20,29 +20,23 @@ internal sealed class GameStats : IInteractionSubscriber
         _players = players;
     }
 
-    public void OnArrangementPurposed(string player, Arrangement arrangement)
+    public void OnQuestionCompleted(string player, Arrangement? declinedArrangement)
     {
-        RegisterProposition(player);
-
-        foreach (string p in arrangement.Partners)
+        if (declinedArrangement is null)
         {
-            RegisterProposition(p);
-            RegisterProposition(player, p);
+            RegisterProposition(player);
         }
-
-        if (!arrangement.CompatablePartners)
+        else
         {
-            return;
-        }
-        foreach ((string, string) pair in ListHelper.EnumeratePairs(arrangement.Partners))
-        {
-            RegisterProposition(pair.Item1, pair.Item2);
+            RegisterPropositions(player, declinedArrangement);
         }
     }
 
-    public void OnActionCompleted(string player, ushort id, IEnumerable<string> partners, bool fully)
+    public void OnActionCompleted(string player, ActionInfo info, bool fully)
     {
-        ActionData data = _actions.GetCard(id);
+        RegisterPropositions(player, info.Arrangement);
+
+        ActionData data = _actions.GetCard(info.Id);
         int? points = GetPoints(data.Tag, fully);
         if (points is null)
         {
@@ -50,7 +44,7 @@ internal sealed class GameStats : IInteractionSubscriber
         }
 
         _points.CreateOrAdd(player, points.Value);
-        foreach (string partner in partners)
+        foreach (string partner in info.Arrangement.Partners)
         {
             _points.CreateOrAdd(partner, points.Value);
         }
@@ -119,6 +113,26 @@ internal sealed class GameStats : IInteractionSubscriber
     private void EnsureMinPoints(string name, int points)
     {
         _points[name] = Math.Max(_points.GetValueOrDefault(name), points);
+    }
+
+    private void RegisterPropositions(string player, Arrangement arrangement)
+    {
+        RegisterProposition(player);
+
+        foreach (string p in arrangement.Partners)
+        {
+            RegisterProposition(p);
+            RegisterProposition(player, p);
+        }
+
+        if (!arrangement.CompatablePartners)
+        {
+            return;
+        }
+        foreach ((string, string) pair in ListHelper.EnumeratePairs(arrangement.Partners))
+        {
+            RegisterProposition(pair.Item1, pair.Item2);
+        }
     }
 
     private void RegisterProposition(string key) => _propositions.CreateOrAdd(key, 1);

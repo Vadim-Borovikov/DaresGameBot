@@ -6,29 +6,41 @@ namespace DaresGameBot.Operations.Data.GameButtons;
 
 internal abstract class CompleteCardData : GameButtonData
 {
+    public readonly Arrangement? Arrangement;
+
+    protected CompleteCardData(Arrangement? arrangement) => Arrangement = arrangement;
+
     public static CompleteCardData? From(string callbackQueryDataCore)
     {
         string[] parts = callbackQueryDataCore.Split(FieldSeparator);
 
+        ushort? id;
         switch (parts.Length)
         {
             case 1:
-                ushort? questionId = parts[0].ToUshort();
-                return questionId is null ? null : new CompleteQuestionData(questionId.Value);
+                id = parts[0].ToUshort();
+                return id is null ? null : new CompleteQuestionData(id.Value);
+            case < 3: return null;
+        }
+
+        Arrangement? arrangement = TryGetArrangement(parts[0], parts[1]);
+        if (arrangement is null)
+        {
+            return null;
+        }
+
+        id = parts[2].ToUshort();
+        if (id is null)
+        {
+            return null;
+        }
+
+        switch (parts.Length)
+        {
+            case 3:
+                return new CompleteQuestionData(id.Value, arrangement);
             case 4:
-                Arrangement? arrangement = TryGetArrangement(parts[0], parts[1]);
-                if (arrangement is null)
-                {
-                    return null;
-                }
-
-                ushort? actionId = parts[2].ToUshort();
-                if (actionId is null)
-                {
-                    return null;
-                }
-
-                ActionInfo actionInfo = new(actionId.Value, arrangement);
+                ActionInfo actionInfo = new(id.Value, arrangement);
 
                 bool? completedFully = parts[3].ToBool();
                 return completedFully is null ? null : new CompleteActionData(actionInfo, completedFully.Value);

@@ -165,8 +165,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         MessageTemplate template;
         switch (revealData)
         {
-            case RevealQuestionData:
-                template = DrawQuestionAndCreateTemplate(game);
+            case RevealQuestionData q:
+                template = DrawQuestionAndCreateTemplate(game, q.Arrangement);
                 break;
             case RevealActionData a:
                 ActionInfo actionInfo = game.DrawAction(a.Arrangement, a.Tag);
@@ -204,7 +204,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         switch (data)
         {
             case CompleteQuestionData q:
-                game.CompleteQuestion(q.Id);
+                game.CompleteQuestion(q.Id, q.Arrangement);
                 break;
             case CompleteActionData a:
                 game.CompleteAction(a.ActionInfo, a.CompletedFully);
@@ -384,14 +384,14 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return template.SendAsync(this, chat);
     }
 
-    private MessageTemplate DrawQuestionAndCreateTemplate(Game.Game game)
+    private MessageTemplate DrawQuestionAndCreateTemplate(Game.Game game, Arrangement? declinedArrangement = null)
     {
         ushort id = game.DrawQuestion();
         CardData questionData = game.GetQuestionData(id);
         Turn turn =
             new(Config.Texts, Config.ImagesFolder, Config.Texts.QuestionsTag, questionData, game.Players.Current);
         MessageTemplate template = turn.GetMessage(game.IncludeEn);
-        template.KeyboardProvider = CreateQuestionKeyboard(id);
+        template.KeyboardProvider = CreateQuestionKeyboard(id, declinedArrangement);
         return template;
     }
 
@@ -411,14 +411,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag)
+            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag, GetString(arrangement))
         };
 
         keyboard.AddRange(Config.ActionOptions
                                 .OrderBy(o => o.Value.Points)
-                                .Select(o => CreateOneButtonRow<RevealCard>(o.Key,
-                                    string.Join(GameButtonData.ListSeparator, arrangement.Partners),
-                                    arrangement.CompatablePartners, o.Key)));
+                                .Select(o => CreateOneButtonRow<RevealCard>(o.Key, GetString(arrangement), o.Key)));
 
         return new InlineKeyboardMarkup(keyboard);
     }
@@ -427,7 +425,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag),
+            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag, GetString(info.Arrangement)),
             CreateActionButtonRow(info, true)
         };
 
@@ -440,13 +438,14 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateQuestionKeyboard(ushort id)
+    private InlineKeyboardMarkup CreateQuestionKeyboard(ushort id, Arrangement? declinedArrangement)
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, id)
+            declinedArrangement is null
+                ? CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, id)
+                : CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, GetString(declinedArrangement), id)
         };
-
         return new InlineKeyboardMarkup(keyboard);
     }
 
@@ -463,9 +462,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
     private List<InlineKeyboardButton> CreateActionButtonRow(ActionInfo info, bool fully)
     {
         string caption = fully ? Config.Texts.Completed : Config.Texts.ActionCompletedPartially;
-        return CreateOneButtonRow<CompleteCard>(caption,
-            string.Join(GameButtonData.ListSeparator, info.Arrangement.Partners), info.Arrangement.CompatablePartners,
-            info.Id, fully);
+        return CreateOneButtonRow<CompleteCard>(caption, GetString(info.Arrangement), info.Id, fully);
     }
 
     private static List<InlineKeyboardButton> CreateOneButtonRow<TData>(string caption, params object[] args)
@@ -482,6 +479,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         {
             CallbackData = typeof(TData).Name + string.Join(GameButtonData.FieldSeparator, fields)
         };
+    }
+
+    private static string GetString(Arrangement arrangement)
+    {
+        string partners = string.Join(GameButtonData.PartnersSeparator, arrangement.Partners);
+        return $"{partners}{GameButtonData.FieldSeparator}{arrangement.CompatablePartners}";
     }
 
     private readonly Sheet _actionsSheet;

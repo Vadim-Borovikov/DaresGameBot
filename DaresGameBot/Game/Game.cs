@@ -58,7 +58,6 @@ internal sealed class Game
         Arrangement arrangement = _matchmaker.SelectCompanionsFor(card.ArrangementType);
 
         CurrentState = State.ArrangementPurposed;
-        OnArrangementPurposed(arrangement);
 
         return arrangement;
     }
@@ -85,9 +84,11 @@ internal sealed class Game
         return info;
     }
 
-    public void CompleteQuestion(ushort id)
+    public void CompleteQuestion(ushort id, Arrangement? declinedArrangement)
     {
         _questionsDeck.Mark(id);
+
+        OnQuestionCompleted(declinedArrangement);
 
         StartNewTurn();
     }
@@ -103,11 +104,11 @@ internal sealed class Game
 
     private void StartNewTurn() => Players.MoveNext();
 
-    private void OnArrangementPurposed(Arrangement arrangement)
+    private void OnQuestionCompleted(Arrangement? declinedArrangement)
     {
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnArrangementPurposed(Players.Current, arrangement);
+            subscriber.OnQuestionCompleted(Players.Current, declinedArrangement);
         }
     }
 
@@ -115,7 +116,7 @@ internal sealed class Game
     {
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnActionCompleted(Players.Current, info.Id, info.Arrangement.Partners, fully);
+            subscriber.OnActionCompleted(Players.Current, info, fully);
         }
     }
 

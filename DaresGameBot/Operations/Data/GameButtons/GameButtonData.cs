@@ -17,8 +17,11 @@ internal abstract class GameButtonData
         return compatablePartners is null ? null : new Arrangement(partners, compatablePartners.Value);
     }
 
-    private static string[]? SplitList(string s) => string.IsNullOrWhiteSpace(s) ? null : s.Split(ListSeparator);
+    private static string[]? SplitList(string s)
+    {
+        return string.IsNullOrWhiteSpace(s) ? null : s.Split(PartnersSeparator);
+    }
 
+    internal const string PartnersSeparator = ";";
     internal const string FieldSeparator = "|";
-    internal const string ListSeparator = ";";
 }

@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-
-namespace DaresGameBot.Game.Matchmaking.Interactions;
+﻿namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal interface IInteractionSubscriber
 {
-    public void OnArrangementPurposed(string player, Arrangement arrangement);
-    public void OnActionCompleted(string player, ushort id, IEnumerable<string> partners, bool fully);
+    public void OnQuestionCompleted(string player, Arrangement? declinedArrangement);
+    public void OnActionCompleted(string player, ActionInfo info, bool fully);
 }
