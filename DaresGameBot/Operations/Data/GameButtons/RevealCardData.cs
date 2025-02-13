@@ -11,7 +11,12 @@ internal abstract class RevealCardData : GameButtonData
         {
             case 1: return new RevealQuestionData();
             case 3:
-                Arrangement arrangement = GetArrangement(parts[0], parts[1]);
+                Arrangement? arrangement = TryGetArrangement(parts[0], parts[1]);
+                if (arrangement is null)
+                {
+                    return null;
+                }
+
                 string tag = parts[2];
                 return new RevealActionData(arrangement, tag);
             default: return null;

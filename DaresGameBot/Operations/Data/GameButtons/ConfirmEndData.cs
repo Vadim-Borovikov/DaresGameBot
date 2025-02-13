@@ -1,4 +1,4 @@
-﻿using System;
+﻿using DaresGameBot.Helpers;
 
 namespace DaresGameBot.Operations.Data.GameButtons;
 
@@ -14,7 +14,8 @@ internal sealed class ConfirmEndData : GameButtonData
 
     public static ConfirmEndData? From(string callbackQueryDataCore)
     {
-        return Enum.TryParse(callbackQueryDataCore, out ActionAfterGameEnds after) ? new ConfirmEndData(after) : null;
+        ActionAfterGameEnds? after = callbackQueryDataCore.ToActionAfterGameEnds();
+        return after is null ? null : new ConfirmEndData(after.Value);
     }
 
     private ConfirmEndData(ActionAfterGameEnds after) => After = after;
