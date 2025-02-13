@@ -22,7 +22,6 @@ internal sealed class Game
     public bool IncludeEn { get; private set; }
 
     public Message? PlayersMessage;
-    public bool PlayersMessageShowsPoints;
 
     public State CurrentState { get; private set; }
 

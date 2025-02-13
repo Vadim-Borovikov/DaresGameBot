@@ -11,8 +11,6 @@ namespace DaresGameBot.Game;
 
 internal sealed class GameStats : IInteractionSubscriber
 {
-    public IReadOnlyDictionary<string, int> Points => _points.AsReadOnly();
-
     public GameStats(Dictionary<string, Option> actionOptions, Deck<ActionData> actions, Players.Repository players)
     {
         _actionOptions = actionOptions;
@@ -30,11 +28,13 @@ internal sealed class GameStats : IInteractionSubscriber
         {
             RegisterPropositions(player, declinedArrangement);
         }
+        RegisterTurn();
     }
 
     public void OnActionCompleted(string player, ActionInfo info, bool fully)
     {
         RegisterPropositions(player, info.Arrangement);
+        RegisterTurn();
 
         ActionData data = _actions.GetCard(info.Id);
         int? points = GetPoints(data.Tag, fully);
@@ -52,7 +52,6 @@ internal sealed class GameStats : IInteractionSubscriber
 
     public bool UpdateList(List<PlayerListUpdateData> updateDatas)
     {
-        int minPoints = _points.Any() ? _points.Values.Min() : 0;
         bool changed = false;
 
         foreach (PlayerListUpdateData data in updateDatas)
@@ -60,25 +59,10 @@ internal sealed class GameStats : IInteractionSubscriber
             switch (data)
             {
                 case AddOrUpdatePlayerData a:
-                    if (!_players.GetActiveNames().Contains(a.Name))
-                    {
-                        EnsureMinPoints(a.Name, minPoints);
-                    }
-
                     changed |= _players.AddOrUpdatePlayerData(a);
-
                     break;
                 case TogglePlayerData t:
-                    if (_players.TogglePlayerData(t))
-                    {
-                        if (_players.GetActiveNames().Contains(t.Name))
-                        {
-                            EnsureMinPoints(t.Name, minPoints);
-                        }
-
-                        changed = true;
-                    }
-
+                    changed |= _players.TogglePlayerData(t);
                     break;
             }
         }
@@ -101,6 +85,14 @@ internal sealed class GameStats : IInteractionSubscriber
                            .Sum(pair => GetPropositions(pair.Item1, pair.Item2));
     }
 
+    public float? GetRatio(string player)
+    {
+        int propositions = GetPropositions(player);
+        return propositions == 0 ? null : 1.0f * _points.GetValueOrDefault(player) / propositions;
+    }
+
+    public int GetTurns(string player) => _turns.GetValueOrDefault(player);
+
     private int? GetPoints(string tag, bool completedFully)
     {
         if (!_actionOptions.ContainsKey(tag))
@@ -108,11 +100,6 @@ internal sealed class GameStats : IInteractionSubscriber
             return null;
         }
         return completedFully ? _actionOptions[tag].Points : _actionOptions[tag].PartialPoints;
-    }
-
-    private void EnsureMinPoints(string name, int points)
-    {
-        _points[name] = Math.Max(_points.GetValueOrDefault(name), points);
     }
 
     private void RegisterPropositions(string player, Arrangement arrangement)
@@ -148,9 +135,18 @@ internal sealed class GameStats : IInteractionSubscriber
         return string.Compare(p1, p2, StringComparison.Ordinal) < 0 ? p1 + p2 : p2 + p1;
     }
 
+    private void RegisterTurn()
+    {
+        foreach (string player in _players.GetActiveNames())
+        {
+            _turns.CreateOrAdd(player, 1);
+        }
+    }
+
     private readonly Dictionary<string, Option> _actionOptions;
     private readonly Deck<ActionData> _actions;
     private readonly Players.Repository _players;
     private readonly Dictionary<string, int> _points = new();
     private readonly Dictionary<string, int> _propositions = new();
+    private readonly Dictionary<string, int> _turns = new();
 }

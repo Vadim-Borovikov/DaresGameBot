@@ -7,7 +7,7 @@ namespace DaresGameBot.Operations;
 
 internal sealed class ConfirmEnd : Operation<ConfirmEndData>
 {
-    protected override byte Order => 8;
+    protected override byte Order => 9;
 
     public ConfirmEnd(Bot bot) : base(bot) => _bot = bot;
 

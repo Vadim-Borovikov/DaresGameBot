@@ -95,6 +95,11 @@ public class Texts : AbstractBot.Configs.Texts
 
     [UsedImplicitly]
     [Required]
+    [MinLength(1)]
+    public string ShowRatesCaption { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
     public MessageTemplateText ReadingDecks { get; init; } = null!;
 
     [Required]
@@ -142,9 +147,6 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public string PlayerFormat { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PlayerFormatPointsPostfix { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
@@ -188,4 +190,22 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     [MinLength(1)]
     public MessageTemplateText EndGameWarning { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText RatesFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText NoRates { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText RateLineFormat { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public MessageTemplateText BestRateFormat { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string RateFormat { get; init; } = null!;
 }

@@ -7,7 +7,7 @@ namespace DaresGameBot.Operations;
 
 internal sealed class RevealCard : Operation<RevealCardData>
 {
-    protected override byte Order => 6;
+    protected override byte Order => 7;
 
     public RevealCard(Bot bot) : base(bot) => _bot = bot;
 

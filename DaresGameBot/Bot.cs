@@ -32,6 +32,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         Operations.Add(new NewCommand(this));
         Operations.Add(new UpdateCommand(this));
         Operations.Add(new LangCommand(this));
+        Operations.Add(new RatesCommand(this));
         Operations.Add(new RevealCard(this));
         Operations.Add(new CompleteCard(this));
         Operations.Add(new UpdatePlayers(this));
@@ -80,7 +81,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             Contexts[sender.Id] = game;
 
             await Config.Texts.NewGameStart.SendAsync(this, chat);
-            Message pin = await ReportPlayersAsync(chat, game, true);
+            Message pin = await ReportPlayersAsync(chat, game);
 
             await PinChatMessageAsync(chat, pin.MessageId);
 
@@ -108,7 +109,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
             await DrawArrangementAsync(chat, game);
 
-            await ReportPlayersAsync(chat, game, true);
+            await ReportPlayersAsync(chat, game);
         }
     }
 
@@ -132,6 +133,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         {
             return;
         }
+
+        await ShowRatesAsync(chat, game);
 
         await UnpinAllChatMessagesAsync(chat);
         Contexts.Remove(sender.Id);
@@ -187,10 +190,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
         await EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
             replyMarkup: template.KeyboardProvider.Keyboard as InlineKeyboardMarkup);
-        if (game.PlayersMessageShowsPoints)
-        {
-            await ReportPlayersAsync(chat, game, false);
-        }
     }
 
     internal Task CompleteCardAsync(Chat chat, User sender, CompleteCardData data)
@@ -212,6 +211,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
         return DrawArrangementAsync(chat, game);
+    }
+
+    internal Task ShowRatesAsync(Chat chat, User sender)
+    {
+        Game.Game? game = TryGetContext<Game.Game>(sender.Id);
+        return game is null ? StartNewGameAsync(chat) : ShowRatesAsync(chat, game);
     }
 
     private Task DoRequestedActionAsync(Chat chat, ConfirmEndData.ActionAfterGameEnds after)
@@ -321,9 +326,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return template.SendAsync(this, chat);
     }
 
-    private async Task<Message> ReportPlayersAsync(Chat chat, Game.Game game, bool includePoints)
+    private async Task<Message> ReportPlayersAsync(Chat chat, Game.Game game)
     {
-        IEnumerable<string> players = game.Players.GetActiveNames().Select(p => GetPlayerLine(p, game, includePoints));
+        IEnumerable<string> players =
+            game.Players.GetActiveNames().Select(p => string.Format(Config.Texts.PlayerFormat, p));
         MessageTemplateText messageText =
             Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, players));
 
@@ -336,18 +342,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             await EditMessageTextAsync(chat, game.PlayersMessage.MessageId, messageText.EscapeIfNeeded());
         }
 
-        game.PlayersMessageShowsPoints = includePoints;
         return game.PlayersMessage;
-    }
-
-    private string GetPlayerLine(string name, Game.Game game, bool includePoints)
-    {
-        string? pointsPostfix = null;
-        if (includePoints)
-        {
-            pointsPostfix = string.Format(Config.Texts.PlayerFormatPointsPostfix, game.Stats.Points[name]);
-        }
-        return string.Format(Config.Texts.PlayerFormat, name, pointsPostfix);
     }
 
     private Game.Game StartNewGame(List<PlayerListUpdateData> updates)
@@ -405,6 +400,48 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         MessageTemplateText message = Config.Texts.TurnFormatShort.Format(player, partnersText);
         message.KeyboardProvider = CreateArrangementKeyboard(arrangement);
         return message.SendAsync(this, chat);
+    }
+
+    private Task ShowRatesAsync(Chat chat, Game.Game game)
+    {
+        Dictionary<string, float> ratios = new();
+        foreach (string player in game.Players.GetActiveNames())
+        {
+            float? rate = game.Stats.GetRatio(player);
+            if (rate is not null)
+            {
+                ratios[player] = rate.Value;
+            }
+        }
+
+        if (ratios.Count == 0)
+        {
+            return Config.Texts.NoRates.SendAsync(this, chat);
+        }
+
+        float bestRate = ratios.Values.Max();
+
+        List<MessageTemplateText> lines = new();
+
+        // ReSharper disable once LoopCanBePartlyConvertedToQuery
+        foreach (string player in ratios.Keys.OrderByDescending(p => ratios[p]))
+        {
+            float rate = ratios[player];
+            int turns = game.Stats.GetTurns(player);
+
+            string line = string.Format(Config.Texts.RateFormat, player, rate.ToString("0.##"), turns);
+            MessageTemplateText lineTemplate = new(line);
+            if (Math.Abs(rate - bestRate) < float.Epsilon)
+            {
+                lineTemplate = Config.Texts.BestRateFormat.Format(line);
+            }
+            lineTemplate = Config.Texts.RateLineFormat.Format(lineTemplate);
+            lines.Add(lineTemplate);
+        }
+
+        MessageTemplateText allLinesTemplate = MessageTemplateText.JoinTexts(lines);
+        MessageTemplateText template = Config.Texts.RatesFormat.Format(allLinesTemplate);
+        return template.SendAsync(this, chat);
     }
 
     private InlineKeyboardMarkup CreateArrangementKeyboard(Arrangement arrangement)
