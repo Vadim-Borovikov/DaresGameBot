@@ -22,11 +22,20 @@ using DaresGameBot.Game.Players;
 using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.GameButtons;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
+using JetBrains.Annotations;
 
 namespace DaresGameBot;
 
 public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple>
 {
+    [Flags]
+    internal enum AccessType
+    {
+        [UsedImplicitly]
+        Default = 1,
+        Admin = 2
+    }
+
     public Bot(Config config) : base(config)
     {
         Operations.Add(new NewCommand(this));

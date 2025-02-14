@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AbstractBot.Operations;
@@ -11,6 +12,8 @@ namespace DaresGameBot.Operations;
 internal sealed class UpdatePlayers : Operation<UpdatesData>
 {
     protected override byte Order => 6;
+
+    public override Enum AccessRequired => DaresGameBot.Bot.AccessType.Admin;
 
     public UpdatePlayers(Bot bot) : base(bot, bot.Config.Texts.UpdatePlayersOperationDescription) => _bot = bot;
 

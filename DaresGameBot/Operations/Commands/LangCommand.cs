@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using AbstractBot.Operations.Commands;
 using Telegram.Bot.Types;
 
@@ -7,6 +8,8 @@ namespace DaresGameBot.Operations.Commands;
 internal sealed class LangCommand : CommandSimple
 {
     protected override byte Order => 5;
+
+    public override Enum AccessRequired => DaresGameBot.Bot.AccessType.Admin;
 
     public LangCommand(Bot bot) : base(bot, "lang", bot.Config.Texts.LangCommandDescription) => _bot = bot;
 
