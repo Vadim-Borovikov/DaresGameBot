@@ -19,26 +19,21 @@ public class Texts : AbstractBot.Configs.Texts
 
     [UsedImplicitly]
     [Required]
-    [MinLength(1)]
     public MessageTemplateText PlayersFormat { get; init; } = null!;
     [UsedImplicitly]
     [Required]
     public string PlayersSeparator { get; init; } = null!;
     [UsedImplicitly]
     [Required]
-    [MinLength(1)]
     public MessageTemplateText NewGame { get; init; } = null!;
     [UsedImplicitly]
     [Required]
-    [MinLength(1)]
     public MessageTemplateText NewGameStart { get; init; } = null!;
     [UsedImplicitly]
     [Required]
-    [MinLength(1)]
     public MessageTemplateText Accepted { get; init; } = null!;
     [UsedImplicitly]
     [Required]
-    [MinLength(1)]
     public MessageTemplateText Refuse { get; init; } = null!;
 
     [Required]
@@ -47,18 +42,14 @@ public class Texts : AbstractBot.Configs.Texts
 
     [UsedImplicitly]
     [Required]
-    [MinLength(1)]
     public MessageTemplateText TurnFormatFull { get; init; } = null!;
     [UsedImplicitly]
     [Required]
-    [MinLength(1)]
     public MessageTemplateText TurnFormatShort { get; init; } = null!;
     [UsedImplicitly]
     [Required]
-    [MinLength(1)]
     public MessageTemplateText TurnDescriptionRuEnFormat { get; init; } = null!;
     [Required]
-    [MinLength(1)]
     public MessageTemplateText TurnPartnersFormat { get; init; } = null!;
 
     [UsedImplicitly]
@@ -103,7 +94,6 @@ public class Texts : AbstractBot.Configs.Texts
     public MessageTemplateText ReadingDecks { get; init; } = null!;
 
     [Required]
-    [MinLength(1)]
     public MessageTemplateText UpdatePlayersOperationDescription { get; init; } = null!;
 
     [UsedImplicitly]
@@ -117,11 +107,9 @@ public class Texts : AbstractBot.Configs.Texts
     public string LangCommandDescription { get; init; } = null!;
 
     [Required]
-    [MinLength(1)]
     public MessageTemplateText LangToggledToRu { get; init; } = null!;
 
     [Required]
-    [MinLength(1)]
     public MessageTemplateText LangToggledToRuEn { get; init; } = null!;
 
     [Required]
@@ -149,13 +137,10 @@ public class Texts : AbstractBot.Configs.Texts
     public string PlayerFormat { get; init; } = null!;
 
     [Required]
-    [MinLength(1)]
     public MessageTemplateText StatusMessageEndSuccessFormat { get; init; } = null!;
     [Required]
-    [MinLength(1)]
     public MessageTemplateText StatusMessageEndFailedFormat { get; init; } = null!;
     [Required]
-    [MinLength(1)]
     public MessageTemplateText EquipmentPrefixFormat { get; init; } = null!;
 
     [Required]
@@ -180,32 +165,24 @@ public class Texts : AbstractBot.Configs.Texts
     public string EquipmentSeparatorSheet { get; init; } = null!;
 
     [Required]
-    [MinLength(1)]
     public MessageTemplateText UnknownToggleFormat { get; init; } = null!;
 
     [Required]
-    [MinLength(1)]
     public MessageTemplateText NothingChanges { get; init; } = null!;
 
     [Required]
-    [MinLength(1)]
     public MessageTemplateText EndGameWarning { get; init; } = null!;
 
     [Required]
-    [MinLength(1)]
     public MessageTemplateText RatesFormat { get; init; } = null!;
 
     [Required]
-    [MinLength(1)]
     public MessageTemplateText NoRates { get; init; } = null!;
 
     [Required]
-    [MinLength(1)]
     public MessageTemplateText RateLineFormat { get; init; } = null!;
     [Required]
-    [MinLength(1)]
     public MessageTemplateText BestRateFormat { get; init; } = null!;
     [Required]
-    [MinLength(1)]
     public string RateFormat { get; init; } = null!;
 }
