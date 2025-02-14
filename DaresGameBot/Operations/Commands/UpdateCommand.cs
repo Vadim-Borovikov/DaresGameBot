@@ -7,7 +7,7 @@ namespace DaresGameBot.Operations.Commands;
 
 internal sealed class UpdateCommand : CommandSimple
 {
-    protected override byte Order => 2;
+    protected override byte Order => 4;
 
     public UpdateCommand(Bot bot) : base(bot, "update", bot.Config.Texts.UpdateCommandDescription) => _bot = bot;
 

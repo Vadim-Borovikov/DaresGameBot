@@ -6,7 +6,7 @@ namespace DaresGameBot.Operations.Commands;
 
 internal sealed class LangCommand : CommandSimple
 {
-    protected override byte Order => 4;
+    protected override byte Order => 5;
 
     public LangCommand(Bot bot) : base(bot, "lang", bot.Config.Texts.LangCommandDescription) => _bot = bot;
 

@@ -6,7 +6,7 @@ namespace DaresGameBot.Operations.Commands;
 
 internal sealed class RatesCommand : CommandSimple
 {
-    protected override byte Order => 5;
+    protected override byte Order => 3;
 
     public RatesCommand(Bot bot) : base(bot, "rates", bot.Config.Texts.ShowRatesCaption) => _bot = bot;
 

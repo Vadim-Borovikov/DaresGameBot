@@ -7,7 +7,7 @@ namespace DaresGameBot.Operations.Commands;
 
 internal sealed class NewCommand : CommandSimple
 {
-    protected override byte Order => 3;
+    protected override byte Order => 2;
 
     public NewCommand(Bot bot) : base(bot, "new", bot.Config.Texts.NewGameCaption) => _bot = bot;
 
