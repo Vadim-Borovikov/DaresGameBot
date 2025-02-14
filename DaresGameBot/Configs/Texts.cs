@@ -184,5 +184,5 @@ public class Texts : AbstractBot.Configs.Texts
     [Required]
     public MessageTemplateText BestRateFormat { get; init; } = null!;
     [Required]
-    public string RateFormat { get; init; } = null!;
+    public MessageTemplateText RateFormat { get; init; } = null!;
 }

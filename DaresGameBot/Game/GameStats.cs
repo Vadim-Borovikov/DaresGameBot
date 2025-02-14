@@ -88,9 +88,10 @@ internal sealed class GameStats : IInteractionSubscriber
     public float? GetRatio(string player)
     {
         int propositions = GetPropositions(player);
-        return propositions == 0 ? null : 1.0f * _points.GetValueOrDefault(player) / propositions;
+        return propositions == 0 ? null : 1.0f * GetPoints(player) / propositions;
     }
 
+    public int GetPoints(string player) => _points.GetValueOrDefault(player);
     public int GetTurns(string player) => _turns.GetValueOrDefault(player);
 
     private int? GetPoints(string tag, bool completedFully)

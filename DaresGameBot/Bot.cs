@@ -426,17 +426,18 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         // ReSharper disable once LoopCanBePartlyConvertedToQuery
         foreach (string player in ratios.Keys.OrderByDescending(p => ratios[p]))
         {
-            float rate = ratios[player];
+            int points = game.Stats.GetPoints(player);
+            int propositions = game.Stats.GetPropositions(player);
+            string rate = ratios[player].ToString("0.##");
             int turns = game.Stats.GetTurns(player);
 
-            string line = string.Format(Config.Texts.RateFormat, player, rate.ToString("0.##"), turns);
-            MessageTemplateText lineTemplate = new(line);
-            if (Math.Abs(rate - bestRate) < float.Epsilon)
+            MessageTemplateText line = Config.Texts.RateFormat.Format(player, points, propositions, rate, turns);
+            if (Math.Abs(ratios[player] - bestRate) < float.Epsilon)
             {
-                lineTemplate = Config.Texts.BestRateFormat.Format(line);
+                line = Config.Texts.BestRateFormat.Format(line);
             }
-            lineTemplate = Config.Texts.RateLineFormat.Format(lineTemplate);
-            lines.Add(lineTemplate);
+            line = Config.Texts.RateLineFormat.Format(line);
+            lines.Add(line);
         }
 
         MessageTemplateText allLinesTemplate = MessageTemplateText.JoinTexts(lines);
