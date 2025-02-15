@@ -63,6 +63,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             Type = ChatType.Private
         };
 
+        await EndGame(chat);
         await UpdateDecksAsync(chat);
     }
 
@@ -90,9 +91,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             Contexts[sender.Id] = game;
 
             await Config.Texts.NewGameStart.SendAsync(this, chat);
-            Message pin = await ReportPlayersAsync(chat, game);
+            game.PlayersMessage = await ReportPlayersAsync(chat, game);
 
-            await PinChatMessageAsync(chat, pin.MessageId);
+            await PinChatMessageAsync(chat, game.PlayersMessage.MessageId);
 
             await DrawArrangementAsync(chat, game);
         }
@@ -118,7 +119,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
             await DrawArrangementAsync(chat, game);
 
-            await ReportPlayersAsync(chat, game);
+            game.PlayersMessage = await ReportPlayersAsync(chat, game);
         }
     }
 
@@ -145,8 +146,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
         await ShowRatesAsync(chat, game);
 
-        await UnpinAllChatMessagesAsync(chat);
-        Contexts.Remove(sender.Id);
+        await EndGame(chat, sender);
 
         await DoRequestedActionAsync(chat, after);
     }
@@ -165,13 +165,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return message.SendAsync(this, chat);
     }
 
-    internal async Task RevealCardAsync(Chat chat, int messageId, User sender, RevealCardData revealData)
+    internal Task RevealCardAsync(Chat chat, int messageId, User sender, RevealCardData revealData)
     {
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
         {
-            await StartNewGameAsync(chat);
-            return;
+            return StartNewGameAsync(chat);
         }
 
         MessageTemplate template;
@@ -197,7 +196,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             throw new InvalidOperationException();
         }
 
-        await EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
+        return EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
             replyMarkup: template.KeyboardProvider.Keyboard as InlineKeyboardMarkup);
     }
 
@@ -242,9 +241,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
     private async Task UpdateDecksAsync(Chat chat)
     {
-        await UnpinAllChatMessagesAsync(chat);
-        Contexts.Remove(chat.Id);
-
         _decksLoadErrors.Clear();
         _decksEquipment.Clear();
         await using (await StatusMessage.CreateAsync(this, chat, Config.Texts.ReadingDecks, GetDecksLoadStatus))
@@ -335,23 +331,16 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return template.SendAsync(this, chat);
     }
 
-    private async Task<Message> ReportPlayersAsync(Chat chat, Game.Game game)
+    private Task<Message> ReportPlayersAsync(Chat chat, Game.Game game)
     {
         IEnumerable<string> players =
             game.Players.GetActiveNames().Select(p => string.Format(Config.Texts.PlayerFormat, p));
         MessageTemplateText messageText =
             Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, players));
 
-        if (game.PlayersMessage is null)
-        {
-            game.PlayersMessage = await messageText.SendAsync(this, chat);
-        }
-        else
-        {
-            await EditMessageTextAsync(chat, game.PlayersMessage.MessageId, messageText.EscapeIfNeeded());
-        }
-
-        return game.PlayersMessage;
+        return game.PlayersMessage is null
+            ? messageText.SendAsync(this, chat)
+            : EditMessageTextAsync(chat, game.PlayersMessage.MessageId, messageText.EscapeIfNeeded());
     }
 
     private Game.Game StartNewGame(List<PlayerListUpdateData> updates)
@@ -452,6 +441,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         MessageTemplateText allLinesTemplate = MessageTemplateText.JoinTexts(lines);
         MessageTemplateText template = Config.Texts.RatesFormat.Format(allLinesTemplate);
         return template.SendAsync(this, chat);
+    }
+
+    private Task EndGame(Chat chat, User? sender = null)
+    {
+        Contexts.Remove(sender?.Id ?? chat.Id);
+        return UnpinAllChatMessagesAsync(chat);
     }
 
     private InlineKeyboardMarkup CreateArrangementKeyboard(Arrangement arrangement)
