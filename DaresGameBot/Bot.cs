@@ -165,12 +165,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
         return message.SendAsync(this, chat);
     }
 
-    internal Task RevealCardAsync(Chat chat, int messageId, User sender, RevealCardData revealData)
+    internal async Task RevealCardAsync(Chat chat, int messageId, User sender, RevealCardData revealData)
     {
         Game.Game? game = TryGetContext<Game.Game>(sender.Id);
         if (game is null)
         {
-            return StartNewGameAsync(chat);
+            await StartNewGameAsync(chat);
+            return;
         }
 
         MessageTemplate template;
@@ -190,14 +191,17 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
 
-        ParseMode parseMode = template.MarkdownV2 ? ParseMode.MarkdownV2 : ParseMode.None;
-        if (template.KeyboardProvider is null)
+        switch (template)
         {
-            throw new InvalidOperationException();
+            case MessageTemplateText mtt:
+                await mtt.EditMessageWithSelfAsync(this, chat, messageId);
+                break;
+            case MessageTemplateImage mti:
+                await mti.EditMessageMediaWithSelfAsync(this, chat, messageId);
+                await mti.EditMessageCaptionWithSelfAsync(this, chat, messageId);
+                break;
+            default: throw new InvalidOperationException();
         }
-
-        return EditMessageTextAsync(chat, messageId, template.EscapeIfNeeded(), parseMode,
-            replyMarkup: template.KeyboardProvider.Keyboard as InlineKeyboardMarkup);
     }
 
     internal Task CompleteCardAsync(Chat chat, User sender, CompleteCardData data)
@@ -340,7 +344,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, object, CommandDataSimple
 
         return game.PlayersMessage is null
             ? messageText.SendAsync(this, chat)
-            : EditMessageTextAsync(chat, game.PlayersMessage.MessageId, messageText.EscapeIfNeeded());
+            : messageText.EditMessageWithSelfAsync(this, chat, game.PlayersMessage.MessageId);
     }
 
     private Game.Game StartNewGame(List<PlayerListUpdateData> updates)
