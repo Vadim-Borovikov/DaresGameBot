@@ -1,5 +1,6 @@
 ﻿using DaresGameBot.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Telegram.Bot.Types;
 
 namespace DaresGameBot.Web.Controllers;
 
@@ -7,5 +8,9 @@ namespace DaresGameBot.Web.Controllers;
 public sealed class HomeController : Controller
 {
     [HttpGet]
-    public IActionResult Index([FromServices] BotSingleton singleton) => View(singleton.Bot.User);
+    public async Task<IActionResult> Index([FromServices] BotSingleton singleton)
+    {
+        User self = await singleton.Bot.GetSelfAsync();
+        return View(self);
+    }
 }

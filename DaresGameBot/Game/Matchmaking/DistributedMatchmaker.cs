@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Helpers;
-using DaresGameBot.Game.Players;
+using DaresGameBot.Context;
+using DaresGameBot.Game.Data;
 
 namespace DaresGameBot.Game.Matchmaking;
 
 internal sealed class DistributedMatchmaker : Matchmaker
 {
-    public DistributedMatchmaker(Repository players, GameStats gameStats, ICompatibility compatibility)
+    public DistributedMatchmaker(PlayersRepository players, GameStats gameStats, ICompatibility compatibility)
         : base(players, compatibility)
     {
         _gameStats = gameStats;
@@ -33,7 +33,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
 
         IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatableGroups(shuffled, arrangementType.Partners);
         return groups.OrderBy(g => _gameStats.GetPropositions(Players.Current, g))
-                     .ThenBy(g => g.Sum(_gameStats.GetPropositions))
+                     .ThenBy(g => g.Sum(p => _gameStats.GetPropositions(p)))
                      .First();
     }
 

@@ -1,17 +1,28 @@
 using System.Collections.Generic;
 using System.Linq;
+using AbstractBot;
 using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
+using DaresGameBot.Save;
 
-namespace DaresGameBot.Game.Players;
+namespace DaresGameBot.Context;
 
-internal sealed class Repository
+internal sealed class PlayersRepository : IContext<PlayersRepository, PlayersRepositoryData, object>
 {
     public IEnumerable<string> GetActiveNames() => _names.Where(n => _infos[n].Active);
     public IEnumerable<string> AllNames => _names;
 
     public string Current => _names[_currentIndex];
+
+    public PlayersRepository() { }
+
+    private PlayersRepository(List<string> names, Dictionary<string, PlayerInfo> infos, int currentIndex)
+    {
+        _names = names;
+        _infos = infos;
+        _currentIndex = currentIndex;
+    }
 
     public void MoveNext()
     {
@@ -73,6 +84,23 @@ internal sealed class Repository
         }
 
         return true;
+    }
+
+    public PlayersRepositoryData Save()
+    {
+        return new PlayersRepositoryData
+        {
+            Names = _names,
+            Infos = _infos.ToDictionary(i => i.Key, i => i.Value.Save()),
+            CurrentIndex = _currentIndex
+        };
+    }
+
+    public static PlayersRepository Load(PlayersRepositoryData data, object? meta)
+    {
+        Dictionary<string, PlayerInfo> infos =
+            data.Infos.ToDictionary(i => i.Key, i => PlayerInfo.Load(i.Value, meta));
+        return new PlayersRepository(data.Names, infos, data.CurrentIndex);
     }
 
     public bool AreCompatable(string p1, string p2, ICompatibility compatibility)

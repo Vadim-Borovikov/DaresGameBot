@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using DaresGameBot.Context;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Helpers;
@@ -9,7 +10,7 @@ namespace DaresGameBot.Game.Matchmaking;
 
 internal abstract class Matchmaker
 {
-    protected Matchmaker(Players.Repository players, ICompatibility compatibility)
+    protected Matchmaker(PlayersRepository players, ICompatibility compatibility)
     {
         Players = players;
         _compatibility = compatibility;
@@ -61,7 +62,7 @@ internal abstract class Matchmaker
 
     protected abstract IEnumerable<string>? EnumerateMatches(ArrangementType arrangementType);
 
-    protected readonly Players.Repository Players;
+    protected readonly PlayersRepository Players;
 
     private readonly ICompatibility _compatibility;
 }

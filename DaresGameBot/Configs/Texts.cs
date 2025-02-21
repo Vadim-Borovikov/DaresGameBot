@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace DaresGameBot.Configs;
 
 [PublicAPI]
-public class Texts : AbstractBot.Configs.Texts
+public class Texts : AbstractBot.Configs.TextsBasic
 {
     [UsedImplicitly]
     [Required]

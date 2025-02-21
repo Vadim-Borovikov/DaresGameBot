@@ -4,7 +4,7 @@ namespace DaresGameBot.Helpers;
 
 internal static class DictionaryHelper
 {
-    public static void CreateOrAdd<TKey>(this Dictionary<TKey, int> dict, TKey key, int value) where TKey : notnull
+    public static void CreateOrAdd<TKey>(this Dictionary<TKey, uint> dict, TKey key, uint value) where TKey : notnull
     {
         if (dict.ContainsKey(key))
         {

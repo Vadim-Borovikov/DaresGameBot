@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Configs;
-using DaresGameBot.Game.Players;
+using DaresGameBot.Context;
 
 namespace DaresGameBot.Operations.Data.PlayerListUpdates;
 
@@ -27,7 +27,7 @@ internal sealed class UpdatesData
                     string group = parts[1];
                     string[] groups = parts[2].Split(texts.UpdateGroupsSeparator);
                     HashSet<string> compatableGroups = new(groups);
-                    GroupsInfo info = new(group, new HashSet<string>(compatableGroups));
+                    GroupsInfo info = new(group, compatableGroups);
                     data = new AddOrUpdatePlayerData(player, info);
                     break;
                 default: return null;

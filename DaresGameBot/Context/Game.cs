@@ -1,14 +1,19 @@
 ﻿using System.Collections.Generic;
+using AbstractBot;
 using DaresGameBot.Game.Matchmaking;
-using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 using GryphonUtilities.Extensions;
-using Telegram.Bot.Types;
+using DaresGameBot.Game;
+using DaresGameBot.Save;
+using DaresGameBot.Context.Meta;
+using DaresGameBot.Game.Data;
+using DaresGameBot.Game.Matchmaking.Compatibility;
+using DaresGameBot.Helpers;
 
-namespace DaresGameBot.Game;
+namespace DaresGameBot.Context;
 
-internal sealed class Game
+internal sealed class Game : IContext<Game, GameData, MetaContext>
 {
     public enum State
     {
@@ -16,19 +21,19 @@ internal sealed class Game
         CardRevealed
     }
 
-    public readonly Players.Repository Players;
+    public readonly PlayersRepository Players;
     public readonly GameStats Stats;
 
     public bool IncludeEn { get; private set; }
 
-    public Message? PlayersMessage;
+    public int? PlayersMessageId;
 
-    public State CurrentState { get; private set; }
+    public State? CurrentState { get; private set; }
 
-    public Game(Deck<ActionData> actionDeck, Deck<CardData> questionsDeck, Players.Repository players, GameStats stats,
-        Matchmaker matchmaker)
+    public Game(Deck<ActionData> actionsDeck, Deck<CardData> questionsDeck, PlayersRepository players, GameStats stats,
+        Matchmaker matchmaker, bool includeEn = false, int? playersMessageId = null, State? currentState = null)
     {
-        _actionDeck = actionDeck;
+        _actionDeck = actionsDeck;
         _questionsDeck = questionsDeck;
         Players = players;
         Stats = stats;
@@ -38,6 +43,10 @@ internal sealed class Game
         {
             Stats
         };
+
+        IncludeEn = includeEn;
+        PlayersMessageId = playersMessageId;
+        CurrentState = currentState;
     }
 
     public ActionData GetActionData(ushort id) => _actionDeck.GetCard(id);
@@ -64,7 +73,6 @@ internal sealed class Game
     public ushort DrawQuestion()
     {
         ushort id = _questionsDeck.GetRandomId().Denull("No question found!");
-        _questionsDeck.Mark(id);
 
         CurrentState = State.CardRevealed;
 
@@ -101,6 +109,62 @@ internal sealed class Game
         StartNewTurn();
     }
 
+    public bool UpdatePlayers(List<PlayerListUpdateData> updateDatas) => Stats.UpdateList(updateDatas);
+
+    public GameData Save()
+    {
+        return new GameData
+        {
+            ActionUses = _actionDeck.Save(),
+            QuestionUses = _questionsDeck.Save(),
+            PlayersRepositoryData = Players.Save(),
+            GameStatsData = Stats.Save(),
+            IncludeEn = IncludeEn,
+            PlayersMessageId = PlayersMessageId,
+            CurrentState = CurrentState?.ToString()
+        };
+    }
+
+    public static Game? Load(GameData data, MetaContext? meta)
+    {
+        if (meta is null)
+        {
+            return null;
+        }
+
+        foreach (ActionData action in meta.Actions.Values)
+        {
+            action.ArrangementType = new ArrangementType(action.Partners, action.CompatablePartners);
+        }
+        Deck<ActionData>? actionDeck = Deck<ActionData>.Load(data.ActionUses, meta.Actions);
+        if (actionDeck is null)
+        {
+            return null;
+        }
+
+        Deck<CardData>? questionDeck = Deck<CardData>.Load(data.QuestionUses, meta.Questions);
+        if (questionDeck is null)
+        {
+            return null;
+        }
+
+        PlayersRepository playersRepository = PlayersRepository.Load(data.PlayersRepositoryData, meta);
+        GameStatsMetaContext gameStatsMeta = new(meta, playersRepository);
+
+        GameStats? gameStats = GameStats.Load(data.GameStatsData, gameStatsMeta);
+        if (gameStats is null)
+        {
+            return null;
+        }
+
+        State? currentState = data.CurrentState?.ToState();
+
+        GroupCompatibility compatibility = new();
+        DistributedMatchmaker matchmaker = new(playersRepository, gameStats, compatibility);
+        return new Game(actionDeck, questionDeck, playersRepository, gameStats, matchmaker, data.IncludeEn,
+            data.PlayersMessageId, currentState);
+    }
+
     private void StartNewTurn() => Players.MoveNext();
 
     private void OnQuestionCompleted(Arrangement? declinedArrangement)
@@ -118,8 +182,6 @@ internal sealed class Game
             subscriber.OnActionCompleted(Players.Current, info, fully);
         }
     }
-
-    public bool UpdatePlayers(List<PlayerListUpdateData> updateDatas) => Stats.UpdateList(updateDatas);
 
     private readonly Deck<ActionData> _actionDeck;
     private readonly Deck<CardData> _questionsDeck;

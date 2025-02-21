@@ -1,6 +1,7 @@
 ﻿using AbstractBot.Operations.Commands;
 using System;
 using System.Threading.Tasks;
+using AbstractBot.Bots;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations.Commands;
@@ -9,11 +10,18 @@ internal sealed class RatesCommand : CommandSimple
 {
     protected override byte Order => 3;
 
-    public override Enum AccessRequired => DaresGameBot.Bot.AccessType.Admin;
+    public override Enum AccessRequired => Bot.AccessType.Admin;
 
-    public RatesCommand(Bot bot) : base(bot, "rates", bot.Config.Texts.ShowRatesCaption) => _bot = bot;
+    public RatesCommand(Bot bot)
+        : base(bot.Config.Texts.CommandDescriptionFormat, "rates", bot.Config.Texts.ShowRatesCaption)
+    {
+        _bot = bot;
+    }
 
-    protected override Task ExecuteAsync(Message message, User sender) => _bot.ShowRatesAsync(message.Chat, sender);
+    protected override Task ExecuteAsync(BotBasic bot, Message message, User sender)
+    {
+        return _bot.ShowRatesAsync(message.Chat);
+    }
 
     private readonly Bot _bot;
 }

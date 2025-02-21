@@ -1,21 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AbstractBot;
 using DaresGameBot.Configs;
+using DaresGameBot.Context.Meta;
+using DaresGameBot.Game;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
+using DaresGameBot.Save;
 
-namespace DaresGameBot.Game;
+namespace DaresGameBot.Context;
 
-internal sealed class GameStats : IInteractionSubscriber
+internal sealed class GameStats : IInteractionSubscriber, IContext<GameStats, GameStatsData, GameStatsMetaContext>
 {
-    public GameStats(Dictionary<string, Option> actionOptions, Deck<ActionData> actions, Players.Repository players)
+    public GameStats(Dictionary<string, Option> actionOptions, Dictionary<ushort, ActionData> actions,
+        PlayersRepository players, GameStatsData? data = null)
     {
         _actionOptions = actionOptions;
         _actions = actions;
         _players = players;
+
+        if (data is not null)
+        {
+            _points = data.Points;
+            _propositions = data.Propositions;
+            _turns = data.Turns;
+        }
     }
 
     public void OnQuestionCompleted(string player, Arrangement? declinedArrangement)
@@ -36,11 +48,11 @@ internal sealed class GameStats : IInteractionSubscriber
         RegisterPropositions(player, info.Arrangement);
         RegisterTurn();
 
-        ActionData data = _actions.GetCard(info.Id);
-        int? points = GetPoints(data.Tag, fully);
+        ActionData? data = _actions.GetValueOrDefault(info.Id);
+        uint? points = GetPoints(data?.Tag, fully);
         if (points is null)
         {
-            throw new NullReferenceException($"No points in config for ({data.Tag}, {fully})");
+            throw new NullReferenceException($"No points in config for ({data?.Tag}, {fully})");
         }
 
         _points.CreateOrAdd(player, points.Value);
@@ -70,33 +82,47 @@ internal sealed class GameStats : IInteractionSubscriber
         return changed;
     }
 
-    public int GetPropositions(string player) => _propositions.GetValueOrDefault(player);
+    public uint GetPropositions(string player) => _propositions.GetValueOrDefault(player);
 
-    public int GetPropositions(string p1, string p2)
+    public uint GetPropositions(string p1, string p2)
     {
         string key = GetKey(p1, p2);
         return _propositions.GetValueOrDefault(key);
     }
 
-    public int GetPropositions(string player, IReadOnlyList<string> players)
+    public uint GetPropositions(string player, IReadOnlyList<string> players)
     {
-        return players.Sum(p => GetPropositions(player, p))
-               + ListHelper.EnumeratePairs(players)
-                           .Sum(pair => GetPropositions(pair.Item1, pair.Item2));
+        return (uint) (players.Sum(p => GetPropositions(player, p))
+                       + ListHelper.EnumeratePairs(players).Sum(pair => GetPropositions(pair.Item1, pair.Item2)));
     }
 
     public float? GetRatio(string player)
     {
-        int propositions = GetPropositions(player);
+        uint propositions = GetPropositions(player);
         return propositions == 0 ? null : 1.0f * GetPoints(player) / propositions;
     }
 
-    public int GetPoints(string player) => _points.GetValueOrDefault(player);
-    public int GetTurns(string player) => _turns.GetValueOrDefault(player);
+    public uint GetPoints(string player) => _points.GetValueOrDefault(player);
+    public uint GetTurns(string player) => _turns.GetValueOrDefault(player);
 
-    private int? GetPoints(string tag, bool completedFully)
+    public GameStatsData Save()
     {
-        if (!_actionOptions.ContainsKey(tag))
+        return new GameStatsData
+        {
+            Points = _points,
+            Propositions = _propositions,
+            Turns = _turns
+        };
+    }
+
+    public static GameStats? Load(GameStatsData data, GameStatsMetaContext? meta)
+    {
+        return meta is null ? null : new GameStats(meta.ActionOptions, meta.Actions, meta.Players, data);
+    }
+
+    private uint? GetPoints(string? tag, bool completedFully)
+    {
+        if (string.IsNullOrWhiteSpace(tag) || !_actionOptions.ContainsKey(tag))
         {
             return null;
         }
@@ -145,9 +171,9 @@ internal sealed class GameStats : IInteractionSubscriber
     }
 
     private readonly Dictionary<string, Option> _actionOptions;
-    private readonly Deck<ActionData> _actions;
-    private readonly Players.Repository _players;
-    private readonly Dictionary<string, int> _points = new();
-    private readonly Dictionary<string, int> _propositions = new();
-    private readonly Dictionary<string, int> _turns = new();
+    private readonly Dictionary<ushort, ActionData> _actions;
+    private readonly PlayersRepository _players;
+    private readonly Dictionary<string, uint> _points = new();
+    private readonly Dictionary<string, uint> _propositions = new();
+    private readonly Dictionary<string, uint> _turns = new();
 }

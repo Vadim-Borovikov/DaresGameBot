@@ -22,4 +22,13 @@ internal static class ObjectExtensions
         }
         return Enum.TryParse(o?.ToString(), out a) ? a : null;
     }
+
+    public static Context.Game.State? ToState(this object? o)
+    {
+        if (o is Context.Game.State s)
+        {
+            return s;
+        }
+        return Enum.TryParse(o?.ToString(), out s) ? s : null;
+    }
 }
