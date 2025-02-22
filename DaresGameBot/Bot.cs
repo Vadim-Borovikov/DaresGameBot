@@ -221,25 +221,30 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         }
 
         MessageTemplate template;
+        Turn turn;
         switch (revealData)
         {
             case RevealQuestionData q:
-                template = DrawQuestionAndCreateTemplate(_game, q.Arrangement);
+                ushort id = _game.DrawQuestion();
+                turn = CreateQuestionTurn(_game, id);
+                template = turn.GetMessage(SaveManager.SaveData.IncludeEn);
+                await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
+                template.KeyboardProvider = CreateQuestionKeyboard(id, q.Arrangement);
+                await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
                 break;
             case RevealActionData a:
                 ActionInfo actionInfo = _game.DrawAction(a.Arrangement, a.Tag);
                 ActionData data = _game.GetActionData(actionInfo.Id);
-                Turn turn =
-                    new(Config.Texts, Config.ImagesFolder, data, _game.Players.Current, actionInfo.Arrangement);
+                turn =
+                    new Turn(Config.Texts, Config.ImagesFolder, data, _game.Players.Current, actionInfo.Arrangement);
                 template = turn.GetMessage(SaveManager.SaveData.IncludeEn);
                 bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
                 template.KeyboardProvider = CreateActionKeyboard(actionInfo, includePartial);
+                await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
+                await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
-
-        await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
-        await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
 
         SaveManager.Save();
     }
@@ -446,24 +451,26 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
             return;
         }
 
-        MessageTemplate template = DrawQuestionAndCreateTemplate(game);
-
-        Message message = await template.SendAsync(this, _adminChat);
-        SaveManager.SaveData.CardAdminMessageId = message.MessageId;
-
-        message = await template.SendAsync(this, _playerChat);
-        SaveManager.SaveData.CardPlayerMessageId = message.MessageId;
+        await DrawAndSendQuestion(game);
     }
 
-    private MessageTemplate DrawQuestionAndCreateTemplate(Context.Game game, Arrangement? declinedArrangement = null)
+    private async Task DrawAndSendQuestion(Context.Game game)
     {
         ushort id = game.DrawQuestion();
-        CardData questionData = game.GetQuestionData(id);
-        Turn turn =
-            new(Config.Texts, Config.ImagesFolder, Config.Texts.QuestionsTag, questionData, game.Players.Current);
+        Turn turn = CreateQuestionTurn(game, id);
         MessageTemplate template = turn.GetMessage(SaveManager.SaveData.IncludeEn);
-        template.KeyboardProvider = CreateQuestionKeyboard(id, declinedArrangement);
-        return template;
+        Message message = await template.SendAsync(this, _playerChat);
+        SaveManager.SaveData.CardPlayerMessageId = message.MessageId;
+
+        template.KeyboardProvider = CreateQuestionKeyboard(id, null);
+        message = await template.SendAsync(this, _adminChat);
+        SaveManager.SaveData.CardAdminMessageId = message.MessageId;
+    }
+
+    private Turn CreateQuestionTurn(Context.Game game, ushort id)
+    {
+        CardData data = game.GetQuestionData(id);
+        return new Turn(Config.Texts, Config.ImagesFolder, Config.Texts.QuestionsTag, data, game.Players.Current);
     }
 
     private async Task ShowArrangementAsync(string player, Arrangement arrangement)
