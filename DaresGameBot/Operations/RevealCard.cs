@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using AbstractBot.Bots;
 using AbstractBot.Operations;
 using DaresGameBot.Operations.Data.GameButtons;
@@ -9,6 +10,8 @@ namespace DaresGameBot.Operations;
 internal sealed class RevealCard : Operation<RevealCardData>
 {
     protected override byte Order => 7;
+
+    public override Enum AccessRequired => Bot.AccessType.Player;
 
     public RevealCard(Bot bot) => _bot = bot;
 
@@ -27,7 +30,7 @@ internal sealed class RevealCard : Operation<RevealCardData>
 
     protected override Task ExecuteAsync(BotBasic bot, RevealCardData data, Message message, User sender)
     {
-        return _bot.RevealCardAsync(message.Chat, message.MessageId, data);
+        return _bot.RevealCardAsync(message.MessageId, data);
     }
 
     private readonly Bot _bot;

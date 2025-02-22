@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using AbstractBot.Bots;
 using AbstractBot.Operations;
 using DaresGameBot.Operations.Data.GameButtons;
@@ -9,6 +10,8 @@ namespace DaresGameBot.Operations;
 internal sealed class ConfirmEnd : Operation<ConfirmEndData>
 {
     protected override byte Order => 9;
+
+    public override Enum AccessRequired => Bot.AccessType.Admin;
 
     public ConfirmEnd(Bot bot) => _bot = bot;
 
@@ -27,7 +30,7 @@ internal sealed class ConfirmEnd : Operation<ConfirmEndData>
 
     protected override Task ExecuteAsync(BotBasic bot, ConfirmEndData data, Message message, User sender)
     {
-        return _bot.OnEndGameConfirmedAsync(message.Chat, data.After);
+        return _bot.OnEndGameConfirmedAsync(data.After);
     }
 
     private readonly Bot _bot;

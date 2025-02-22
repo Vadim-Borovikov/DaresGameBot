@@ -15,4 +15,10 @@ public sealed class Data : SaveData<object>
 
     [UsedImplicitly]
     public int? PlayersMessageId { get; set; }
+
+    [UsedImplicitly]
+    public int? CardAdminMessageId { get; set; }
+
+    [UsedImplicitly]
+    public int? CardPlayerMessageId { get; set; }
 }

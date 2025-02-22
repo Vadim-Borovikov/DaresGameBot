@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using AbstractBot.Bots;
 using AbstractBot.Operations;
 using DaresGameBot.Operations.Data.GameButtons;
@@ -9,6 +10,8 @@ namespace DaresGameBot.Operations;
 internal sealed class CompleteCard : Operation<CompleteCardData>
 {
     protected override byte Order => 8;
+
+    public override Enum AccessRequired => Bot.AccessType.Admin;
 
     public CompleteCard(Bot bot) => _bot = bot;
 
@@ -27,7 +30,7 @@ internal sealed class CompleteCard : Operation<CompleteCardData>
 
     protected override Task ExecuteAsync(BotBasic bot, CompleteCardData data, Message message, User sender)
     {
-        return _bot.CompleteCardAsync(message.Chat, data);
+        return _bot.CompleteCardAsync(data);
     }
 
     private readonly Bot _bot;

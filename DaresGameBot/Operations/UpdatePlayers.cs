@@ -41,7 +41,7 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
     protected override Task ExecuteAsync(BotBasic bot, UpdatesData data, Message message, User sender)
     {
         return _bot.CanBeUpdated()
-            ? _bot.UpdatePlayersAsync(message.Chat, data.Datas)
+            ? _bot.UpdatePlayersAsync(data.Datas)
             : _bot.Config.Texts.Refuse.SendAsync(_bot, message.Chat);
     }
 

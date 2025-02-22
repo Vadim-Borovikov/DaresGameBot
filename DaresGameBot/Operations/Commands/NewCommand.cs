@@ -21,7 +21,7 @@ internal sealed class NewCommand : CommandSimple
 
     protected override Task ExecuteAsync(BotBasic bot, Message message, User sender)
     {
-        return _bot.OnEndGameRequestedAsync(message.Chat, ConfirmEndData.ActionAfterGameEnds.StartNewGame);
+        return _bot.OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds.StartNewGame);
     }
 
     private readonly Bot _bot;
