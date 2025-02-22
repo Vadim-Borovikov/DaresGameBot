@@ -239,9 +239,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
                     new Turn(Config.Texts, Config.ImagesFolder, data, _game.Players.Current, actionInfo.Arrangement);
                 template = turn.GetMessage(SaveManager.SaveData.IncludeEn);
                 bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
-                template.KeyboardProvider = CreateActionKeyboard(actionInfo, includePartial);
-                await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
+                template.KeyboardProvider = CreateActionKeyboard(actionInfo, false, includePartial);
                 await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
+                template.KeyboardProvider = CreateActionKeyboard(actionInfo, true, includePartial);
+                await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
@@ -558,18 +559,23 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info, bool includePartial)
+    private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info, bool admin, bool includePartial)
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
             CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag, GetString(info.Arrangement)),
-            CreateActionButtonRow(info, true)
         };
 
-        if (includePartial)
+        if (admin)
         {
-            List<InlineKeyboardButton> partialRow = CreateActionButtonRow(info, false);
-            keyboard.Insert(1, partialRow);
+            if (includePartial)
+            {
+                List<InlineKeyboardButton> partialRow = CreateActionButtonRow(info, false);
+                keyboard.Add(partialRow);
+            }
+
+            List<InlineKeyboardButton> fullRow = CreateActionButtonRow(info, true);
+            keyboard.Add(fullRow);
         }
 
         return new InlineKeyboardMarkup(keyboard);
