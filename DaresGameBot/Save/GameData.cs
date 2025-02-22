@@ -18,11 +18,5 @@ public sealed class GameData
     public GameStatsData GameStatsData { get; set; } = null!;
 
     [UsedImplicitly]
-    public bool IncludeEn { get; set; }
-
-    [UsedImplicitly]
-    public int? PlayersMessageId { get; set; }
-
-    [UsedImplicitly]
     public string? CurrentState { get; set; }
 }

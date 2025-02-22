@@ -80,7 +80,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
     protected override void BeforeSave()
     {
         SaveManager.SaveData.GameData = _game?.Save();
-
+        SaveManager.SaveData.IncludeEn = _includeEn;
+        SaveManager.SaveData.PlayersMessageId = _playersMessageId;
         base.BeforeSave();
     }
 
@@ -90,6 +91,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
         MetaContext? meta = GetMetaContext();
         _game = SaveManager.SaveData.GameData is null ? null : Context.Game.Load(SaveManager.SaveData.GameData, meta);
+        _includeEn = SaveManager.SaveData.IncludeEn;
+        _playersMessageId = SaveManager.SaveData.PlayersMessageId;
     }
 
     protected override MetaContext? GetMetaContext()
@@ -118,9 +121,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
             await Config.Texts.NewGameStart.SendAsync(this, chat);
             Message message = await ReportPlayersAsync(chat, _game);
-            _game.PlayersMessageId = message.MessageId;
+            _playersMessageId = message.MessageId;
 
-            await PinChatMessageAsync(chat, _game.PlayersMessageId.Value);
+            await PinChatMessageAsync(chat, _playersMessageId.Value);
 
             await DrawArrangementAsync(chat, _game);
         }
@@ -147,7 +150,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
             await DrawArrangementAsync(chat, _game);
 
             Message message = await ReportPlayersAsync(chat, _game);
-            _game.PlayersMessageId = message.MessageId;
+            _playersMessageId = message.MessageId;
         }
 
         SaveManager.Save();
@@ -186,10 +189,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
             return StartNewGameAsync(chat);
         }
 
-        _game.ToggleEn();
+        _includeEn = !_includeEn;
         SaveManager.Save();
 
-        MessageTemplateText message = _game.IncludeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
+        MessageTemplateText message = _includeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
         return message.SendAsync(this, chat);
     }
 
@@ -212,7 +215,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
                 ActionData data = _game.GetActionData(actionInfo.Id);
                 Turn turn =
                     new(Config.Texts, Config.ImagesFolder, data, _game.Players.Current, actionInfo.Arrangement);
-                template = turn.GetMessage(_game.IncludeEn);
+                template = turn.GetMessage(_includeEn);
                 bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
                 template.KeyboardProvider = CreateActionKeyboard(actionInfo, includePartial);
                 break;
@@ -378,9 +381,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         MessageTemplateText messageText =
             Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, players));
 
-        return game.PlayersMessageId is null
+        return _playersMessageId is null
             ? messageText.SendAsync(this, chat)
-            : messageText.EditMessageWithSelfAsync(this, chat, game.PlayersMessageId.Value);
+            : messageText.EditMessageWithSelfAsync(this, chat, _playersMessageId.Value);
     }
 
     private Context.Game StartNewGame(List<PlayerListUpdateData> updates)
@@ -425,7 +428,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         CardData questionData = game.GetQuestionData(id);
         Turn turn =
             new(Config.Texts, Config.ImagesFolder, Config.Texts.QuestionsTag, questionData, game.Players.Current);
-        MessageTemplate template = turn.GetMessage(game.IncludeEn);
+        MessageTemplate template = turn.GetMessage(_includeEn);
         template.KeyboardProvider = CreateQuestionKeyboard(id, declinedArrangement);
         return template;
     }
@@ -579,4 +582,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
     private Context.Game? _game;
     private readonly HashSet<string> _decksEquipment = new();
     private readonly List<string> _decksLoadErrors = new();
+    private bool _includeEn;
+    private int? _playersMessageId;
 }

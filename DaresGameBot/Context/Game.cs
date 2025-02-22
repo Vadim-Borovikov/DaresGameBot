@@ -24,14 +24,10 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
     public readonly PlayersRepository Players;
     public readonly GameStats Stats;
 
-    public bool IncludeEn { get; private set; }
-
-    public int? PlayersMessageId;
-
     public State? CurrentState { get; private set; }
 
     public Game(Deck<ActionData> actionsDeck, Deck<CardData> questionsDeck, PlayersRepository players, GameStats stats,
-        Matchmaker matchmaker, bool includeEn = false, int? playersMessageId = null, State? currentState = null)
+        Matchmaker matchmaker, State? currentState = null)
     {
         _actionDeck = actionsDeck;
         _questionsDeck = questionsDeck;
@@ -44,15 +40,11 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
             Stats
         };
 
-        IncludeEn = includeEn;
-        PlayersMessageId = playersMessageId;
         CurrentState = currentState;
     }
 
     public ActionData GetActionData(ushort id) => _actionDeck.GetCard(id);
     public CardData GetQuestionData(ushort id) => _questionsDeck.GetCard(id);
-
-    public void ToggleEn() => IncludeEn = !IncludeEn;
 
     public Arrangement? TryDrawArrangement()
     {
@@ -119,8 +111,6 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
             QuestionUses = _questionsDeck.Save(),
             PlayersRepositoryData = Players.Save(),
             GameStatsData = Stats.Save(),
-            IncludeEn = IncludeEn,
-            PlayersMessageId = PlayersMessageId,
             CurrentState = CurrentState?.ToString()
         };
     }
@@ -161,8 +151,7 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
 
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(playersRepository, gameStats, compatibility);
-        return new Game(actionDeck, questionDeck, playersRepository, gameStats, matchmaker, data.IncludeEn,
-            data.PlayersMessageId, currentState);
+        return new Game(actionDeck, questionDeck, playersRepository, gameStats, matchmaker, currentState);
     }
 
     private void StartNewTurn() => Players.MoveNext();
