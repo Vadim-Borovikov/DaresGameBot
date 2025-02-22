@@ -26,11 +26,14 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
 
     public State? CurrentState { get; private set; }
 
-    public Game(Deck<ActionData> actionsDeck, Deck<CardData> questionsDeck, PlayersRepository players, GameStats stats,
-        Matchmaker matchmaker, State? currentState = null)
+    public Game(Deck<ActionData> actionsDeck, Deck<CardData> questionsDeck, string actionsVersion,
+        string questionsVersion, PlayersRepository players, GameStats stats, Matchmaker matchmaker,
+        State? currentState = null)
     {
         _actionDeck = actionsDeck;
         _questionsDeck = questionsDeck;
+        _actionsVersion = actionsVersion;
+        _questionsVersion = questionsVersion;
         Players = players;
         Stats = stats;
         _matchmaker = matchmaker;
@@ -109,6 +112,8 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
         {
             ActionUses = _actionDeck.Save(),
             QuestionUses = _questionsDeck.Save(),
+            ActionsVersion = _actionsVersion,
+            QuestionsVersion = _questionsVersion,
             PlayersRepositoryData = Players.Save(),
             GameStatsData = Stats.Save(),
             CurrentState = CurrentState?.ToString()
@@ -118,6 +123,11 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
     public static Game? Load(GameData data, MetaContext? meta)
     {
         if (meta is null)
+        {
+            return null;
+        }
+
+        if ((meta.ActionsVersion != data.ActionsVersion) || (meta.QuestionsVersion != data.QuestionsVersion))
         {
             return null;
         }
@@ -151,7 +161,8 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
 
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(playersRepository, gameStats, compatibility);
-        return new Game(actionDeck, questionDeck, playersRepository, gameStats, matchmaker, currentState);
+        return new Game(actionDeck, questionDeck, data.ActionsVersion, data.QuestionsVersion, playersRepository,
+            gameStats, matchmaker, currentState);
     }
 
     private void StartNewTurn() => Players.MoveNext();
@@ -174,6 +185,8 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
 
     private readonly Deck<ActionData> _actionDeck;
     private readonly Deck<CardData> _questionsDeck;
+    private readonly string _actionsVersion;
+    private readonly string _questionsVersion;
     private readonly List<IInteractionSubscriber> _interactionSubscribers;
     private readonly Matchmaker _matchmaker;
 }

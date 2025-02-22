@@ -71,7 +71,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
         if (_game is null)
         {
-            await EndGame(chat);
+            await UnpinPlayersAsync(chat, cancellationToken);
         }
     }
 
@@ -101,7 +101,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         {
             return null;
         }
-        return new MetaContext(Config.ActionOptions, _actions, _questions);
+        return new MetaContext(Config.ActionOptions, _actions, _questions, Config.Texts.ActionsTitle,
+            Config.Texts.QuestionsTitle);
     }
 
     internal bool CanBeUpdated() => _game is null || (_game.CurrentState == Context.Game.State.ArrangementPurposed);
@@ -120,10 +121,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
             _game = StartNewGame(updates);
 
             await Config.Texts.NewGameStart.SendAsync(this, chat);
-            Message message = await ReportPlayersAsync(chat, _game);
-            _playersMessageId = message.MessageId;
-
-            await PinChatMessageAsync(chat, _playersMessageId.Value);
+            await ReportAndPinPlayersAsync(chat, _game);
 
             await DrawArrangementAsync(chat, _game);
         }
@@ -149,8 +147,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
             await DrawArrangementAsync(chat, _game);
 
-            Message message = await ReportPlayersAsync(chat, _game);
-            _playersMessageId = message.MessageId;
+            await ReportAndPinPlayersAsync(chat, _game);
         }
 
         SaveManager.Save();
@@ -374,18 +371,6 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         return template.SendAsync(this, chat);
     }
 
-    private Task<Message> ReportPlayersAsync(Chat chat, Context.Game game)
-    {
-        IEnumerable<string> players =
-            game.Players.GetActiveNames().Select(p => string.Format(Config.Texts.PlayerFormat, p));
-        MessageTemplateText messageText =
-            Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, players));
-
-        return _playersMessageId is null
-            ? messageText.SendAsync(this, chat)
-            : messageText.EditMessageWithSelfAsync(this, chat, _playersMessageId.Value);
-    }
-
     private Context.Game StartNewGame(List<PlayerListUpdateData> updates)
     {
         if (_actions is null)
@@ -407,7 +392,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(repository, gameStats, compatibility);
-        return new Context.Game(actionDeck, questionDeck, repository, gameStats, matchmaker);
+        return new Context.Game(actionDeck, questionDeck, Config.Texts.ActionsTitle, Config.Texts.QuestionsTitle,
+            repository, gameStats, matchmaker);
     }
 
     private Task DrawArrangementAsync(Chat chat, Context.Game game)
@@ -488,11 +474,37 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         return template.SendAsync(this, chat);
     }
 
-    private Task EndGame(Chat chat)
+    private async Task EndGame(Chat chat)
     {
         _game = null;
+        await UnpinPlayersAsync(chat);
         SaveManager.Save();
-        return UnpinAllChatMessagesAsync(chat);
+    }
+
+    private async Task ReportAndPinPlayersAsync(Chat chat, Context.Game game)
+    {
+        IEnumerable<string> players =
+            game.Players.GetActiveNames().Select(p => string.Format(Config.Texts.PlayerFormat, p));
+        MessageTemplateText messageText =
+            Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, players));
+
+        if (_playersMessageId is null)
+        {
+            Message message = await messageText.SendAsync(this, chat);
+            _playersMessageId = message.MessageId;
+        }
+        else
+        {
+            await messageText.EditMessageWithSelfAsync(this, chat, _playersMessageId.Value);
+        }
+
+        await PinChatMessageAsync(chat, _playersMessageId.Value);
+    }
+
+    private Task UnpinPlayersAsync(Chat chat, CancellationToken cancellationToken = default)
+    {
+        _playersMessageId = null;
+        return UnpinAllChatMessagesAsync(chat, cancellationToken);
     }
 
     private InlineKeyboardMarkup CreateArrangementKeyboard(Arrangement arrangement)

@@ -19,4 +19,10 @@ public sealed class GameData
 
     [UsedImplicitly]
     public string? CurrentState { get; set; }
+
+    [UsedImplicitly]
+    public string? ActionsVersion { get; set; }
+
+    [UsedImplicitly]
+    public string? QuestionsVersion { get; set; }
 }
