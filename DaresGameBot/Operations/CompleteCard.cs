@@ -9,7 +9,7 @@ namespace DaresGameBot.Operations;
 
 internal sealed class CompleteCard : Operation<CompleteCardData>
 {
-    protected override byte Order => 8;
+    protected override byte Order => 9;
 
     public override Enum AccessRequired => Bot.AccessType.Admin;
 

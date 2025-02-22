@@ -7,30 +7,30 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class ConfirmEnd : Operation<ConfirmEndData>
+internal sealed class UnrevealCard : Operation<UnervealCardData>
 {
-    protected override byte Order => 10;
+    protected override byte Order => 8;
 
     public override Enum AccessRequired => Bot.AccessType.Admin;
 
-    public ConfirmEnd(Bot bot) => _bot = bot;
+    public UnrevealCard(Bot bot) => _bot = bot;
 
-    protected override bool IsInvokingBy(User self, Message message, User sender, out ConfirmEndData? data)
+    protected override bool IsInvokingBy(User self, Message message, User sender, out UnervealCardData? data)
     {
         data = null;
         return false;
     }
 
     protected override bool IsInvokingBy(User self, Message message, User sender, string callbackQueryDataCore,
-        out ConfirmEndData? data)
+        out UnervealCardData? data)
     {
-        data = ConfirmEndData.From(callbackQueryDataCore);
+        data = UnervealCardData.From(callbackQueryDataCore);
         return data is not null;
     }
 
-    protected override Task ExecuteAsync(BotBasic bot, ConfirmEndData data, Message message, User sender)
+    protected override Task ExecuteAsync(BotBasic bot, UnervealCardData data, Message message, User sender)
     {
-        return _bot.OnEndGameConfirmedAsync(data.After);
+        return _bot.UnrevealCardAsync(message.MessageId, data);
     }
 
     private readonly Bot _bot;

@@ -46,6 +46,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         Operations.Add(new LangCommand(this));
         Operations.Add(new RatesCommand(this));
         Operations.Add(new RevealCard(this));
+        Operations.Add(new UnrevealCard(this));
         Operations.Add(new CompleteCard(this));
         Operations.Add(new UpdatePlayers(this));
         Operations.Add(new ConfirmEnd(this));
@@ -248,6 +249,36 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         }
 
         SaveManager.Save();
+    }
+
+    internal async Task UnrevealCardAsync(int messageId, UnervealCardData data)
+    {
+        if (_game is null)
+        {
+            await StartNewGameAsync();
+            return;
+        }
+
+        if ((messageId != SaveManager.SaveData.CardAdminMessageId)
+            && (messageId != SaveManager.SaveData.CardPlayerMessageId))
+        {
+            return;
+        }
+        if (SaveManager.SaveData.CardAdminMessageId is null || SaveManager.SaveData.CardPlayerMessageId is null)
+        {
+            return;
+        }
+
+        MessageTemplateText? partnersText = null;
+        if (data.Arrangement.Partners.Count > 0)
+        {
+            partnersText = Turn.GetPartnersPart(Config.Texts, data.Arrangement);
+        }
+        MessageTemplateText template = Config.Texts.TurnFormatShort.Format(_game.Players.Current, partnersText);
+        template.KeyboardProvider = CreateArrangementKeyboard(data.Arrangement);
+
+        await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
+        await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
     }
 
     internal Task CompleteCardAsync(CompleteCardData data)
@@ -561,34 +592,55 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
     private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info, bool admin, bool includePartial)
     {
-        List<List<InlineKeyboardButton>> keyboard = new()
-        {
-            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag, GetString(info.Arrangement)),
-        };
+        string arrangementString = GetString(info.Arrangement);
+        List<InlineKeyboardButton> unreveal =
+            CreateOneButtonRow<UnrevealCard>(Config.Texts.Unreveal, arrangementString);
+        List<InlineKeyboardButton> question =
+            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag, arrangementString);
 
+        List<InlineKeyboardButton> partial = CreateActionButtonRow(info, false);
+        List<InlineKeyboardButton> full = CreateActionButtonRow(info, true);
+
+        List<List<InlineKeyboardButton>> keyboard = new();
         if (admin)
         {
+            keyboard.Add(unreveal);
+            keyboard.Add(question);
             if (includePartial)
             {
-                List<InlineKeyboardButton> partialRow = CreateActionButtonRow(info, false);
-                keyboard.Add(partialRow);
+                keyboard.Add(partial);
             }
-
-            List<InlineKeyboardButton> fullRow = CreateActionButtonRow(info, true);
-            keyboard.Add(fullRow);
+            keyboard.Add(full);
         }
-
+        else
+        {
+            keyboard.Add(question);
+        }
         return new InlineKeyboardMarkup(keyboard);
     }
 
     private InlineKeyboardMarkup CreateQuestionKeyboard(ushort id, Arrangement? declinedArrangement)
     {
-        List<List<InlineKeyboardButton>> keyboard = new()
+        List<List<InlineKeyboardButton>> keyboard = new();
+
+        List<InlineKeyboardButton> complete;
+        if (declinedArrangement is null)
         {
-            declinedArrangement is null
-                ? CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, id)
-                : CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, GetString(declinedArrangement), id)
-        };
+            complete = CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, id);
+            keyboard.Add(complete);
+        }
+        else
+        {
+            string arrangementString = GetString(declinedArrangement);
+
+            List<InlineKeyboardButton> unreveal =
+                CreateOneButtonRow<UnrevealCard>(Config.Texts.Unreveal, arrangementString);
+            complete = CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, arrangementString, id);
+
+            keyboard.Add(unreveal);
+            keyboard.Add(complete);
+        }
+
         return new InlineKeyboardMarkup(keyboard);
     }
 

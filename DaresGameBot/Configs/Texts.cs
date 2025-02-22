@@ -114,6 +114,10 @@ public class Texts : AbstractBot.Configs.TextsBasic
 
     [Required]
     [MinLength(1)]
+    public string Unreveal { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
     public string Completed { get; init; } = null!;
 
     [Required]
