@@ -277,6 +277,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
         await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
         await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
+
+        _game.ProcessCardUnrevealed();
     }
 
     internal Task CompleteCardAsync(CompleteCardData data)

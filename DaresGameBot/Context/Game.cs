@@ -86,6 +86,8 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
         return info;
     }
 
+    public void ProcessCardUnrevealed() => CurrentState = State.ArrangementPurposed;
+
     public void CompleteQuestion(ushort id, Arrangement? declinedArrangement)
     {
         _questionsDeck.Mark(id);
