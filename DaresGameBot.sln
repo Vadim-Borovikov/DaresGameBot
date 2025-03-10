@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaresGameBot.Web", "DaresGa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DaresGameBot", "DaresGameBot\DaresGameBot.csproj", "{FEFB9867-80E8-4299-92E0-6C38C948541F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AbstractBot", "..\AbstractBot\AbstractBot\AbstractBot.csproj", "{9526B5B7-C8D6-79FB-6B8E-589A5169F4D0}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{FEFB9867-80E8-4299-92E0-6C38C948541F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FEFB9867-80E8-4299-92E0-6C38C948541F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FEFB9867-80E8-4299-92E0-6C38C948541F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9526B5B7-C8D6-79FB-6B8E-589A5169F4D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9526B5B7-C8D6-79FB-6B8E-589A5169F4D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9526B5B7-C8D6-79FB-6B8E-589A5169F4D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9526B5B7-C8D6-79FB-6B8E-589A5169F4D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

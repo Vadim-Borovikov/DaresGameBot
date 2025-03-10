@@ -1,40 +1,44 @@
+using AbstractBot.Modules.Context.Localization;
+using AbstractBot.Modules.Context;
 using DaresGameBot.Game.States.Cores;
 using DaresGameBot.Game.States.Data;
-using GryphonUtilities.Save;
+using System.Collections.Generic;
 
 namespace DaresGameBot.Game.States;
 
-internal sealed class BotState : IStateful<BotData>
+internal sealed class BotState : BotState<BotData, UserState, LocalizationUserStateData>
 {
     public readonly BotStateCore Core;
 
     public Game? Game;
 
-    public bool IncludeEn;
     public int? PlayersMessageId;
     public int? CardAdminMessageId;
     public int? CardPlayerMessageId;
 
-    internal BotState(BotStateCore core) => Core = core;
+    internal BotState(BotStateCore core, Dictionary<long, UserState> userStates) : base(userStates) => Core = core;
 
-    public BotData Save()
+    public override BotData Save()
     {
-        return new BotData
-        {
-            GameData = Game?.Save(),
-            IncludeEn = IncludeEn,
-            PlayersMessageId = PlayersMessageId,
-            CardAdminMessageId = CardAdminMessageId,
-            CardPlayerMessageId = CardPlayerMessageId,
-        };
+        BotData data = base.Save();
+
+        data.GameData = Game?.Save();
+
+        data.PlayersMessageId = PlayersMessageId;
+        data.CardAdminMessageId = CardAdminMessageId;
+        data.CardPlayerMessageId = CardPlayerMessageId;
+
+        return data;
     }
 
-    public void LoadFrom(BotData? data)
+    public override void LoadFrom(BotData? data)
     {
         if (data is null)
         {
             return;
         }
+
+        base.LoadFrom(data);
 
         if (Core.SheetInfo is not null && data.GameData is not null)
         {
@@ -42,7 +46,6 @@ internal sealed class BotState : IStateful<BotData>
             Game.LoadFrom(data.GameData);
         }
 
-        IncludeEn = data.IncludeEn;
         PlayersMessageId = data.PlayersMessageId;
         CardAdminMessageId = data.CardAdminMessageId;
         CardPlayerMessageId = data.CardPlayerMessageId;

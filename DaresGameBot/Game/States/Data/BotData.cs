@@ -1,16 +1,15 @@
 ﻿// ReSharper disable NullableWarningSuppressionIsUsed
 
+using AbstractBot.Modules.Context.Localization;
+using AbstractBot.Modules.Context;
 using JetBrains.Annotations;
 
 namespace DaresGameBot.Game.States.Data;
 
-public sealed class BotData
+public sealed class BotData : BotStateData<LocalizationUserStateData>
 {
     [UsedImplicitly]
     public GameData? GameData { get; set; }
-
-    [UsedImplicitly]
-    public bool IncludeEn { get; set; }
 
     [UsedImplicitly]
     public int? PlayersMessageId { get; set; }

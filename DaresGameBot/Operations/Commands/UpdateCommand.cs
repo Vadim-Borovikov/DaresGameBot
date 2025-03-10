@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using AbstractBot.Interfaces.Modules;
 using AbstractBot.Interfaces.Modules.Config;
 using AbstractBot.Models.Operations.Commands;
 using DaresGameBot.Operations.Data.GameButtons;
@@ -11,15 +12,15 @@ internal sealed class UpdateCommand : Command
 {
     public override Enum AccessRequired => Bot.AccessType.Admin;
 
-    public UpdateCommand(Bot bot, ITexts texts)
-        : base(bot.Core.Accesses, bot.Core.UpdateSender, "update", texts, bot.Core.SelfUsername)
+    public UpdateCommand(Bot bot, ITextsProvider<ITexts> textsProvider)
+        : base(bot.Core.Accesses, bot.Core.UpdateSender, "update", textsProvider, bot.Core.SelfUsername)
     {
         _bot = bot;
     }
 
     protected override Task ExecuteAsync(Message message, User sender)
     {
-        return _bot.OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds.UpdateCards);
+        return _bot.OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds.UpdateCards, sender);
     }
 
     private readonly Bot _bot;

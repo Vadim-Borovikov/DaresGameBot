@@ -1,5 +1,4 @@
-﻿using DaresGameBot.Web.Models;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace DaresGameBot.Web.Controllers;
 

@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using DaresGameBot.Configs;
 using DaresGameBot.Web.Models;
 using GryphonUtilities;
 using GryphonUtilities.Time;
@@ -17,7 +18,7 @@ internal static class Program
         {
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-            Config config = Configure(builder) ?? throw new NullReferenceException("Can't load config.");
+            Models.Config config = Configure(builder) ?? throw new NullReferenceException("Can't load config.");
             clock = new Clock(config.SystemTimeZoneIdLogs);
             logger = new Logger(clock);
             logger.LogStartup();
@@ -51,21 +52,50 @@ internal static class Program
         }
     }
 
-    private static Config? Configure(WebApplicationBuilder builder)
+    private static Models.Config? Configure(WebApplicationBuilder builder)
     {
         ConfigurationManager configuration = builder.Configuration;
-        Config? config = configuration.Get<Config>();
+        Models.Config? config = configuration.Get<Models.Config>();
         if (config is null)
         {
             return null;
         }
 
-        builder.Services.AddOptions<Config>().Bind(configuration).ValidateDataAnnotations();
-        builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<Config>>().Value);
+        builder.Services.AddOptions<Models.Config>().Bind(configuration).ValidateDataAnnotations();
+        builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<Models.Config>>().Value);
+
+        LoadTextsFiles(builder, config);
 
         CultureInfo.DefaultThreadCurrentCulture = new CultureInfo(config.CultureInfoName);
 
         return config;
+    }
+
+    private static void LoadTextsFiles(WebApplicationBuilder builder, Models.Config config)
+    {
+        foreach (string file in Directory.GetFiles(builder.Environment.ContentRootPath, "texts.*.json"))
+        {
+            string? langCode = ExtractLanguageCode(file);
+            if (langCode is null)
+            {
+                continue;
+            }
+
+            builder.Configuration.AddJsonFile(file, true, true);
+
+            Texts? texts = builder.Configuration.Get<Texts>();
+            if (texts is not null)
+            {
+                config.AllTexts[langCode] = texts;
+            }
+        }
+    }
+
+    private static string? ExtractLanguageCode(string filePath)
+    {
+        string fileName = Path.GetFileNameWithoutExtension(filePath);
+        string[] parts = fileName.Split('.');
+        return parts.Length == 2 ? parts[1] : null;
     }
 
     private static void UseUpdateEndpoint(IApplicationBuilder app, string token)

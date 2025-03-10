@@ -7,14 +7,16 @@ namespace DaresGameBot.Game;
 
 internal sealed class Turn
 {
-    public Turn(Texts texts, string imagesfolder, ActionData actionData, string player, Arrangement arrangement)
-        : this(texts, imagesfolder, actionData.Tag, actionData, player, arrangement, actionData.ImagePath)
+    public Turn(Texts texts, bool includeEn, string imagesfolder, ActionData actionData, string player,
+        Arrangement arrangement)
+        : this(texts, includeEn, imagesfolder, actionData.Tag, actionData, player, arrangement, actionData.ImagePath)
     {}
 
-    public Turn(Texts texts, string imagesfolder, string tag, CardData cardData, string player,
+    public Turn(Texts texts, bool includeEn, string imagesfolder, string tag, CardData cardData, string player,
         Arrangement? arrangement = null, string? imagePath = null)
     {
         _texts = texts;
+        _includeEn = includeEn;
         _player = player;
         _arrangement = arrangement;
         _tagPart = new MessageTemplateText(tag);
@@ -23,10 +25,10 @@ internal sealed class Turn
         _imagePath = string.IsNullOrWhiteSpace(imagePath) ? null : Path.Combine(imagesfolder, imagePath);
     }
 
-    public MessageTemplate GetMessage(bool includeEn = false)
+    public MessageTemplate GetMessage()
     {
         MessageTemplateText descriprionPart = _descriprionRuPart;
-        if (includeEn && _descriprionEnPart is not null)
+        if (_includeEn && _descriprionEnPart is not null)
         {
             descriprionPart = _texts.TurnDescriptionRuEnFormat.Format(_descriprionRuPart, _descriprionEnPart);
         }
@@ -61,5 +63,6 @@ internal sealed class Turn
     private readonly string _player;
     private readonly Arrangement? _arrangement;
     private readonly Texts _texts;
+    private readonly bool _includeEn;
     private readonly string? _imagePath;
 }

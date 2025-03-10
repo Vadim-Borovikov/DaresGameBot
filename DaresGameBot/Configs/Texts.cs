@@ -87,10 +87,7 @@ public class Texts : AbstractBot.Models.Config.Texts
     public MessageTemplateText UpdatePlayersOperationDescription { get; init; } = null!;
 
     [Required]
-    public MessageTemplateText LangToggledToRu { get; init; } = null!;
-
-    [Required]
-    public MessageTemplateText LangToggledToRuEn { get; init; } = null!;
+    public MessageTemplateText LangToggled { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

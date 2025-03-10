@@ -27,7 +27,7 @@ internal sealed class ConfirmEnd : Operation<ConfirmEndData>
 
     protected override Task ExecuteAsync(ConfirmEndData data, Message message, User sender)
     {
-        return _bot.OnEndGameConfirmedAsync(data.After);
+        return _bot.OnEndGameConfirmedAsync(data.After, sender);
     }
 
     private readonly Bot _bot;

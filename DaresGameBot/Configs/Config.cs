@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using AbstractBot.Interfaces.Modules.Config;
 using AbstractBot.Models.Config;
 using JetBrains.Annotations;
 
@@ -7,7 +8,7 @@ using JetBrains.Annotations;
 
 namespace DaresGameBot.Configs;
 
-public class Config : ConfigWithSheets
+public class Config : ConfigWithSheets, ILocalizationConfig<Texts>
 {
     [UsedImplicitly]
     [Required]
@@ -53,5 +54,8 @@ public class Config : ConfigWithSheets
 
     [UsedImplicitly]
     [Required]
-    public Texts Texts { get; init; } = null!;
+    public string DefaultLanguageCode { get; init; } = null!;
+
+    [UsedImplicitly]
+    public Dictionary<string, Texts> AllTexts { get; set; } = new();
 }

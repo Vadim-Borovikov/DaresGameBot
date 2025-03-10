@@ -2,13 +2,13 @@ namespace DaresGameBot.Web.Models;
 
 public sealed class BotService : IHostedService, IDisposable
 {
-    internal readonly Bot Bot;
+    public BotService(Bot bot) => _bot = bot;
 
-    public BotService(Bot bot) => Bot = bot;
+    public void Dispose() => _bot.Dispose();
 
-    public void Dispose() => Bot.Dispose();
+    public Task StartAsync(CancellationToken cancellationToken) => _bot.StartAsync(cancellationToken);
 
-    public Task StartAsync(CancellationToken cancellationToken) => Bot.StartAsync(cancellationToken);
+    public Task StopAsync(CancellationToken cancellationToken) => _bot.StopAsync(cancellationToken);
 
-    public Task StopAsync(CancellationToken cancellationToken) => Bot.StopAsync(cancellationToken);
+    private readonly Bot _bot;
 }

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AbstractBot.Interfaces.Modules;
+using AbstractBot.Models.MessageTemplates;
 using AbstractBot.Models.Operations;
 using DaresGameBot.Configs;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
@@ -14,12 +16,16 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
 {
     public override Enum AccessRequired => Bot.AccessType.Admin;
 
-    public UpdatePlayers(Bot bot, Texts texts) : base(bot.Core.Accesses, bot.Core.UpdateSender)
+    public UpdatePlayers(Bot bot, ITextsProvider<Texts> textsProvider) : base(bot.Core.Accesses, bot.Core.UpdateSender)
     {
         _bot = bot;
-        _texts = texts;
+        _textsProvider = textsProvider;
+    }
 
-        HelpDescription = texts.UpdatePlayersOperationDescription;
+    public override MessageTemplateText GetHelpDescriptionFor(User user)
+    {
+        Texts texts = _textsProvider.GetTextsFor(user);
+        return texts.UpdatePlayersOperationDescription;
     }
 
     protected override bool IsInvokingBy(Message message, User sender, out UpdatesData? data)
@@ -30,25 +36,28 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
             return false;
         }
 
-        List<string>? lines = message.Text?.Split(_texts.PlayersSeparator).Select(l => l.Trim()).ToList();
+        Texts texts = _textsProvider.GetTextsFor(sender);
+
+        List<string>? lines = message.Text?.Split(texts.PlayersSeparator).Select(l => l.Trim()).ToList();
 
         switch (lines?.Count)
         {
             case null:
             case < 1: return false;
             default:
-                data = UpdatesData.From(lines, _texts);
+                data = UpdatesData.From(lines, texts);
                 return data is not null;
         }
     }
 
     protected override Task ExecuteAsync(UpdatesData data, Message message, User sender)
     {
+        Texts texts = _textsProvider.GetTextsFor(sender);
         return _bot.CanBeUpdated()
-            ? _bot.UpdatePlayersAsync(data.Datas)
-            : _texts.Refuse.SendAsync(_bot.Core.UpdateSender, message.Chat);
+            ? _bot.UpdatePlayersAsync(data.Datas, sender)
+            : texts.Refuse.SendAsync(_bot.Core.UpdateSender, message.Chat);
     }
 
     private readonly Bot _bot;
-    private readonly Texts _texts;
+    private readonly ITextsProvider<Texts> _textsProvider;
 }
