@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using AbstractBot.Bots;
-using AbstractBot.Operations;
+using AbstractBot.Models.Operations;
 using DaresGameBot.Operations.Data.GameButtons;
 using Telegram.Bot.Types;
 
@@ -9,26 +8,24 @@ namespace DaresGameBot.Operations;
 
 internal sealed class UnrevealCard : Operation<UnervealCardData>
 {
-    protected override byte Order => 8;
-
     public override Enum AccessRequired => Bot.AccessType.Admin;
 
-    public UnrevealCard(Bot bot) => _bot = bot;
+    public UnrevealCard(Bot bot) : base(bot.Core.Accesses, bot.Core.UpdateSender) => _bot = bot;
 
-    protected override bool IsInvokingBy(User self, Message message, User sender, out UnervealCardData? data)
+    protected override bool IsInvokingBy(Message message, User sender, out UnervealCardData? data)
     {
         data = null;
         return false;
     }
 
-    protected override bool IsInvokingBy(User self, Message message, User sender, string callbackQueryDataCore,
+    protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
         out UnervealCardData? data)
     {
         data = UnervealCardData.From(callbackQueryDataCore);
         return data is not null;
     }
 
-    protected override Task ExecuteAsync(BotBasic bot, UnervealCardData data, Message message, User sender)
+    protected override Task ExecuteAsync(UnervealCardData data, Message message, User sender)
     {
         return _bot.UnrevealCardAsync(message.MessageId, data);
     }

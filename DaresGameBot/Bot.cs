@@ -1,6 +1,4 @@
 using AbstractBot;
-using AbstractBot.Bots;
-using AbstractBot.Configs.MessageTemplates;
 using DaresGameBot.Configs;
 using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Operations;
@@ -11,25 +9,36 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AbstractBot.Operations.Data;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using DaresGameBot.Game;
 using DaresGameBot.Game.Matchmaking.Compatibility;
-using DaresGameBot.Helpers;
 using DaresGameBot.Operations.Data.GameButtons;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 using JetBrains.Annotations;
-using DaresGameBot.Context;
-using DaresGameBot.Context.Meta;
 using DaresGameBot.Game.Data;
-using DaresGameBot.Save;
+using AbstractBot.Interfaces.Modules;
+using AbstractBot.Models;
+using AbstractBot.Models.MessageTemplates;
+using AbstractBot.Models.Operations.Commands.Start;
+using AbstractBot.Models.Operations.Commands;
+using AbstractBot.Modules.TextProviders;
+using AbstractBot.Modules;
+using GryphonUtilities.Save;
+using AbstractBot.Interfaces.Operations.Commands.Start;
+using DaresGameBot.Utilities;
+using DaresGameBot.Game.States;
+using DaresGameBot.Game.States.Cores;
+using DaresGameBot.Game.States.Data;
 
 namespace DaresGameBot;
 
-public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, MetaContext, Data, CommandDataSimple>
+public sealed class Bot : AbstractBot.Bot, IDisposable
 {
+    private readonly BotCore _core;
+    private readonly Config _config;
+
     [Flags]
     internal enum AccessType
     {
@@ -39,81 +48,107 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         Admin = 4
     }
 
-    public Bot(Config config) : base(config)
+    public static async Task<Bot?> TryCreateAsync(Config config, CancellationToken cancellationToken)
     {
-        Operations.Add(new NewCommand(this));
-        Operations.Add(new UpdateCommand(this));
-        Operations.Add(new LangCommand(this));
-        Operations.Add(new RatesCommand(this));
-        Operations.Add(new RevealCard(this));
-        Operations.Add(new UnrevealCard(this));
-        Operations.Add(new CompleteCard(this));
-        Operations.Add(new UpdatePlayers(this));
-        Operations.Add(new ConfirmEnd(this));
+        BotCore? core = await BotCore.TryCreateAsync(config, cancellationToken);
+        if (core is null)
+        {
+            return null;
+        }
 
-        GoogleSheetsManager.Documents.Document document = DocumentsManager.GetOrAdd(Config.GoogleSheetId);
+        core.UpdateSender.DefaultKeyboardProvider = KeyboardProvider.Same;
 
-        _actionsSheet = document.GetOrAddSheet(Config.Texts.ActionsTitle);
-        _questionsSheet = document.GetOrAddSheet(Config.Texts.QuestionsTitle);
+        SaveManager<BotState, BotData> saveManager = new(config.SavePath, core.Clock);
+
+        Common<Texts> common = new(config.Texts);
+
+        AccessBasedUserProvider userProvider = new(core.Accesses);
+
+        ICommands commands = new Commands(core.Client, core.Accesses, core.UpdateReceiver, common, userProvider);
+
+        Texts defaultTexts = common.GetDefaultTexts();
+        Greeter greeter = new(core.UpdateSender, defaultTexts.StartFormat);
+        Start start = new(core.Accesses, core.UpdateSender, commands, defaultTexts, core.SelfUsername, greeter);
+
+        Help help = new(core.Accesses, core.UpdateSender, core.UpdateReceiver, defaultTexts, core.SelfUsername);
+
+        return new Bot(core, commands, start, help, config, saveManager, common);
+    }
+
+    private Bot(BotCore core, ICommands commands, IStartCommand start, Help help, Config config,
+        SaveManager<BotState, BotData> saveManager, ITextsProvider<Texts> textsProvider)
+        : base(core, commands, start, help)
+    {
+        _core = core;
+        _config = config;
+
+        _sheetsManager = new Manager(_config);
+        _saveManager = saveManager;
+        _textsProvider = textsProvider;
+
+        GoogleSheetsManager.Documents.Document document = _sheetsManager.GetOrAdd(_config.GoogleSheetId);
+
+        Texts texts = textsProvider.GetDefaultTexts();
+
+        _actionsSheet = document.GetOrAddSheet(texts.ActionsTitle);
+        _questionsSheet = document.GetOrAddSheet(texts.QuestionsTitle);
 
         _adminChat = new Chat
         {
-            Id = Config.AdminChatId,
+            Id = _config.AdminChatId,
             Type = ChatType.Private
         };
         _playerChat = new Chat
         {
-            Id = Config.PlayerChatId,
+            Id = _config.PlayerChatId,
             Type = ChatType.Private
         };
+
+        BotStateCore stateCore = new(_config.ActionOptions, texts.ActionsTitle, texts.QuestionsTitle);
+        _state = new BotState(stateCore);
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
+
+        _core.UpdateReceiver.Operations.Add(new NewCommand(this, texts));
+        _core.UpdateReceiver.Operations.Add(new RatesCommand(this, texts));
+        _core.UpdateReceiver.Operations.Add(new UpdateCommand(this, texts));
+        _core.UpdateReceiver.Operations.Add(new LangCommand(this, texts));
+        _core.UpdateReceiver.Operations.Add(new UpdatePlayers(this, texts));
+        _core.UpdateReceiver.Operations.Add(new RevealCard(this));
+        _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
+        _core.UpdateReceiver.Operations.Add(new CompleteCard(this));
+        _core.UpdateReceiver.Operations.Add(new ConfirmEnd(this));
+
         await base.StartAsync(cancellationToken);
 
         await UpdateDecksAsync();
 
-        SaveManager.Load();
-
-        if (_game is null)
-        {
-            await UnpinPlayersAsync(cancellationToken);
-        }
+        _saveManager.LoadTo(_state);
     }
 
-    protected override KeyboardProvider GetDefaultKeyboardProvider(Chat _) => KeyboardProvider.Same;
-
-    protected override void BeforeSave()
+    public override Task StopAsync(CancellationToken cancellationToken)
     {
-        SaveManager.SaveData.GameData = _game?.Save();
-
-        base.BeforeSave();
+        _saveManager.Save(_state);
+        return base.StopAsync(cancellationToken);
     }
 
-    protected override void AfterLoad()
+    public void Dispose()
     {
-        base.AfterLoad();
-
-        MetaContext? meta = GetMetaContext();
-        _game = SaveManager.SaveData.GameData is null ? null : Context.Game.Load(SaveManager.SaveData.GameData, meta);
+        _sheetsManager.Dispose();
+        _core.Dispose();
     }
 
-    protected override MetaContext? GetMetaContext()
-    {
-        if (_actions is null || _questions is null)
-        {
-            return null;
-        }
-        return new MetaContext(Config.ActionOptions, _actions, _questions, Config.Texts.ActionsTitle,
-            Config.Texts.QuestionsTitle);
-    }
-
-    internal bool CanBeUpdated() => _game is null || (_game.CurrentState == Context.Game.State.ArrangementPurposed);
+    internal bool CanBeUpdated() => _state.Game is null
+                                    || (_state.Game.CurrentState == Game.States.Game.State.ArrangementPurposed);
 
     internal async Task UpdatePlayersAsync(List<PlayerListUpdateData> updates)
     {
-        if (_game is null)
+        Texts texts = _textsProvider.GetDefaultTexts();
+
+        if (_state.Game is null)
         {
             List<string> toggled = updates.OfType<TogglePlayerData>().Select(t => t.Name).ToList();
             if (toggled.Any())
@@ -122,20 +157,20 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
                 return;
             }
 
-            _game = StartNewGame(updates);
+            _state.Game = StartNewGame(updates);
 
-            await Config.Texts.NewGameStart.SendAsync(this, _adminChat);
-            await Config.Texts.NewGameStart.SendAsync(this, _playerChat);
+            await texts.NewGameStart.SendAsync(_core.UpdateSender, _adminChat);
+            await texts.NewGameStart.SendAsync(_core.UpdateSender, _playerChat);
 
-            SaveManager.SaveData.PlayersMessageId = null;
-            await ReportAndPinPlayersAsync(_game);
+            _state.PlayersMessageId = null;
+            await ReportAndPinPlayersAsync(_state.Game);
 
-            await DrawArrangementAsync(_game);
+            await DrawArrangementAsync(_state.Game);
         }
         else
         {
             HashSet<string> toggled = new(updates.OfType<TogglePlayerData>().Select(t => t.Name));
-            toggled.ExceptWith(_game.Players.AllNames);
+            toggled.ExceptWith(_state.Game.Players.AllNames);
 
             if (toggled.Any())
             {
@@ -143,43 +178,44 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
                 return;
             }
 
-            bool changed = _game.UpdatePlayers(updates);
+            bool changed = _state.Game.UpdatePlayers(updates);
             if (!changed)
             {
-                await Config.Texts.NothingChanges.SendAsync(this, _adminChat);
+                await texts.NothingChanges.SendAsync(_core.UpdateSender, _adminChat);
                 return;
             }
 
-            await Config.Texts.Accepted.SendAsync(this, _adminChat);
+            await texts.Accepted.SendAsync(_core.UpdateSender, _adminChat);
 
-            await DrawArrangementAsync(_game);
+            await DrawArrangementAsync(_state.Game);
 
-            await ReportAndPinPlayersAsync(_game);
+            await ReportAndPinPlayersAsync(_state.Game);
         }
 
-        SaveManager.Save();
+        _saveManager.Save(_state);
     }
 
     internal Task OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds after)
     {
-        if (_game is null)
+        if (_state.Game is null)
         {
             return DoRequestedActionAsync(after);
         }
 
-        MessageTemplateText template = Config.Texts.EndGameWarning;
+        Texts texts = _textsProvider.GetDefaultTexts();
+        MessageTemplateText template = texts.EndGameWarning;
         template.KeyboardProvider = CreateEndGameConfirmationKeyboard(after);
-        return template.SendAsync(this, _adminChat);
+        return template.SendAsync(_core.UpdateSender, _adminChat);
     }
 
     internal async Task OnEndGameConfirmedAsync(ConfirmEndData.ActionAfterGameEnds after)
     {
-        if (_game is null)
+        if (_state.Game is null)
         {
             return;
         }
 
-        await ShowRatesAsync(_game);
+        await ShowRatesAsync(_state.Game);
 
         await EndGame();
 
@@ -188,33 +224,32 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
     internal Task OnToggleLanguagesAsync()
     {
-        if (_game is null)
+        if (_state.Game is null)
         {
             return StartNewGameAsync();
         }
 
-        SaveManager.SaveData.IncludeEn = !SaveManager.SaveData.IncludeEn;
-        SaveManager.Save();
+        _state.IncludeEn = !_state.IncludeEn;
+        _saveManager.Save(_state);
 
-        MessageTemplateText message =
-            SaveManager.SaveData.IncludeEn ? Config.Texts.LangToggledToRuEn : Config.Texts.LangToggledToRu;
-        return message.SendAsync(this, _adminChat);
+        Texts texts = _textsProvider.GetDefaultTexts();
+        MessageTemplateText message = _state.IncludeEn ? texts.LangToggledToRuEn : texts.LangToggledToRu;
+        return message.SendAsync(_core.UpdateSender, _adminChat);
     }
 
     internal async Task RevealCardAsync(int messageId, RevealCardData revealData)
     {
-        if (_game is null)
+        if (_state.Game is null)
         {
             await StartNewGameAsync();
             return;
         }
 
-        if ((messageId != SaveManager.SaveData.CardAdminMessageId)
-            && (messageId != SaveManager.SaveData.CardPlayerMessageId))
+        if ((messageId != _state.CardAdminMessageId) && (messageId != _state.CardPlayerMessageId))
         {
             return;
         }
-        if (SaveManager.SaveData.CardAdminMessageId is null || SaveManager.SaveData.CardPlayerMessageId is null)
+        if (_state.CardAdminMessageId is null || _state.CardPlayerMessageId is null)
         {
             return;
         }
@@ -224,66 +259,69 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         switch (revealData)
         {
             case RevealQuestionData q:
-                ushort id = _game.DrawQuestion();
-                turn = CreateQuestionTurn(_game, id);
-                template = turn.GetMessage(SaveManager.SaveData.IncludeEn);
-                await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
+                ushort id = _state.Game.DrawQuestion();
+                turn = CreateQuestionTurn(_state.Game, id);
+                template = turn.GetMessage(_state.IncludeEn);
+                await EditMessageAsync(_playerChat, template, _state.CardPlayerMessageId.Value);
                 template.KeyboardProvider = CreateQuestionKeyboard(id, q.Arrangement);
-                await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
+                await EditMessageAsync(_adminChat, template, _state.CardAdminMessageId.Value);
                 break;
             case RevealActionData a:
-                ActionInfo actionInfo = _game.DrawAction(a.Arrangement, a.Tag);
-                ActionData data = _game.GetActionData(actionInfo.Id);
-                turn =
-                    new Turn(Config.Texts, Config.ImagesFolder, data, _game.Players.Current, actionInfo.Arrangement);
-                template = turn.GetMessage(SaveManager.SaveData.IncludeEn);
-                bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
+                Texts texts = _textsProvider.GetDefaultTexts();
+                ActionInfo actionInfo = _state.Game.DrawAction(a.Arrangement, a.Tag);
+                ActionData data = _state.Game.GetActionData(actionInfo.Id);
+                turn = new Turn(texts, _config.ImagesFolder, data, _state.Game.Players.Current,
+                    actionInfo.Arrangement);
+                template = turn.GetMessage(_state.IncludeEn);
+                bool includePartial = _config.ActionOptions[a.Tag].PartialPoints.HasValue;
                 template.KeyboardProvider = CreateActionKeyboard(actionInfo, false, includePartial);
-                await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
+                await EditMessageAsync(_playerChat, template, _state.CardPlayerMessageId.Value);
                 template.KeyboardProvider = CreateActionKeyboard(actionInfo, true, includePartial);
-                await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
+                await EditMessageAsync(_adminChat, template, _state.CardAdminMessageId.Value);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
 
-        SaveManager.Save();
+        _saveManager.Save(_state);
     }
 
     internal async Task UnrevealCardAsync(int messageId, UnervealCardData data)
     {
-        if (_game is null)
+        if (_state.Game is null)
         {
             await StartNewGameAsync();
             return;
         }
 
-        if ((messageId != SaveManager.SaveData.CardAdminMessageId)
-            && (messageId != SaveManager.SaveData.CardPlayerMessageId))
+        if ((messageId != _state.CardAdminMessageId) && (messageId != _state.CardPlayerMessageId))
         {
             return;
         }
-        if (SaveManager.SaveData.CardAdminMessageId is null || SaveManager.SaveData.CardPlayerMessageId is null)
+        if (_state.CardAdminMessageId is null || _state.CardPlayerMessageId is null)
         {
             return;
         }
 
+        Texts texts = _textsProvider.GetDefaultTexts();
         MessageTemplateText? partnersText = null;
         if (data.Arrangement.Partners.Count > 0)
         {
-            partnersText = Turn.GetPartnersPart(Config.Texts, data.Arrangement);
+            partnersText = Turn.GetPartnersPart(texts, data.Arrangement);
         }
-        MessageTemplateText template = Config.Texts.TurnFormatShort.Format(_game.Players.Current, partnersText);
+        MessageTemplateText template = texts.TurnFormatShort.Format(_state.Game.Players.Current, partnersText);
         template.KeyboardProvider = CreateArrangementKeyboard(data.Arrangement);
 
-        await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
-        await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
+        await EditMessageAsync(_adminChat, template, _state.CardAdminMessageId.Value);
+        await EditMessageAsync(_playerChat, template, _state.CardPlayerMessageId.Value);
 
-        _game.ProcessCardUnrevealed();
+        _state.Game.ProcessCardUnrevealed();
+
+        _saveManager.Save(_state);
     }
 
     internal Task CompleteCardAsync(CompleteCardData data)
     {
-        if (_game is null)
+        if (_state.Game is null)
         {
             return StartNewGameAsync();
         }
@@ -291,34 +329,34 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         switch (data)
         {
             case CompleteQuestionData q:
-                _game.CompleteQuestion(q.Id, q.Arrangement);
+                _state.Game.CompleteQuestion(q.Id, q.Arrangement);
                 break;
             case CompleteActionData a:
-                _game.CompleteAction(a.ActionInfo, a.CompletedFully);
+                _state.Game.CompleteAction(a.ActionInfo, a.CompletedFully);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
         }
 
-        SaveManager.Save();
+        _state.CardAdminMessageId = null;
+        _state.CardPlayerMessageId = null;
 
-        SaveManager.SaveData.CardAdminMessageId = null;
-        SaveManager.SaveData.CardPlayerMessageId = null;
+        _saveManager.Save(_state);
 
-        return DrawArrangementAsync(_game);
+        return DrawArrangementAsync(_state.Game);
     }
 
-    internal Task ShowRatesAsync() => _game is null ? StartNewGameAsync() : ShowRatesAsync(_game);
+    internal Task ShowRatesAsync() => _state.Game is null ? StartNewGameAsync() : ShowRatesAsync(_state.Game);
 
     private async Task EditMessageAsync(Chat chat, MessageTemplate template, int messageId)
     {
         switch (template)
         {
             case MessageTemplateText mtt:
-                await mtt.EditMessageWithSelfAsync(this, chat, messageId);
+                await mtt.EditMessageWithSelfAsync(_core.UpdateSender, chat, messageId);
                 break;
             case MessageTemplateImage mti:
-                await mti.EditMessageMediaWithSelfAsync(this, chat, messageId);
-                await mti.EditMessageCaptionWithSelfAsync(this, chat, messageId);
+                await mti.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, messageId);
+                await mti.EditMessageCaptionWithSelfAsync(_core.UpdateSender, chat, messageId);
                 break;
             default: throw new InvalidOperationException();
         }
@@ -334,15 +372,22 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         };
     }
 
-    private Task StartNewGameAsync() => Config.Texts.NewGame.SendAsync(this, _adminChat);
+    private Task StartNewGameAsync()
+    {
+        Texts texts = _textsProvider.GetDefaultTexts();
+        return texts.NewGame.SendAsync(Core.UpdateSender, _adminChat);
+    }
 
     private async Task UpdateDecksAsync()
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
+
         _decksLoadErrors.Clear();
         _decksEquipment.Clear();
-        await using (await StatusMessage.CreateAsync(this, _adminChat, Config.Texts.ReadingDecks, GetDecksLoadStatus))
+        await using (await StatusMessage.CreateAsync(_core.UpdateSender, _adminChat, texts.ReadingDecks,
+                         texts.StatusMessageStartFormat, texts.StatusMessageEndFormat, GetDecksLoadStatus))
         {
-            List<ActionData> actionsList = await _actionsSheet.LoadAsync<ActionData>(Config.ActionsRange);
+            List<ActionData> actionsList = await _actionsSheet.LoadAsync<ActionData>(_config.ActionsRange);
 
             HashSet<string> allTags = new();
             Dictionary<int, HashSet<string>> tags = new();
@@ -361,14 +406,14 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
                 if (data.Equipment is not null && (data.Equipment.Length > 0))
                 {
-                    foreach (string item in data.Equipment.Split(Config.Texts.EquipmentSeparatorSheet))
+                    foreach (string item in data.Equipment.Split(texts.EquipmentSeparatorSheet))
                     {
                         _decksEquipment.Add(item);
                     }
                 }
             }
 
-            List<string> optionsTags = Config.ActionOptions.Keys.ToList();
+            List<string> optionsTags = _config.ActionOptions.Keys.ToList();
             if (allTags.SetEquals(optionsTags))
             {
                 foreach (int hash in tags.Keys)
@@ -379,24 +424,26 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
                     }
 
                     ActionData data = actionsList.First(a => a.ArrangementType.GetHashCode() == hash);
-                    string line = string.Format(Config.Texts.WrongArrangementFormat, data.Partners,
-                        data.CompatablePartners, string.Join(Config.Texts.TagSeparator, tags[hash]));
+                    string line = string.Format(texts.WrongArrangementFormat, data.Partners,
+                        data.CompatablePartners, string.Join(texts.TagSeparator, tags[hash]));
                     _decksLoadErrors.Add(line);
                 }
 
                 if (_decksLoadErrors.Count == 0)
                 {
-                    _actions = GetIndexDictionary(actionsList);
+                    Dictionary<ushort, ActionData> actions = GetIndexDictionary(actionsList);
 
-                    List<CardData> questionsList = await _questionsSheet.LoadAsync<CardData>(Config.QuestionsRange);
-                    _questions = GetIndexDictionary(questionsList);
+                    List<CardData> questionsList = await _questionsSheet.LoadAsync<CardData>(_config.QuestionsRange);
+                    Dictionary<ushort, CardData> questions = GetIndexDictionary(questionsList);
+
+                    _state.Core.SheetInfo = new SheetInfo(actions, questions);
                 }
             }
             else
             {
-                string line = string.Format(Config.Texts.WrongTagsFormat,
-                    string.Join(Config.Texts.TagSeparator, allTags),
-                    string.Join(Config.Texts.TagSeparator, optionsTags));
+                string line = string.Format(texts.WrongTagsFormat,
+                    string.Join(texts.TagSeparator, allTags),
+                    string.Join(texts.TagSeparator, optionsTags));
                 _decksLoadErrors.Add(line);
             }
         }
@@ -414,56 +461,56 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
     private MessageTemplateText GetDecksLoadStatus()
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
+
         if (_decksLoadErrors.Count == 0)
         {
             MessageTemplateText? equipmentPart = null;
             if (_decksEquipment.Count > 0)
             {
-                string equipment = TextHelper.FormatAndJoin(_decksEquipment, Config.Texts.EquipmentFormat,
-                    Config.Texts.EquipmentSeparatorMessage);
-                equipmentPart = Config.Texts.EquipmentPrefixFormat.Format(equipment);
+                string equipment =
+                    TextHelper.FormatAndJoin(_decksEquipment, texts.EquipmentFormat, texts.EquipmentSeparatorMessage);
+                equipmentPart = texts.EquipmentPrefixFormat.Format(equipment);
             }
-            return Config.Texts.StatusMessageEndSuccessFormat.Format(equipmentPart);
+            return texts.StatusMessageEndSuccessFormat.Format(equipmentPart);
         }
 
-        string errors =
-            TextHelper.FormatAndJoin(_decksLoadErrors, Config.Texts.ErrorFormat, Config.Texts.ErrorsSeparator);
-        return Config.Texts.StatusMessageEndFailedFormat.Format(errors);
+        string errors = TextHelper.FormatAndJoin(_decksLoadErrors, texts.ErrorFormat, texts.ErrorsSeparator);
+        return texts.StatusMessageEndFailedFormat.Format(errors);
     }
 
     private Task ReportUnknownToggleAsync(IEnumerable<string> names)
     {
-        string text = string.Join(Config.Texts.DefaultSeparator, names);
-        MessageTemplateText template = Config.Texts.UnknownToggleFormat.Format(text);
-        return template.SendAsync(this, _adminChat);
+        Texts texts = _textsProvider.GetDefaultTexts();
+        string text = string.Join(texts.DefaultSeparator, names);
+        MessageTemplateText template = texts.UnknownToggleFormat.Format(text);
+        return template.SendAsync(_core.UpdateSender, _adminChat);
     }
 
-    private Context.Game StartNewGame(List<PlayerListUpdateData> updates)
+    private Game.States.Game StartNewGame(List<PlayerListUpdateData> updates)
     {
-        if (_actions is null)
+        if (_state.Core.SheetInfo is null)
         {
-            throw new ArgumentNullException(nameof(_actions));
+            throw new ArgumentNullException(nameof(_state.Core.SheetInfo));
         }
-        Deck<ActionData> actionDeck = new(_actions);
-
-        if (_questions is null)
-        {
-            throw new ArgumentNullException(nameof(_questions));
-        }
-        Deck<CardData> questionDeck = new(_questions);
+        Deck<ActionData> actionDeck = new(_state.Core.SheetInfo.Actions);
+        Deck<CardData> questionDeck = new(_state.Core.SheetInfo.Questions);
 
         PlayersRepository repository = new();
-        GameStats gameStats = new(Config.ActionOptions, _actions, repository);
+        GameStatsStateCore gameStatsStateCore =
+            new(_state.Core.ActionOptions, _state.Core.SheetInfo.Actions, repository);
+        GameStats gameStats = new(gameStatsStateCore);
 
         gameStats.UpdateList(updates);
 
+        Texts texts = _textsProvider.GetDefaultTexts();
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(repository, gameStats, compatibility);
-        return new Context.Game(actionDeck, questionDeck, Config.Texts.ActionsTitle, Config.Texts.QuestionsTitle,
-            repository, gameStats, matchmaker);
+        return new Game.States.Game(actionDeck, questionDeck, texts.ActionsTitle, texts.QuestionsTitle, repository,
+            gameStats, matchmaker);
     }
 
-    private async Task DrawArrangementAsync(Context.Game game)
+    private async Task DrawArrangementAsync(Game.States.Game game)
     {
         Arrangement? arrangement = game.TryDrawArrangement();
         if (arrangement is not null)
@@ -475,44 +522,51 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         await DrawAndSendQuestion(game);
     }
 
-    private async Task DrawAndSendQuestion(Context.Game game)
+    private async Task DrawAndSendQuestion(Game.States.Game game)
     {
         ushort id = game.DrawQuestion();
         Turn turn = CreateQuestionTurn(game, id);
-        MessageTemplate template = turn.GetMessage(SaveManager.SaveData.IncludeEn);
-        Message message = await template.SendAsync(this, _playerChat);
-        SaveManager.SaveData.CardPlayerMessageId = message.MessageId;
+        MessageTemplate template = turn.GetMessage(_state.IncludeEn);
+        Message message = await template.SendAsync(_core.UpdateSender, _playerChat);
+        _state.CardPlayerMessageId = message.MessageId;
 
         template.KeyboardProvider = CreateQuestionKeyboard(id, null);
-        message = await template.SendAsync(this, _adminChat);
-        SaveManager.SaveData.CardAdminMessageId = message.MessageId;
+        message = await template.SendAsync(_core.UpdateSender, _adminChat);
+        _state.CardAdminMessageId = message.MessageId;
+
+        _saveManager.Save(_state);
     }
 
-    private Turn CreateQuestionTurn(Context.Game game, ushort id)
+    private Turn CreateQuestionTurn(Game.States.Game game, ushort id)
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
         CardData data = game.GetQuestionData(id);
-        return new Turn(Config.Texts, Config.ImagesFolder, Config.Texts.QuestionsTag, data, game.Players.Current);
+        return new Turn(texts, _config.ImagesFolder, texts.QuestionsTag, data, game.Players.Current);
     }
 
     private async Task ShowArrangementAsync(string player, Arrangement arrangement)
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
         MessageTemplateText? partnersText = null;
         if (arrangement.Partners.Count > 0)
         {
-            partnersText = Turn.GetPartnersPart(Config.Texts, arrangement);
+            partnersText = Turn.GetPartnersPart(texts, arrangement);
         }
-        MessageTemplateText messageTemplate = Config.Texts.TurnFormatShort.Format(player, partnersText);
+        MessageTemplateText messageTemplate = texts.TurnFormatShort.Format(player, partnersText);
         messageTemplate.KeyboardProvider = CreateArrangementKeyboard(arrangement);
 
-        Message message = await messageTemplate.SendAsync(this, _adminChat);
-        SaveManager.SaveData.CardAdminMessageId = message.MessageId;
+        Message message = await messageTemplate.SendAsync(_core.UpdateSender, _adminChat);
+        _state.CardAdminMessageId = message.MessageId;
 
-        message = await messageTemplate.SendAsync(this, _playerChat);
-        SaveManager.SaveData.CardPlayerMessageId = message.MessageId;
+        message = await messageTemplate.SendAsync(_core.UpdateSender, _playerChat);
+        _state.CardPlayerMessageId = message.MessageId;
+
+        _saveManager.Save(_state);
     }
 
-    private Task ShowRatesAsync(Context.Game game)
+    private Task ShowRatesAsync(Game.States.Game game)
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
         Dictionary<string, float> ratios = new();
         foreach (string player in game.Players.GetActiveNames())
         {
@@ -525,7 +579,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
         if (ratios.Count == 0)
         {
-            return Config.Texts.NoRates.SendAsync(this, _adminChat);
+            return texts.NoRates.SendAsync(_core.UpdateSender, _adminChat);
         }
 
         float bestRate = ratios.Values.Max();
@@ -540,65 +594,64 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
             string rate = ratios[player].ToString("0.##");
             uint turns = game.Stats.GetTurns(player);
 
-            MessageTemplateText line = Config.Texts.RateFormat.Format(player, points, propositions, rate, turns);
+            MessageTemplateText line = texts.RateFormat.Format(player, points, propositions, rate, turns);
             if (Math.Abs(ratios[player] - bestRate) < float.Epsilon)
             {
-                line = Config.Texts.BestRateFormat.Format(line);
+                line = texts.BestRateFormat.Format(line);
             }
-            line = Config.Texts.RateLineFormat.Format(line);
+            line = texts.RateLineFormat.Format(line);
             lines.Add(line);
         }
 
         MessageTemplateText allLinesTemplate = MessageTemplateText.JoinTexts(lines);
-        MessageTemplateText template = Config.Texts.RatesFormat.Format(allLinesTemplate);
-        return template.SendAsync(this, _adminChat);
+        MessageTemplateText template = texts.RatesFormat.Format(allLinesTemplate);
+        return template.SendAsync(_core.UpdateSender, _adminChat);
     }
 
     private async Task EndGame()
     {
-        _game = null;
-        SaveManager.SaveData.IncludeEn = false;
-        SaveManager.SaveData.PlayersMessageId = null;
-        SaveManager.SaveData.CardAdminMessageId = null;
-        SaveManager.SaveData.CardPlayerMessageId = null;
-        await UnpinPlayersAsync();
-        SaveManager.Save();
+        _state.Game = null;
+        _state.IncludeEn = false;
+        _state.CardAdminMessageId = null;
+        _state.CardPlayerMessageId = null;
+        _state.PlayersMessageId = null;
+        await _core.UpdateSender.UnpinAllChatMessagesAsync(_adminChat);
+        _saveManager.Save(_state);
     }
 
-    private async Task ReportAndPinPlayersAsync(Context.Game game)
+    private async Task ReportAndPinPlayersAsync(Game.States.Game game)
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
         IEnumerable<string> players =
-            game.Players.GetActiveNames().Select(p => string.Format(Config.Texts.PlayerFormat, p));
+            game.Players.GetActiveNames().Select(p => string.Format(texts.PlayerFormat, p));
         MessageTemplateText messageText =
-            Config.Texts.PlayersFormat.Format(string.Join(Config.Texts.PlayersSeparator, players));
+            texts.PlayersFormat.Format(string.Join(texts.PlayersSeparator, players));
 
-        if (SaveManager.SaveData.PlayersMessageId is null)
+        if (_state.PlayersMessageId is null)
         {
-            Message message = await messageText.SendAsync(this, _adminChat);
-            SaveManager.SaveData.PlayersMessageId = message.MessageId;
+            Message message = await messageText.SendAsync(_core.UpdateSender, _adminChat);
+            _state.PlayersMessageId = message.MessageId;
         }
         else
         {
-            await messageText.EditMessageWithSelfAsync(this, _adminChat, SaveManager.SaveData.PlayersMessageId.Value);
+            await messageText.EditMessageWithSelfAsync(_core.UpdateSender, _adminChat, _state.PlayersMessageId.Value);
         }
 
-        await PinChatMessageAsync(_adminChat, SaveManager.SaveData.PlayersMessageId.Value);
-    }
+        await _core.UpdateSender.PinChatMessageAsync(_adminChat, _state.PlayersMessageId.Value);
 
-    private Task UnpinPlayersAsync(CancellationToken cancellationToken = default)
-    {
-        SaveManager.SaveData.PlayersMessageId = null;
-        return UnpinAllChatMessagesAsync(_adminChat, cancellationToken);
+        _saveManager.Save(_state);
     }
 
     private InlineKeyboardMarkup CreateArrangementKeyboard(Arrangement arrangement)
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
         List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag, GetString(arrangement))
+            CreateOneButtonRow<RevealCard>(texts.QuestionsTag, GetString(arrangement))
         };
 
-        keyboard.AddRange(Config.ActionOptions
+        keyboard.AddRange(_state.Core
+                                .ActionOptions
                                 .OrderBy(o => o.Value.Points)
                                 .Select(o => CreateOneButtonRow<RevealCard>(o.Key, GetString(arrangement), o.Key)));
 
@@ -607,11 +660,12 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
     private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info, bool admin, bool includePartial)
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
         string arrangementString = GetString(info.Arrangement);
         List<InlineKeyboardButton> unreveal =
-            CreateOneButtonRow<UnrevealCard>(Config.Texts.Unreveal, arrangementString);
+            CreateOneButtonRow<UnrevealCard>(texts.Unreveal, arrangementString);
         List<InlineKeyboardButton> question =
-            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag, arrangementString);
+            CreateOneButtonRow<RevealCard>(texts.QuestionsTag, arrangementString);
 
         List<InlineKeyboardButton> partial = CreateActionButtonRow(info, false);
         List<InlineKeyboardButton> full = CreateActionButtonRow(info, true);
@@ -636,12 +690,13 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
     private InlineKeyboardMarkup CreateQuestionKeyboard(ushort id, Arrangement? declinedArrangement)
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
         List<List<InlineKeyboardButton>> keyboard = new();
 
         List<InlineKeyboardButton> complete;
         if (declinedArrangement is null)
         {
-            complete = CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, id);
+            complete = CreateOneButtonRow<CompleteCard>(texts.Completed, id);
             keyboard.Add(complete);
         }
         else
@@ -649,8 +704,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
             string arrangementString = GetString(declinedArrangement);
 
             List<InlineKeyboardButton> unreveal =
-                CreateOneButtonRow<UnrevealCard>(Config.Texts.Unreveal, arrangementString);
-            complete = CreateOneButtonRow<CompleteCard>(Config.Texts.Completed, arrangementString, id);
+                CreateOneButtonRow<UnrevealCard>(texts.Unreveal, arrangementString);
+            complete = CreateOneButtonRow<CompleteCard>(texts.Completed, arrangementString, id);
 
             keyboard.Add(unreveal);
             keyboard.Add(complete);
@@ -661,9 +716,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
     private InlineKeyboardMarkup CreateEndGameConfirmationKeyboard(ConfirmEndData.ActionAfterGameEnds after)
     {
+        Texts texts = _textsProvider.GetDefaultTexts();
         List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CreateOneButtonRow<ConfirmEnd>(Config.Texts.Completed, after)
+            CreateOneButtonRow<ConfirmEnd>(texts.Completed, after)
         };
 
         return new InlineKeyboardMarkup(keyboard);
@@ -671,7 +727,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
 
     private List<InlineKeyboardButton> CreateActionButtonRow(ActionInfo info, bool fully)
     {
-        string caption = fully ? Config.Texts.Completed : Config.Texts.ActionCompletedPartially;
+        Texts texts = _textsProvider.GetDefaultTexts();
+        string caption = fully ? texts.Completed : texts.ActionCompletedPartially;
         return CreateOneButtonRow<CompleteCard>(caption, GetString(info.Arrangement), info.Id, fully);
     }
 
@@ -697,13 +754,15 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         return $"{partners}{GameButtonData.FieldSeparator}{arrangement.CompatablePartners}";
     }
 
+    private readonly BotState _state;
+
     private readonly Sheet _actionsSheet;
     private readonly Sheet _questionsSheet;
-    private Dictionary<ushort, ActionData>? _actions;
-    private Dictionary<ushort, CardData>? _questions;
-    private Context.Game? _game;
     private readonly HashSet<string> _decksEquipment = new();
     private readonly List<string> _decksLoadErrors = new();
     private readonly Chat _adminChat;
     private readonly Chat _playerChat;
+    private readonly Manager _sheetsManager;
+    private readonly SaveManager<BotState, BotData> _saveManager;
+    private readonly ITextsProvider<Texts> _textsProvider;
 }

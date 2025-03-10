@@ -1,28 +1,19 @@
 using System.Collections.Generic;
 using System.Linq;
-using AbstractBot;
 using DaresGameBot.Game.Matchmaking.Compatibility;
-using DaresGameBot.Helpers;
+using DaresGameBot.Game.States.Data;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
-using DaresGameBot.Save;
+using DaresGameBot.Utilities;
+using GryphonUtilities.Save;
 
-namespace DaresGameBot.Context;
+namespace DaresGameBot.Game.States;
 
-internal sealed class PlayersRepository : IContext<PlayersRepository, PlayersRepositoryData, object>
+internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
 {
     public IEnumerable<string> GetActiveNames() => _names.Where(n => _infos[n].Active);
     public IEnumerable<string> AllNames => _names;
 
     public string Current => _names[_currentIndex];
-
-    public PlayersRepository() { }
-
-    private PlayersRepository(List<string> names, Dictionary<string, PlayerInfo> infos, int currentIndex)
-    {
-        _names = names;
-        _infos = infos;
-        _currentIndex = currentIndex;
-    }
 
     public void MoveNext()
     {
@@ -96,11 +87,25 @@ internal sealed class PlayersRepository : IContext<PlayersRepository, PlayersRep
         };
     }
 
-    public static PlayersRepository Load(PlayersRepositoryData data, object? meta)
+    public void LoadFrom(PlayersRepositoryData? data)
     {
-        Dictionary<string, PlayerInfo> infos =
-            data.Infos.ToDictionary(i => i.Key, i => PlayerInfo.Load(i.Value, meta));
-        return new PlayersRepository(data.Names, infos, data.CurrentIndex);
+        if (data is null)
+        {
+            return;
+        }
+
+        _names.Clear();
+        _names.AddRange(data.Names);
+
+        _infos.Clear();
+        foreach (string name in data.Infos.Keys)
+        {
+            PlayerData d = data.Infos[name];
+            GroupsInfo i = new(d.GroupsData.Group, d.GroupsData.CompatableGroups);
+            _infos[name] = new PlayerInfo(i, d.Active);
+        }
+
+        _currentIndex = data.CurrentIndex;
     }
 
     public bool AreCompatable(string p1, string p2, ICompatibility compatibility)

@@ -1,11 +1,11 @@
-using AbstractBot.Configs.MessageTemplates;
 using JetBrains.Annotations;
 using System.ComponentModel.DataAnnotations;
+using AbstractBot.Models.MessageTemplates;
 
 namespace DaresGameBot.Configs;
 
 [PublicAPI]
-public class Texts : AbstractBot.Configs.TextsBasic
+public class Texts : AbstractBot.Models.Config.Texts
 {
     [UsedImplicitly]
     [Required]
@@ -81,30 +81,10 @@ public class Texts : AbstractBot.Configs.TextsBasic
 
     [UsedImplicitly]
     [Required]
-    [MinLength(1)]
-    public string NewGameCaption { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public string ShowRatesCaption { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
     public MessageTemplateText ReadingDecks { get; init; } = null!;
 
     [Required]
     public MessageTemplateText UpdatePlayersOperationDescription { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public string UpdateCommandDescription { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public string LangCommandDescription { get; init; } = null!;
 
     [Required]
     public MessageTemplateText LangToggledToRu { get; init; } = null!;
@@ -131,10 +111,6 @@ public class Texts : AbstractBot.Configs.TextsBasic
     [Required]
     [MinLength(1)]
     public string WrongArrangementFormat { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
-    public string WrongArrangementLineFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

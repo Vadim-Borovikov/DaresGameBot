@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DaresGameBot.Helpers;
+namespace DaresGameBot.Utilities;
 
 internal static class RandomHelper
 {

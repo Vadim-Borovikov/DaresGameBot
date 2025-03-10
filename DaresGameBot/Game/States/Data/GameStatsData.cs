@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
 
-namespace DaresGameBot.Save;
+namespace DaresGameBot.Game.States.Data;
 
 public sealed class GameStatsData
 {

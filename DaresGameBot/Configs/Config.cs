@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using AbstractBot.Configs;
+using AbstractBot.Models.Config;
 using JetBrains.Annotations;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
 
 namespace DaresGameBot.Configs;
 
-public class Config : ConfigWithSheets<Texts>
+public class Config : ConfigWithSheets
 {
     [UsedImplicitly]
     [Required]
@@ -37,6 +37,11 @@ public class Config : ConfigWithSheets<Texts>
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
+    public string SavePath { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
     public Dictionary<string, Option> ActionOptions { get; init; } = null!;
 
     [UsedImplicitly]
@@ -45,4 +50,8 @@ public class Config : ConfigWithSheets<Texts>
     [UsedImplicitly]
     [Required]
     public long PlayerChatId { get; init; }
+
+    [UsedImplicitly]
+    [Required]
+    public Texts Texts { get; init; } = null!;
 }

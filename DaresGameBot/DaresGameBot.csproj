@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AbstractBot" Version="82.0.0" />
+    <ProjectReference Include="..\..\AbstractBot\AbstractBot\AbstractBot.csproj" />
   </ItemGroup>
 
 </Project>

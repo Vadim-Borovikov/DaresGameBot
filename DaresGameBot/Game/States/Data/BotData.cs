@@ -1,11 +1,10 @@
 ﻿// ReSharper disable NullableWarningSuppressionIsUsed
 
-using AbstractBot;
 using JetBrains.Annotations;
 
-namespace DaresGameBot.Save;
+namespace DaresGameBot.Game.States.Data;
 
-public sealed class Data : SaveData<object>
+public sealed class BotData
 {
     [UsedImplicitly]
     public GameData? GameData { get; set; }

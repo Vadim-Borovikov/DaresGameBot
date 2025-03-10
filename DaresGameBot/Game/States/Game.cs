@@ -1,19 +1,19 @@
 ﻿using System.Collections.Generic;
-using AbstractBot;
 using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 using GryphonUtilities.Extensions;
-using DaresGameBot.Game;
-using DaresGameBot.Save;
-using DaresGameBot.Context.Meta;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Compatibility;
-using DaresGameBot.Helpers;
+using GryphonUtilities.Save;
+using DaresGameBot.Utilities.Extensions;
+using DaresGameBot.Configs;
+using DaresGameBot.Game.States.Cores;
+using DaresGameBot.Game.States.Data;
 
-namespace DaresGameBot.Context;
+namespace DaresGameBot.Game.States;
 
-internal sealed class Game : IContext<Game, GameData, MetaContext>
+internal sealed class Game : IStateful<GameData>
 {
     public enum State
     {
@@ -26,12 +26,34 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
 
     public State? CurrentState { get; private set; }
 
+    public Game(Dictionary<string, Option> actionOptions, string actionsVersion, string questionsVersion,
+        SheetInfo sheetInfo)
+    {
+        _actionDeck = new Deck<ActionData>(sheetInfo.Actions);
+        _questionDeck = new Deck<CardData>(sheetInfo.Questions);
+        _actionsVersion = actionsVersion;
+        _questionsVersion = questionsVersion;
+        Players = new PlayersRepository();
+
+        GameStatsStateCore gameStatsStateCore = new(actionOptions, sheetInfo.Actions, Players);
+        Stats = new GameStats(gameStatsStateCore);
+        GroupCompatibility compatibility = new();
+        _matchmaker = new DistributedMatchmaker(Players, Stats, compatibility);
+
+        _interactionSubscribers = new List<IInteractionSubscriber>
+        {
+            Stats
+        };
+
+        CurrentState = null;
+    }
+
     public Game(Deck<ActionData> actionsDeck, Deck<CardData> questionsDeck, string actionsVersion,
         string questionsVersion, PlayersRepository players, GameStats stats, Matchmaker matchmaker,
         State? currentState = null)
     {
         _actionDeck = actionsDeck;
-        _questionsDeck = questionsDeck;
+        _questionDeck = questionsDeck;
         _actionsVersion = actionsVersion;
         _questionsVersion = questionsVersion;
         Players = players;
@@ -47,7 +69,7 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
     }
 
     public ActionData GetActionData(ushort id) => _actionDeck.GetCard(id);
-    public CardData GetQuestionData(ushort id) => _questionsDeck.GetCard(id);
+    public CardData GetQuestionData(ushort id) => _questionDeck.GetCard(id);
 
     public Arrangement? TryDrawArrangement()
     {
@@ -67,7 +89,7 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
 
     public ushort DrawQuestion()
     {
-        ushort id = _questionsDeck.GetRandomId().Denull("No question found!");
+        ushort id = _questionDeck.GetRandomId().Denull("No question found!");
 
         CurrentState = State.CardRevealed;
 
@@ -90,7 +112,7 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
 
     public void CompleteQuestion(ushort id, Arrangement? declinedArrangement)
     {
-        _questionsDeck.Mark(id);
+        _questionDeck.Mark(id);
 
         OnQuestionCompleted(declinedArrangement);
 
@@ -113,7 +135,7 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
         return new GameData
         {
             ActionUses = _actionDeck.Save(),
-            QuestionUses = _questionsDeck.Save(),
+            QuestionUses = _questionDeck.Save(),
             ActionsVersion = _actionsVersion,
             QuestionsVersion = _questionsVersion,
             PlayersRepositoryData = Players.Save(),
@@ -122,49 +144,26 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
         };
     }
 
-    public static Game? Load(GameData data, MetaContext? meta)
+    public void LoadFrom(GameData? data)
     {
-        if (meta is null)
+        if (data is null)
         {
-            return null;
+            return;
         }
 
-        if ((meta.ActionsVersion != data.ActionsVersion) || (meta.QuestionsVersion != data.QuestionsVersion))
+        if ((_actionsVersion != data.ActionsVersion) || (_questionsVersion != data.QuestionsVersion))
         {
-            return null;
+            return;
         }
 
-        foreach (ActionData action in meta.Actions.Values)
-        {
-            action.ArrangementType = new ArrangementType(action.Partners, action.CompatablePartners);
-        }
-        Deck<ActionData>? actionDeck = Deck<ActionData>.Load(data.ActionUses, meta.Actions);
-        if (actionDeck is null)
-        {
-            return null;
-        }
+        _actionDeck.LoadFrom(data.ActionUses);
+        _questionDeck.LoadFrom(data.QuestionUses);
 
-        Deck<CardData>? questionDeck = Deck<CardData>.Load(data.QuestionUses, meta.Questions);
-        if (questionDeck is null)
-        {
-            return null;
-        }
+        Players.LoadFrom(data.PlayersRepositoryData);
 
-        PlayersRepository playersRepository = PlayersRepository.Load(data.PlayersRepositoryData, meta);
-        GameStatsMetaContext gameStatsMeta = new(meta, playersRepository);
+        Stats.LoadFrom(data.GameStatsData);
 
-        GameStats? gameStats = GameStats.Load(data.GameStatsData, gameStatsMeta);
-        if (gameStats is null)
-        {
-            return null;
-        }
-
-        State? currentState = data.CurrentState?.ToState();
-
-        GroupCompatibility compatibility = new();
-        DistributedMatchmaker matchmaker = new(playersRepository, gameStats, compatibility);
-        return new Game(actionDeck, questionDeck, data.ActionsVersion, data.QuestionsVersion, playersRepository,
-            gameStats, matchmaker, currentState);
+        CurrentState = data.CurrentState?.ToState();
     }
 
     private void StartNewTurn() => Players.MoveNext();
@@ -186,7 +185,7 @@ internal sealed class Game : IContext<Game, GameData, MetaContext>
     }
 
     private readonly Deck<ActionData> _actionDeck;
-    private readonly Deck<CardData> _questionsDeck;
+    private readonly Deck<CardData> _questionDeck;
     private readonly string _actionsVersion;
     private readonly string _questionsVersion;
     private readonly List<IInteractionSubscriber> _interactionSubscribers;

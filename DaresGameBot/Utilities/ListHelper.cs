@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace DaresGameBot.Helpers;
+namespace DaresGameBot.Utilities;
 
 internal static class ListHelper
 {

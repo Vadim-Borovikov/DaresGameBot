@@ -1,18 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using AbstractBot;
-using DaresGameBot.Helpers;
+using DaresGameBot.Utilities;
+using DaresGameBot.Utilities.Extensions;
+using GryphonUtilities.Save;
 
-namespace DaresGameBot.Context;
+namespace DaresGameBot.Game.States;
 
-internal sealed class Deck<T> : IContext<Deck<T>, Dictionary<ushort, uint>, Dictionary<ushort, T>>
+internal sealed class Deck<T> : IStateful<Dictionary<ushort, uint>>
 {
-    public Deck(Dictionary<ushort, T> cards, Dictionary<ushort, uint>? uses = null)
-    {
-        _cards = cards;
-        _uses = uses ?? new Dictionary<ushort, uint>();
-    }
+    public Deck(Dictionary<ushort, T> cards) => _cards = cards;
 
     public T GetCard(ushort id) => _cards[id];
 
@@ -33,11 +30,17 @@ internal sealed class Deck<T> : IContext<Deck<T>, Dictionary<ushort, uint>, Dict
 
     public Dictionary<ushort, uint> Save() => _uses;
 
-    public static Deck<T>? Load(Dictionary<ushort, uint> data, Dictionary<ushort, T>? meta)
+    public void LoadFrom(Dictionary<ushort, uint>? data)
     {
-        return meta is null ? null : new Deck<T>(meta, data);
+        if (data is null)
+        {
+            return;
+        }
+
+        _uses.Clear();
+        _uses.AddAll(data);
     }
 
     private readonly Dictionary<ushort, T> _cards;
-    private readonly Dictionary<ushort, uint> _uses;
+    private readonly Dictionary<ushort, uint> _uses = new();
 }

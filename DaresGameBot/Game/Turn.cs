@@ -1,5 +1,5 @@
 using System.IO;
-using AbstractBot.Configs.MessageTemplates;
+using AbstractBot.Models.MessageTemplates;
 using DaresGameBot.Configs;
 using DaresGameBot.Game.Data;
 

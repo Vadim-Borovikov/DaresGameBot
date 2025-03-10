@@ -1,7 +1,7 @@
 ﻿using System;
 using DaresGameBot.Operations.Data.GameButtons;
 
-namespace DaresGameBot.Helpers;
+namespace DaresGameBot.Utilities.Extensions;
 
 internal static class ObjectExtensions
 {
@@ -23,9 +23,9 @@ internal static class ObjectExtensions
         return Enum.TryParse(o?.ToString(), out a) ? a : null;
     }
 
-    public static Context.Game.State? ToState(this object? o)
+    public static Game.States.Game.State? ToState(this object? o)
     {
-        if (o is Context.Game.State s)
+        if (o is Game.States.Game.State s)
         {
             return s;
         }

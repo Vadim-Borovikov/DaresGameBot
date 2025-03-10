@@ -1,24 +1,22 @@
 ﻿using System;
 using System.Threading.Tasks;
-using AbstractBot.Bots;
-using AbstractBot.Operations.Commands;
+using AbstractBot.Interfaces.Modules.Config;
+using AbstractBot.Models.Operations.Commands;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations.Commands;
 
-internal sealed class LangCommand : CommandSimple
+internal sealed class LangCommand : Command
 {
-    protected override byte Order => 5;
-
     public override Enum AccessRequired => Bot.AccessType.Admin;
 
-    public LangCommand(Bot bot)
-        : base(bot.Config.Texts.CommandDescriptionFormat, "lang", bot.Config.Texts.LangCommandDescription)
+    public LangCommand(Bot bot, ITexts texts)
+        : base(bot.Core.Accesses, bot.Core.UpdateSender, "lang", texts, bot.Core.SelfUsername)
     {
         _bot = bot;
     }
 
-    protected override Task ExecuteAsync(BotBasic bot, Message message, User sender) => _bot.OnToggleLanguagesAsync();
+    protected override Task ExecuteAsync(Message message, User sender) => _bot.OnToggleLanguagesAsync();
 
     private readonly Bot _bot;
 }

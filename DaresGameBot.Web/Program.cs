@@ -8,7 +8,7 @@ namespace DaresGameBot.Web;
 
 internal static class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         Logger.DeleteExceptionLog();
         Clock clock = new();
@@ -26,7 +26,10 @@ internal static class Program
             services.AddControllersWithViews();
             services.ConfigureTelegramBotMvc();
 
-            AddBotTo(services);
+            Bot bot = await Bot.TryCreateAsync(config, CancellationToken.None)
+                      ?? throw new InvalidOperationException("Failed to initialize bot due to invalid configuration.");
+            services.AddSingleton(bot);
+            services.AddHostedService<BotService>();
 
             WebApplication app = builder.Build();
 
@@ -40,7 +43,7 @@ internal static class Program
 
             UseUpdateEndpoint(app, config.Token);
 
-            app.Run();
+            await app.RunAsync();
         }
         catch (Exception ex)
         {
@@ -63,12 +66,6 @@ internal static class Program
         CultureInfo.DefaultThreadCurrentCulture = new CultureInfo(config.CultureInfoName);
 
         return config;
-    }
-
-    private static void AddBotTo(IServiceCollection services)
-    {
-        services.AddSingleton<BotSingleton>();
-        services.AddHostedService<BotService>();
     }
 
     private static void UseUpdateEndpoint(IApplicationBuilder app, string token)

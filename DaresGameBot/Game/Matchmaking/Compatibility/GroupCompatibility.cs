@@ -1,4 +1,4 @@
-using DaresGameBot.Context;
+using DaresGameBot.Game.States;
 
 namespace DaresGameBot.Game.Matchmaking.Compatibility;
 

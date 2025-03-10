@@ -1,34 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using AbstractBot;
-using DaresGameBot.Configs;
-using DaresGameBot.Context.Meta;
-using DaresGameBot.Game;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Interactions;
-using DaresGameBot.Helpers;
+using DaresGameBot.Game.States.Cores;
+using DaresGameBot.Game.States.Data;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
-using DaresGameBot.Save;
+using DaresGameBot.Utilities;
+using DaresGameBot.Utilities.Extensions;
+using GryphonUtilities.Save;
 
-namespace DaresGameBot.Context;
+namespace DaresGameBot.Game.States;
 
-internal sealed class GameStats : IInteractionSubscriber, IContext<GameStats, GameStatsData, GameStatsMetaContext>
+internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsData>
 {
-    public GameStats(Dictionary<string, Option> actionOptions, Dictionary<ushort, ActionData> actions,
-        PlayersRepository players, GameStatsData? data = null)
-    {
-        _actionOptions = actionOptions;
-        _actions = actions;
-        _players = players;
-
-        if (data is not null)
-        {
-            _points = data.Points;
-            _propositions = data.Propositions;
-            _turns = data.Turns;
-        }
-    }
+    public GameStats(GameStatsStateCore core) => _core = core;
 
     public void OnQuestionCompleted(string player, Arrangement? declinedArrangement)
     {
@@ -48,7 +34,7 @@ internal sealed class GameStats : IInteractionSubscriber, IContext<GameStats, Ga
         RegisterPropositions(player, info.Arrangement);
         RegisterTurn();
 
-        ActionData? data = _actions.GetValueOrDefault(info.Id);
+        ActionData? data = _core.Actions.GetValueOrDefault(info.Id);
         uint? points = GetPoints(data?.Tag, fully);
         if (points is null)
         {
@@ -71,10 +57,10 @@ internal sealed class GameStats : IInteractionSubscriber, IContext<GameStats, Ga
             switch (data)
             {
                 case AddOrUpdatePlayerData a:
-                    changed |= _players.AddOrUpdatePlayerData(a);
+                    changed |= _core.Players.AddOrUpdatePlayerData(a);
                     break;
                 case TogglePlayerData t:
-                    changed |= _players.TogglePlayerData(t);
+                    changed |= _core.Players.TogglePlayerData(t);
                     break;
             }
         }
@@ -115,18 +101,30 @@ internal sealed class GameStats : IInteractionSubscriber, IContext<GameStats, Ga
         };
     }
 
-    public static GameStats? Load(GameStatsData data, GameStatsMetaContext? meta)
+    public void LoadFrom(GameStatsData? data)
     {
-        return meta is null ? null : new GameStats(meta.ActionOptions, meta.Actions, meta.Players, data);
+        if (data is null)
+        {
+            return;
+        }
+
+        _points.Clear();
+        _points.AddAll(data.Points);
+
+        _propositions.Clear();
+        _propositions.AddAll(data.Propositions);
+
+        _turns.Clear();
+        _turns.AddAll(data.Turns);
     }
 
     private uint? GetPoints(string? tag, bool completedFully)
     {
-        if (string.IsNullOrWhiteSpace(tag) || !_actionOptions.ContainsKey(tag))
+        if (string.IsNullOrWhiteSpace(tag) || !_core.ActionOptions.ContainsKey(tag))
         {
             return null;
         }
-        return completedFully ? _actionOptions[tag].Points : _actionOptions[tag].PartialPoints;
+        return completedFully ? _core.ActionOptions[tag].Points : _core.ActionOptions[tag].PartialPoints;
     }
 
     private void RegisterPropositions(string player, Arrangement arrangement)
@@ -164,16 +162,15 @@ internal sealed class GameStats : IInteractionSubscriber, IContext<GameStats, Ga
 
     private void RegisterTurn()
     {
-        foreach (string player in _players.GetActiveNames())
+        foreach (string player in _core.Players.GetActiveNames())
         {
             _turns.CreateOrAdd(player, 1);
         }
     }
 
-    private readonly Dictionary<string, Option> _actionOptions;
-    private readonly Dictionary<ushort, ActionData> _actions;
-    private readonly PlayersRepository _players;
     private readonly Dictionary<string, uint> _points = new();
     private readonly Dictionary<string, uint> _propositions = new();
     private readonly Dictionary<string, uint> _turns = new();
+
+    private readonly GameStatsStateCore _core;
 }

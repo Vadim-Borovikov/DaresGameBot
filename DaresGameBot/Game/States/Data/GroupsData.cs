@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
 
-namespace DaresGameBot.Save;
+namespace DaresGameBot.Game.States.Data;
 
 public sealed class GroupsData
 {

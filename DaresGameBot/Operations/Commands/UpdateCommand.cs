@@ -1,25 +1,23 @@
 ﻿using System;
 using System.Threading.Tasks;
-using AbstractBot.Bots;
-using AbstractBot.Operations.Commands;
+using AbstractBot.Interfaces.Modules.Config;
+using AbstractBot.Models.Operations.Commands;
 using DaresGameBot.Operations.Data.GameButtons;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations.Commands;
 
-internal sealed class UpdateCommand : CommandSimple
+internal sealed class UpdateCommand : Command
 {
-    protected override byte Order => 4;
-
     public override Enum AccessRequired => Bot.AccessType.Admin;
 
-    public UpdateCommand(Bot bot)
-        : base(bot.Config.Texts.CommandDescriptionFormat, "update", bot.Config.Texts.UpdateCommandDescription)
+    public UpdateCommand(Bot bot, ITexts texts)
+        : base(bot.Core.Accesses, bot.Core.UpdateSender, "update", texts, bot.Core.SelfUsername)
     {
         _bot = bot;
     }
 
-    protected override Task ExecuteAsync(BotBasic bot, Message message, User sender)
+    protected override Task ExecuteAsync(Message message, User sender)
     {
         return _bot.OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds.UpdateCards);
     }
