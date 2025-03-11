@@ -1,4 +1,3 @@
-using AbstractBot.Modules.Context.Localization;
 using AbstractBot.Modules.Context;
 using DaresGameBot.Game.States.Cores;
 using DaresGameBot.Game.States.Data;
@@ -6,17 +5,40 @@ using System.Collections.Generic;
 
 namespace DaresGameBot.Game.States;
 
-internal sealed class BotState : BotState<BotData, UserState, LocalizationUserStateData>
+internal sealed class BotState : BotState<BotData, UserState, UserStateData>
 {
     public readonly BotStateCore Core;
 
     public Game? Game;
 
     public int? PlayersMessageId;
-    public int? CardAdminMessageId;
-    public int? CardPlayerMessageId;
 
-    internal BotState(BotStateCore core, Dictionary<long, UserState> userStates) : base(userStates) => Core = core;
+    public UserState? AdminState => UserStates.GetValueOrDefault(_adminId);
+    public UserState? PlayerState => UserStates.GetValueOrDefault(_playerId);
+
+    internal BotState(BotStateCore core, Dictionary<long, UserState> userStates, long adminId, long playerId)
+        : base(userStates)
+    {
+        Core = core;
+        _adminId = adminId;
+        _playerId = playerId;
+    }
+
+    public void SetUserMessageId(long userId, int messageId)
+    {
+        if (!UserStates.ContainsKey(userId))
+        {
+            UserStates[userId] = new UserState();
+        }
+        UserStates[userId].CardMessageId = messageId;
+    }
+    public void ResetUserMessageId(long userId)
+    {
+        if (UserStates.ContainsKey(userId))
+        {
+            UserStates[userId].CardMessageId = null;
+        }
+    }
 
     public override BotData Save()
     {
@@ -25,8 +47,6 @@ internal sealed class BotState : BotState<BotData, UserState, LocalizationUserSt
         data.GameData = Game?.Save();
 
         data.PlayersMessageId = PlayersMessageId;
-        data.CardAdminMessageId = CardAdminMessageId;
-        data.CardPlayerMessageId = CardPlayerMessageId;
 
         return data;
     }
@@ -47,7 +67,8 @@ internal sealed class BotState : BotState<BotData, UserState, LocalizationUserSt
         }
 
         PlayersMessageId = data.PlayersMessageId;
-        CardAdminMessageId = data.CardAdminMessageId;
-        CardPlayerMessageId = data.CardPlayerMessageId;
     }
+
+    private readonly long _adminId;
+    private readonly long _playerId;
 }

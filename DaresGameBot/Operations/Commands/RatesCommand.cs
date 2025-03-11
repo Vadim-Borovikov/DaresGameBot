@@ -17,7 +17,7 @@ internal sealed class RatesCommand : Command
         _bot = bot;
     }
 
-    protected override Task ExecuteAsync(Message message, User sender) => _bot.ShowRatesAsync(sender.Id);
+    protected override Task ExecuteAsync(Message message, User sender) => _bot.ShowRatesAsync();
 
     private readonly Bot _bot;
 }

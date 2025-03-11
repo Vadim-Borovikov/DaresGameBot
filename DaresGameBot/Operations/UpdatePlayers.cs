@@ -54,7 +54,7 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
     {
         Texts texts = _textsProvider.GetTextsFor(sender.Id);
         return _bot.CanBeUpdated()
-            ? _bot.UpdatePlayersAsync(data.Datas, sender.Id)
+            ? _bot.UpdatePlayersAsync(data.Datas)
             : texts.Refuse.SendAsync(_bot.Core.UpdateSender, message.Chat);
     }
 

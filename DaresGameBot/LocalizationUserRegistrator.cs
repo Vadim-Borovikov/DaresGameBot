@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot;
 
-internal sealed class LocalizationUserRegistrator : LocalizationUserRegistrator<UserState, LocalizationUserStateData>
+internal sealed class LocalizationUserRegistrator : LocalizationUserRegistrator<UserState, UserStateData>
 {
     public LocalizationUserRegistrator(BotState state, SaveManager<BotState, BotData> saveManager)
         : base(state.UserStates)
