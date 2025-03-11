@@ -20,7 +20,7 @@ internal sealed class UpdateCommand : Command
 
     protected override Task ExecuteAsync(Message message, User sender)
     {
-        return _bot.OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds.UpdateCards, sender);
+        return _bot.OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds.UpdateCards, sender.Id);
     }
 
     private readonly Bot _bot;

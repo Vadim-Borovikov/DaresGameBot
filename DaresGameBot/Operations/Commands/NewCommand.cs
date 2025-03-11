@@ -20,7 +20,7 @@ internal sealed class NewCommand : Command
 
     protected override Task ExecuteAsync(Message message, User sender)
     {
-        return _bot.OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds.StartNewGame, sender);
+        return _bot.OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds.StartNewGame, sender.Id);
     }
 
     private readonly Bot _bot;

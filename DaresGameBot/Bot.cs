@@ -32,15 +32,11 @@ using DaresGameBot.Game.States;
 using DaresGameBot.Game.States.Cores;
 using DaresGameBot.Game.States.Data;
 using AbstractBot.Modules.Context.Localization;
-using AbstractBot.Modules.UserProviders;
 
 namespace DaresGameBot;
 
 public sealed class Bot : AbstractBot.Bot, IDisposable
 {
-    private readonly BotCore _core;
-    private readonly Config _config;
-
     [Flags]
     internal enum AccessType
     {
@@ -67,23 +63,25 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         Localization<Texts, UserState, LocalizationUserStateData> localization =
             new(config.AllTexts, config.DefaultLanguageCode, userStates);
 
-        AccessBasedUserProvider accessBasedUserProvider = new(core.Accesses);
-        CumulativeUserProvider userProvider = new(accessBasedUserProvider, localization);
-
-        ICommands commands = new Commands(core.Client, core.Accesses, core.UpdateReceiver, localization, userProvider);
+        ICommands commands =
+            new Commands(core.Client, core.Accesses, core.UpdateReceiver, localization, userStates.Keys);
 
         Texts defaultTexts = localization.GetDefaultTexts();
         Greeter greeter = new(core.UpdateSender, defaultTexts.StartFormat);
-        Start start = new(core.Accesses, core.UpdateSender, commands, localization, core.SelfUsername, greeter);
+
+        BotStateCore stateCore = new(config.ActionOptions, defaultTexts.ActionsTitle, defaultTexts.QuestionsTitle);
+        BotState state = new(stateCore, userStates);
+        LocalizationUserRegistrator registrator = new(state, saveManager);
+        Start start = new(core.Accesses, core.UpdateSender, commands, localization, core.SelfUsername, greeter,
+            registrator);
 
         Help help = new(core.Accesses, core.UpdateSender, core.UpdateReceiver, localization, core.SelfUsername);
 
-        return new Bot(core, commands, start, help, config, saveManager, localization, userStates);
+        return new Bot(core, commands, start, help, config, saveManager, state, localization);
     }
 
     private Bot(BotCore core, ICommands commands, IStartCommand start, Help help, Config config,
-        SaveManager<BotState, BotData> saveManager, ITextsProvider<Texts> textsProvider,
-        Dictionary<long, UserState> userStates)
+        SaveManager<BotState, BotData> saveManager, BotState state, ITextsProvider<Texts> textsProvider)
         : base(core, commands, start, help)
     {
         _core = core;
@@ -111,12 +109,18 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             Type = ChatType.Private
         };
 
-        BotStateCore stateCore = new(_config.ActionOptions, texts.ActionsTitle, texts.QuestionsTitle);
-        _state = new BotState(stateCore, userStates);
+        _state = state;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
+        await _core.Connection.StartAsync(cancellationToken);
+        await _core.Logging.StartAsync(cancellationToken);
+
+        await UpdateDecksAsync();
+
+        _saveManager.LoadTo(_state);
+
         _core.UpdateReceiver.Operations.Add(new NewCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new RatesCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new UpdateCommand(this, _textsProvider));
@@ -126,12 +130,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
         _core.UpdateReceiver.Operations.Add(new CompleteCard(this));
         _core.UpdateReceiver.Operations.Add(new ConfirmEnd(this));
-
-        await base.StartAsync(cancellationToken);
-
-        await UpdateDecksAsync();
-
-        _saveManager.LoadTo(_state);
 
         await Commands.UpdateForAll(cancellationToken);
     }
@@ -151,28 +149,28 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     internal bool CanBeUpdated() => _state.Game is null
                                     || (_state.Game.CurrentState == Game.States.Game.State.ArrangementPurposed);
 
-    internal async Task UpdatePlayersAsync(List<PlayerListUpdateData> updates, User sender)
+    internal async Task UpdatePlayersAsync(List<PlayerListUpdateData> updates, long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
 
         if (_state.Game is null)
         {
             List<string> toggled = updates.OfType<TogglePlayerData>().Select(t => t.Name).ToList();
             if (toggled.Any())
             {
-                await ReportUnknownToggleAsync(toggled, sender);
+                await ReportUnknownToggleAsync(toggled, userId);
                 return;
             }
 
-            _state.Game = StartNewGame(updates, sender);
+            _state.Game = StartNewGame(updates, userId);
 
             await texts.NewGameStart.SendAsync(_core.UpdateSender, _adminChat);
             await texts.NewGameStart.SendAsync(_core.UpdateSender, _playerChat);
 
             _state.PlayersMessageId = null;
-            await ReportAndPinPlayersAsync(_state.Game, sender);
+            await ReportAndPinPlayersAsync(_state.Game, userId);
 
-            await DrawArrangementAsync(_state.Game, sender);
+            await DrawArrangementAsync(_state.Game, userId);
         }
         else
         {
@@ -181,7 +179,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
             if (toggled.Any())
             {
-                await ReportUnknownToggleAsync(toggled, sender);
+                await ReportUnknownToggleAsync(toggled, userId);
                 return;
             }
 
@@ -194,64 +192,64 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
             await texts.Accepted.SendAsync(_core.UpdateSender, _adminChat);
 
-            await DrawArrangementAsync(_state.Game, sender);
+            await DrawArrangementAsync(_state.Game, userId);
 
-            await ReportAndPinPlayersAsync(_state.Game, sender);
+            await ReportAndPinPlayersAsync(_state.Game, userId);
         }
 
         _saveManager.Save(_state);
     }
 
-    internal Task OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds after, User sender)
+    internal Task OnEndGameRequestedAsync(ConfirmEndData.ActionAfterGameEnds after, long userId)
     {
         if (_state.Game is null)
         {
-            return DoRequestedActionAsync(after, sender);
+            return DoRequestedActionAsync(after, userId);
         }
 
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         MessageTemplateText template = texts.EndGameWarning;
-        template.KeyboardProvider = CreateEndGameConfirmationKeyboard(after, sender);
+        template.KeyboardProvider = CreateEndGameConfirmationKeyboard(after, userId);
         return template.SendAsync(_core.UpdateSender, _adminChat);
     }
 
-    internal async Task OnEndGameConfirmedAsync(ConfirmEndData.ActionAfterGameEnds after, User sender)
+    internal async Task OnEndGameConfirmedAsync(ConfirmEndData.ActionAfterGameEnds after, long userId)
     {
         if (_state.Game is null)
         {
             return;
         }
 
-        await ShowRatesAsync(_state.Game, sender);
+        await ShowRatesAsync(_state.Game, userId);
 
         await EndGame();
 
-        await DoRequestedActionAsync(after, sender);
+        await DoRequestedActionAsync(after, userId);
     }
 
-    internal Task OnToggleLanguagesAsync(User sender)
+    internal Task OnToggleLanguagesAsync(long userId)
     {
-        if (!_state.UserStates.ContainsKey(sender.Id))
+        if (!_state.UserStates.ContainsKey(userId))
         {
-            _state.UserStates[sender.Id] = new UserState();
+            _state.UserStates[userId] = new UserState();
         }
 
-        _state.UserStates[sender.Id].LanguageCode =
-            _state.UserStates[sender.Id].IncludeEn ? UserState.LocalizationRu : UserState.LocalizationRuEn;
+        _state.UserStates[userId].LanguageCode =
+            _state.UserStates[userId].IncludeEn ? UserState.LocalizationRu : UserState.LocalizationRuEn;
         _saveManager.Save(_state);
 
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
 
-        Commands.UpdateFor(sender);
+        Commands.UpdateFor(userId);
 
         return texts.LangToggled.SendAsync(_core.UpdateSender, _adminChat);
     }
 
-    internal async Task RevealCardAsync(int messageId, RevealCardData revealData, User sender)
+    internal async Task RevealCardAsync(int messageId, RevealCardData revealData, long userId)
     {
         if (_state.Game is null)
         {
-            await StartNewGameAsync(sender);
+            await StartNewGameAsync(userId);
             return;
         }
 
@@ -270,24 +268,24 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         {
             case RevealQuestionData q:
                 ushort id = _state.Game.DrawQuestion();
-                turn = CreateQuestionTurn(_state.Game, sender, id);
+                turn = CreateQuestionTurn(_state.Game, userId, id);
                 template = turn.GetMessage();
                 await EditMessageAsync(_playerChat, template, _state.CardPlayerMessageId.Value);
-                template.KeyboardProvider = CreateQuestionKeyboard(id, q.Arrangement, sender);
+                template.KeyboardProvider = CreateQuestionKeyboard(id, q.Arrangement, userId);
                 await EditMessageAsync(_adminChat, template, _state.CardAdminMessageId.Value);
                 break;
             case RevealActionData a:
-                Texts texts = _textsProvider.GetTextsFor(sender);
+                Texts texts = _textsProvider.GetTextsFor(userId);
                 ActionInfo actionInfo = _state.Game.DrawAction(a.Arrangement, a.Tag);
                 ActionData data = _state.Game.GetActionData(actionInfo.Id);
-                bool includeEn = _state.UserStates.ContainsKey(sender.Id) && _state.UserStates[sender.Id].IncludeEn;
+                bool includeEn = _state.UserStates.ContainsKey(userId) && _state.UserStates[userId].IncludeEn;
                 turn = new Turn(texts, includeEn, _config.ImagesFolder, data, _state.Game.Players.Current,
                     actionInfo.Arrangement);
                 template = turn.GetMessage();
                 bool includePartial = _config.ActionOptions[a.Tag].PartialPoints.HasValue;
-                template.KeyboardProvider = CreateActionKeyboard(actionInfo, false, includePartial, sender);
+                template.KeyboardProvider = CreateActionKeyboard(actionInfo, false, includePartial, userId);
                 await EditMessageAsync(_playerChat, template, _state.CardPlayerMessageId.Value);
-                template.KeyboardProvider = CreateActionKeyboard(actionInfo, true, includePartial, sender);
+                template.KeyboardProvider = CreateActionKeyboard(actionInfo, true, includePartial, userId);
                 await EditMessageAsync(_adminChat, template, _state.CardAdminMessageId.Value);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
@@ -296,11 +294,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    internal async Task UnrevealCardAsync(int messageId, UnervealCardData data, User sender)
+    internal async Task UnrevealCardAsync(int messageId, UnervealCardData data, long userId)
     {
         if (_state.Game is null)
         {
-            await StartNewGameAsync(sender);
+            await StartNewGameAsync(userId);
             return;
         }
 
@@ -313,14 +311,14 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         MessageTemplateText? partnersText = null;
         if (data.Arrangement.Partners.Count > 0)
         {
             partnersText = Turn.GetPartnersPart(texts, data.Arrangement);
         }
         MessageTemplateText template = texts.TurnFormatShort.Format(_state.Game.Players.Current, partnersText);
-        template.KeyboardProvider = CreateArrangementKeyboard(data.Arrangement, sender);
+        template.KeyboardProvider = CreateArrangementKeyboard(data.Arrangement, userId);
 
         await EditMessageAsync(_adminChat, template, _state.CardAdminMessageId.Value);
         await EditMessageAsync(_playerChat, template, _state.CardPlayerMessageId.Value);
@@ -330,11 +328,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    internal Task CompleteCardAsync(CompleteCardData data, User sender)
+    internal Task CompleteCardAsync(CompleteCardData data, long userId)
     {
         if (_state.Game is null)
         {
-            return StartNewGameAsync(sender);
+            return StartNewGameAsync(userId);
         }
 
         switch (data)
@@ -353,12 +351,12 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         _saveManager.Save(_state);
 
-        return DrawArrangementAsync(_state.Game, sender);
+        return DrawArrangementAsync(_state.Game, userId);
     }
 
-    internal Task ShowRatesAsync(User sender)
+    internal Task ShowRatesAsync(long userId)
     {
-        return _state.Game is null ? StartNewGameAsync(sender) : ShowRatesAsync(_state.Game, sender);
+        return _state.Game is null ? StartNewGameAsync(userId) : ShowRatesAsync(_state.Game, userId);
     }
 
     private async Task EditMessageAsync(Chat chat, MessageTemplate template, int messageId)
@@ -376,31 +374,31 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
     }
 
-    private Task DoRequestedActionAsync(ConfirmEndData.ActionAfterGameEnds after, User sender)
+    private Task DoRequestedActionAsync(ConfirmEndData.ActionAfterGameEnds after, long userId)
     {
         return after switch
         {
-            ConfirmEndData.ActionAfterGameEnds.StartNewGame => StartNewGameAsync(sender),
-            ConfirmEndData.ActionAfterGameEnds.UpdateCards  => UpdateDecksAsync(sender),
+            ConfirmEndData.ActionAfterGameEnds.StartNewGame => StartNewGameAsync(userId),
+            ConfirmEndData.ActionAfterGameEnds.UpdateCards  => UpdateDecksAsync(userId),
             _ => throw new ArgumentOutOfRangeException(nameof(after), after, null)
         };
     }
 
-    private Task StartNewGameAsync(User sender)
+    private Task StartNewGameAsync(long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         return texts.NewGame.SendAsync(Core.UpdateSender, _adminChat);
     }
 
-    private async Task UpdateDecksAsync(User? sender = null)
+    private async Task UpdateDecksAsync(long? userId = null)
     {
-        Texts texts = sender is null ? _textsProvider.GetDefaultTexts() : _textsProvider.GetTextsFor(sender);
+        Texts texts = userId is null ? _textsProvider.GetDefaultTexts() : _textsProvider.GetTextsFor(userId.Value);
 
         _decksLoadErrors.Clear();
         _decksEquipment.Clear();
         await using (await StatusMessage.CreateAsync(_core.UpdateSender, _adminChat, texts.ReadingDecks,
                          texts.StatusMessageStartFormat, texts.StatusMessageEndFormat,
-                         () => GetDecksLoadStatus(sender)))
+                         () => GetDecksLoadStatus(userId)))
         {
             List<ActionData> actionsList = await _actionsSheet.LoadAsync<ActionData>(_config.ActionsRange);
 
@@ -474,9 +472,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return dict;
     }
 
-    private MessageTemplateText GetDecksLoadStatus(User? sender)
+    private MessageTemplateText GetDecksLoadStatus(long? userId)
     {
-        Texts texts = sender is null ? _textsProvider.GetDefaultTexts() : _textsProvider.GetTextsFor(sender);
+        Texts texts = userId is null ? _textsProvider.GetDefaultTexts() : _textsProvider.GetTextsFor(userId.Value);
 
         if (_decksLoadErrors.Count == 0)
         {
@@ -494,15 +492,15 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return texts.StatusMessageEndFailedFormat.Format(errors);
     }
 
-    private Task ReportUnknownToggleAsync(IEnumerable<string> names, User sender)
+    private Task ReportUnknownToggleAsync(IEnumerable<string> names, long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         string text = string.Join(texts.DefaultSeparator, names);
         MessageTemplateText template = texts.UnknownToggleFormat.Format(text);
         return template.SendAsync(_core.UpdateSender, _adminChat);
     }
 
-    private Game.States.Game StartNewGame(List<PlayerListUpdateData> updates, User sender)
+    private Game.States.Game StartNewGame(List<PlayerListUpdateData> updates, long userId)
     {
         if (_state.Core.SheetInfo is null)
         {
@@ -518,58 +516,58 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         gameStats.UpdateList(updates);
 
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(repository, gameStats, compatibility);
         return new Game.States.Game(actionDeck, questionDeck, texts.ActionsTitle, texts.QuestionsTitle, repository,
             gameStats, matchmaker);
     }
 
-    private async Task DrawArrangementAsync(Game.States.Game game, User sender)
+    private async Task DrawArrangementAsync(Game.States.Game game, long userId)
     {
         Arrangement? arrangement = game.TryDrawArrangement();
         if (arrangement is not null)
         {
-            await ShowArrangementAsync(game.Players.Current, arrangement, sender);
+            await ShowArrangementAsync(game.Players.Current, arrangement, userId);
             return;
         }
 
-        await DrawAndSendQuestion(game, sender);
+        await DrawAndSendQuestion(game, userId);
     }
 
-    private async Task DrawAndSendQuestion(Game.States.Game game, User sender)
+    private async Task DrawAndSendQuestion(Game.States.Game game, long userId)
     {
         ushort id = game.DrawQuestion();
-        Turn turn = CreateQuestionTurn(game, sender, id);
+        Turn turn = CreateQuestionTurn(game, userId, id);
         MessageTemplate template = turn.GetMessage();
         Message message = await template.SendAsync(_core.UpdateSender, _playerChat);
         _state.CardPlayerMessageId = message.MessageId;
 
-        template.KeyboardProvider = CreateQuestionKeyboard(id, null, sender);
+        template.KeyboardProvider = CreateQuestionKeyboard(id, null, userId);
         message = await template.SendAsync(_core.UpdateSender, _adminChat);
         _state.CardAdminMessageId = message.MessageId;
 
         _saveManager.Save(_state);
     }
 
-    private Turn CreateQuestionTurn(Game.States.Game game, User sender, ushort id)
+    private Turn CreateQuestionTurn(Game.States.Game game, long userId, ushort id)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         CardData data = game.GetQuestionData(id);
-        bool includeEn = _state.UserStates.ContainsKey(sender.Id) && _state.UserStates[sender.Id].IncludeEn;
-        return new Turn(texts,  includeEn, _config.ImagesFolder, texts.QuestionsTag, data,             game.Players.Current);
+        bool includeEn = _state.UserStates.ContainsKey(userId) && _state.UserStates[userId].IncludeEn;
+        return new Turn(texts,  includeEn, _config.ImagesFolder, texts.QuestionsTag, data, game.Players.Current);
     }
 
-    private async Task ShowArrangementAsync(string player, Arrangement arrangement, User sender)
+    private async Task ShowArrangementAsync(string player, Arrangement arrangement, long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         MessageTemplateText? partnersText = null;
         if (arrangement.Partners.Count > 0)
         {
             partnersText = Turn.GetPartnersPart(texts, arrangement);
         }
         MessageTemplateText messageTemplate = texts.TurnFormatShort.Format(player, partnersText);
-        messageTemplate.KeyboardProvider = CreateArrangementKeyboard(arrangement, sender);
+        messageTemplate.KeyboardProvider = CreateArrangementKeyboard(arrangement, userId);
 
         Message message = await messageTemplate.SendAsync(_core.UpdateSender, _adminChat);
         _state.CardAdminMessageId = message.MessageId;
@@ -580,9 +578,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    private Task ShowRatesAsync(Game.States.Game game, User sender)
+    private Task ShowRatesAsync(Game.States.Game game, long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         Dictionary<string, float> ratios = new();
         foreach (string player in game.Players.GetActiveNames())
         {
@@ -634,9 +632,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    private async Task ReportAndPinPlayersAsync(Game.States.Game game, User sender)
+    private async Task ReportAndPinPlayersAsync(Game.States.Game game, long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         IEnumerable<string> players =
             game.Players.GetActiveNames().Select(p => string.Format(texts.PlayerFormat, p));
         MessageTemplateText messageText =
@@ -657,9 +655,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    private InlineKeyboardMarkup CreateArrangementKeyboard(Arrangement arrangement, User sender)
+    private InlineKeyboardMarkup CreateArrangementKeyboard(Arrangement arrangement, long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         List<List<InlineKeyboardButton>> keyboard = new()
         {
             CreateOneButtonRow<RevealCard>(texts.QuestionsTag, GetString(arrangement))
@@ -673,17 +671,17 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info, bool admin, bool includePartial, User sender)
+    private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info, bool admin, bool includePartial, long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         string arrangementString = GetString(info.Arrangement);
         List<InlineKeyboardButton> unreveal =
             CreateOneButtonRow<UnrevealCard>(texts.Unreveal, arrangementString);
         List<InlineKeyboardButton> question =
             CreateOneButtonRow<RevealCard>(texts.QuestionsTag, arrangementString);
 
-        List<InlineKeyboardButton> partial = CreateActionButtonRow(info, false, sender);
-        List<InlineKeyboardButton> full = CreateActionButtonRow(info, true, sender);
+        List<InlineKeyboardButton> partial = CreateActionButtonRow(info, false, userId);
+        List<InlineKeyboardButton> full = CreateActionButtonRow(info, true, userId);
 
         List<List<InlineKeyboardButton>> keyboard = new();
         if (admin)
@@ -703,9 +701,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateQuestionKeyboard(ushort id, Arrangement? declinedArrangement, User sender)
+    private InlineKeyboardMarkup CreateQuestionKeyboard(ushort id, Arrangement? declinedArrangement, long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         List<List<InlineKeyboardButton>> keyboard = new();
 
         List<InlineKeyboardButton> complete;
@@ -730,9 +728,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     }
 
     private InlineKeyboardMarkup CreateEndGameConfirmationKeyboard(ConfirmEndData.ActionAfterGameEnds after,
-        User sender)
+        long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         List<List<InlineKeyboardButton>> keyboard = new()
         {
             CreateOneButtonRow<ConfirmEnd>(texts.Completed, after)
@@ -741,9 +739,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private List<InlineKeyboardButton> CreateActionButtonRow(ActionInfo info, bool fully, User sender)
+    private List<InlineKeyboardButton> CreateActionButtonRow(ActionInfo info, bool fully, long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         string caption = fully ? texts.Completed : texts.ActionCompletedPartially;
         return CreateOneButtonRow<CompleteCard>(caption, GetString(info.Arrangement), info.Id, fully);
     }
@@ -781,4 +779,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     private readonly Manager _sheetsManager;
     private readonly SaveManager<BotState, BotData> _saveManager;
     private readonly ITextsProvider<Texts> _textsProvider;
+
+    private readonly BotCore _core;
+    private readonly Config _config;
 }

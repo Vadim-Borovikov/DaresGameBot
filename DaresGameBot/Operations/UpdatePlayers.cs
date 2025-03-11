@@ -22,9 +22,9 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
         _textsProvider = textsProvider;
     }
 
-    public override MessageTemplateText GetHelpDescriptionFor(User user)
+    public override MessageTemplateText GetHelpDescriptionFor(long userId)
     {
-        Texts texts = _textsProvider.GetTextsFor(user);
+        Texts texts = _textsProvider.GetTextsFor(userId);
         return texts.UpdatePlayersOperationDescription;
     }
 
@@ -36,7 +36,7 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
             return false;
         }
 
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(sender.Id);
 
         List<string>? lines = message.Text?.Split(texts.PlayersSeparator).Select(l => l.Trim()).ToList();
 
@@ -52,9 +52,9 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
 
     protected override Task ExecuteAsync(UpdatesData data, Message message, User sender)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender);
+        Texts texts = _textsProvider.GetTextsFor(sender.Id);
         return _bot.CanBeUpdated()
-            ? _bot.UpdatePlayersAsync(data.Datas, sender)
+            ? _bot.UpdatePlayersAsync(data.Datas, sender.Id)
             : texts.Refuse.SendAsync(_bot.Core.UpdateSender, message.Chat);
     }
 

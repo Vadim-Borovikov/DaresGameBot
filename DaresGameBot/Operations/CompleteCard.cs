@@ -27,7 +27,7 @@ internal sealed class CompleteCard : Operation<CompleteCardData>
 
     protected override Task ExecuteAsync(CompleteCardData data, Message message, User sender)
     {
-        return _bot.CompleteCardAsync(data, sender);
+        return _bot.CompleteCardAsync(data, sender.Id);
     }
 
     private readonly Bot _bot;

@@ -27,7 +27,7 @@ internal sealed class RevealCard : Operation<RevealCardData>
 
     protected override Task ExecuteAsync(RevealCardData data, Message message, User sender)
     {
-        return _bot.RevealCardAsync(message.MessageId, data, sender);
+        return _bot.RevealCardAsync(message.MessageId, data, sender.Id);
     }
 
     private readonly Bot _bot;
