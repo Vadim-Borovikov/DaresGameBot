@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AbstractBot" Version="83.0.0-a05" />
+    <PackageReference Include="AbstractBot" Version="83.0.0-a07" />
   </ItemGroup>
 
 </Project>

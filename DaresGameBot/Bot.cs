@@ -65,11 +65,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         ICommands commands =
             new Commands(core.Client, core.Accesses, core.UpdateReceiver, localization, userStates.Keys);
 
-        Texts defaultTexts = localization.GetDefaultTexts();
-        Greeter greeter = new(core.UpdateSender, defaultTexts.StartFormat);
 
+        Texts defaultTexts = localization.GetDefaultTexts();
         BotStateCore stateCore = new(config.ActionOptions, defaultTexts.ActionsTitle, defaultTexts.QuestionsTitle);
         BotState state = new(stateCore, userStates, config.AdminChatId, config.PlayerChatId);
+        Greeter greeter = new(core.UpdateSender, localization);
         LocalizationUserRegistrator registrator = new(state, saveManager);
         Start start = new(core.Accesses, core.UpdateSender, commands, localization, core.SelfUsername, greeter,
             registrator);

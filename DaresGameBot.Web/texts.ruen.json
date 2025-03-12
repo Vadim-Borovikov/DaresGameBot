@@ -1,17 +1,20 @@
 ﻿{
   "MenuDescriptions": {
-    "start": "Start",
-    "help": "Help",
-    "update": "Update",
-    "lang": "Lang",
-    "new": "New",
-    "rates": "Rates"
+    "start": "приветствие | greeting",
+    "help": "инструкция | instructions",
+    "update": "обновить колоды | update decks",
+    "lang": "переключить язык | toggle language",
+    "new": "новая игра | new game",
+    "rates": "показать рейтинги | show rates"
   },
 
   "StartFormat": {
     "Text": [
       "Привет! С моей помощью вы с друзьями можете поиграть в откровенные фанты 😏",
-      "Инструкция: /help."
+      "Инструкция: /help.",
+      "",
+      "Hi! Here you can play Sensual Dares with your friends 😏",
+      "Instructions: /help."
     ]
   },
 
@@ -21,6 +24,13 @@
       "",
       "Тяните *действия* по очереди\\.",
       "Можно полностью или частично отказаться выполнять *действие*\\. Отказавшиеся тянут *вопрос* и отвечают на него\\.",
+      "",
+      "",
+      "Hi\\! Here you can play Sensual Dares with your friends 😏",
+      "",
+      "Draw *actions* one by one\\.",
+      "You can decline performing an *action*\\. In that case, draw a *question* and answer it\\.",
+      "",
       "",
       "{0}"
     ],
@@ -81,7 +91,9 @@
 
   "NewGameStart": {
     "Text": [
-      "🔥 Начинаем новую игру!"
+      "🔥 Начинаем новую игру!",
+      "",
+      "🔥 New game started!"
     ]
   },
   "Accepted": {
@@ -153,8 +165,8 @@
     ]
   },
 
-  "Partner": "Партнёр",
-  "Partners": "Партнёры",
+  "Partner": "Partner",
+  "Partners": "Partners",
 
   "DefaultSeparator": ", ",
 
