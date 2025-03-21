@@ -13,6 +13,8 @@ internal sealed class PlayersRepository : IContext<PlayersRepository, PlayersRep
     public IEnumerable<string> GetActiveNames() => _names.Where(n => _infos[n].Active);
     public IEnumerable<string> AllNames => _names;
 
+    public int IndexOf(string name) => _names.IndexOf(name);
+    public string NameAt(int index) => _names[index];
     public string Current => _names[_currentIndex];
 
     public PlayersRepository() { }

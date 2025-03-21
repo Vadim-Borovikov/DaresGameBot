@@ -24,7 +24,11 @@ internal sealed class CompleteCard : Operation<CompleteCardData>
     protected override bool IsInvokingBy(User self, Message message, User sender, string callbackQueryDataCore,
         out CompleteCardData? data)
     {
-        data = CompleteCardData.From(callbackQueryDataCore);
+        data = null;
+        if (_bot.Players is not null)
+        {
+            data = CompleteCardData.From(callbackQueryDataCore, _bot.Players);
+        }
         return data is not null;
     }
 

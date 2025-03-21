@@ -39,6 +39,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         Admin = 4
     }
 
+    internal PlayersRepository? Players => _game?.Players;
+
     public Bot(Config config) : base(config)
     {
         Operations.Add(new NewCommand(this));
@@ -228,7 +230,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
                 turn = CreateQuestionTurn(_game, id);
                 template = turn.GetMessage(SaveManager.SaveData.IncludeEn);
                 await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
-                template.KeyboardProvider = CreateQuestionKeyboard(id, q.Arrangement);
+                template.KeyboardProvider = CreateQuestionKeyboard(id, q.Arrangement, _game.Players);
                 await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
                 break;
             case RevealActionData a:
@@ -238,9 +240,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
                     new Turn(Config.Texts, Config.ImagesFolder, data, _game.Players.Current, actionInfo.Arrangement);
                 template = turn.GetMessage(SaveManager.SaveData.IncludeEn);
                 bool includePartial = Config.ActionOptions[a.Tag].PartialPoints.HasValue;
-                template.KeyboardProvider = CreateActionKeyboard(actionInfo, false, includePartial);
+                template.KeyboardProvider = CreateActionKeyboard(actionInfo, false, includePartial, _game.Players);
                 await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
-                template.KeyboardProvider = CreateActionKeyboard(actionInfo, true, includePartial);
+                template.KeyboardProvider = CreateActionKeyboard(actionInfo, true, includePartial, _game.Players);
                 await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
                 break;
             default: throw new InvalidOperationException("Unexpected SelectOptionInfo");
@@ -273,7 +275,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
             partnersText = Turn.GetPartnersPart(Config.Texts, data.Arrangement);
         }
         MessageTemplateText template = Config.Texts.TurnFormatShort.Format(_game.Players.Current, partnersText);
-        template.KeyboardProvider = CreateArrangementKeyboard(data.Arrangement);
+        template.KeyboardProvider = CreateArrangementKeyboard(data.Arrangement, _game.Players);
 
         await EditMessageAsync(_adminChat, template, SaveManager.SaveData.CardAdminMessageId.Value);
         await EditMessageAsync(_playerChat, template, SaveManager.SaveData.CardPlayerMessageId.Value);
@@ -468,7 +470,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         Arrangement? arrangement = game.TryDrawArrangement();
         if (arrangement is not null)
         {
-            await ShowArrangementAsync(game.Players.Current, arrangement);
+            await ShowArrangementAsync(game.Players, arrangement);
             return;
         }
 
@@ -483,7 +485,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         Message message = await template.SendAsync(this, _playerChat);
         SaveManager.SaveData.CardPlayerMessageId = message.MessageId;
 
-        template.KeyboardProvider = CreateQuestionKeyboard(id, null);
+        template.KeyboardProvider = CreateQuestionKeyboard(id, null, game.Players);
         message = await template.SendAsync(this, _adminChat);
         SaveManager.SaveData.CardAdminMessageId = message.MessageId;
     }
@@ -494,15 +496,15 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         return new Turn(Config.Texts, Config.ImagesFolder, Config.Texts.QuestionsTag, data, game.Players.Current);
     }
 
-    private async Task ShowArrangementAsync(string player, Arrangement arrangement)
+    private async Task ShowArrangementAsync(PlayersRepository players, Arrangement arrangement)
     {
         MessageTemplateText? partnersText = null;
         if (arrangement.Partners.Count > 0)
         {
             partnersText = Turn.GetPartnersPart(Config.Texts, arrangement);
         }
-        MessageTemplateText messageTemplate = Config.Texts.TurnFormatShort.Format(player, partnersText);
-        messageTemplate.KeyboardProvider = CreateArrangementKeyboard(arrangement);
+        MessageTemplateText messageTemplate = Config.Texts.TurnFormatShort.Format(players.Current, partnersText);
+        messageTemplate.KeyboardProvider = CreateArrangementKeyboard(arrangement, players);
 
         Message message = await messageTemplate.SendAsync(this, _adminChat);
         SaveManager.SaveData.CardAdminMessageId = message.MessageId;
@@ -591,30 +593,31 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         return UnpinAllChatMessagesAsync(_adminChat, cancellationToken);
     }
 
-    private InlineKeyboardMarkup CreateArrangementKeyboard(Arrangement arrangement)
+    private InlineKeyboardMarkup CreateArrangementKeyboard(Arrangement arrangement, PlayersRepository players)
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
-            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag, GetString(arrangement))
+            CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag, GetString(arrangement, players))
         };
 
         keyboard.AddRange(Config.ActionOptions
                                 .OrderBy(o => o.Value.Points)
-                                .Select(o => CreateOneButtonRow<RevealCard>(o.Key, GetString(arrangement), o.Key)));
+                                .Select(o => CreateOneButtonRow<RevealCard>(o.Key, GetString(arrangement, players), o.Key)));
 
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info, bool admin, bool includePartial)
+    private InlineKeyboardMarkup CreateActionKeyboard(ActionInfo info, bool admin, bool includePartial,
+        PlayersRepository players)
     {
-        string arrangementString = GetString(info.Arrangement);
+        string arrangementString = GetString(info.Arrangement, players);
         List<InlineKeyboardButton> unreveal =
             CreateOneButtonRow<UnrevealCard>(Config.Texts.Unreveal, arrangementString);
         List<InlineKeyboardButton> question =
             CreateOneButtonRow<RevealCard>(Config.Texts.QuestionsTag, arrangementString);
 
-        List<InlineKeyboardButton> partial = CreateActionButtonRow(info, false);
-        List<InlineKeyboardButton> full = CreateActionButtonRow(info, true);
+        List<InlineKeyboardButton> partial = CreateActionButtonRow(info, false, players);
+        List<InlineKeyboardButton> full = CreateActionButtonRow(info, true, players);
 
         List<List<InlineKeyboardButton>> keyboard = new();
         if (admin)
@@ -634,7 +637,8 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup CreateQuestionKeyboard(ushort id, Arrangement? declinedArrangement)
+    private InlineKeyboardMarkup CreateQuestionKeyboard(ushort id, Arrangement? declinedArrangement,
+        PlayersRepository players)
     {
         List<List<InlineKeyboardButton>> keyboard = new();
 
@@ -646,7 +650,7 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         }
         else
         {
-            string arrangementString = GetString(declinedArrangement);
+            string arrangementString = GetString(declinedArrangement, players);
 
             List<InlineKeyboardButton> unreveal =
                 CreateOneButtonRow<UnrevealCard>(Config.Texts.Unreveal, arrangementString);
@@ -669,10 +673,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private List<InlineKeyboardButton> CreateActionButtonRow(ActionInfo info, bool fully)
+    private List<InlineKeyboardButton> CreateActionButtonRow(ActionInfo info, bool fully, PlayersRepository players)
     {
         string caption = fully ? Config.Texts.Completed : Config.Texts.ActionCompletedPartially;
-        return CreateOneButtonRow<CompleteCard>(caption, GetString(info.Arrangement), info.Id, fully);
+        return CreateOneButtonRow<CompleteCard>(caption, GetString(info.Arrangement, players), info.Id, fully);
     }
 
     private static List<InlineKeyboardButton> CreateOneButtonRow<TData>(string caption, params object[] args)
@@ -691,9 +695,10 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         };
     }
 
-    private static string GetString(Arrangement arrangement)
+    private static string GetString(Arrangement arrangement, PlayersRepository players)
     {
-        string partners = string.Join(GameButtonData.PartnersSeparator, arrangement.Partners);
+        IEnumerable<int> indices = arrangement.Partners.Select(players.IndexOf);
+        string partners = string.Join(GameButtonData.PartnersSeparator, indices);
         return $"{partners}{GameButtonData.FieldSeparator}{arrangement.CompatablePartners}";
     }
 

@@ -1,4 +1,5 @@
-﻿using DaresGameBot.Game;
+﻿using DaresGameBot.Context;
+using DaresGameBot.Game;
 
 namespace DaresGameBot.Operations.Data.GameButtons;
 
@@ -8,7 +9,7 @@ internal sealed class UnervealCardData : GameButtonData
 
     private UnervealCardData(Arrangement arrangement) => Arrangement = arrangement;
 
-    public static UnervealCardData? From(string callbackQueryDataCore)
+    public static UnervealCardData? From(string callbackQueryDataCore, PlayersRepository players)
     {
         string[] parts = callbackQueryDataCore.Split(FieldSeparator);
         if (parts.Length != 2)
@@ -16,7 +17,7 @@ internal sealed class UnervealCardData : GameButtonData
             return null;
         }
 
-        Arrangement? arrangement = TryGetArrangement(parts[0], parts[1]);
+        Arrangement? arrangement = TryGetArrangement(players, parts[0], parts[1]);
         return arrangement is null ? null : new UnervealCardData(arrangement);
     }
 }
