@@ -1,4 +1,5 @@
 ﻿using DaresGameBot.Game;
+using DaresGameBot.Game.States;
 using DaresGameBot.Utilities.Extensions;
 using GoogleSheetsManager.Extensions;
 
@@ -10,7 +11,7 @@ internal abstract class CompleteCardData : GameButtonData
 
     protected CompleteCardData(Arrangement? arrangement) => Arrangement = arrangement;
 
-    public static CompleteCardData? From(string callbackQueryDataCore)
+    public static CompleteCardData? From(string callbackQueryDataCore, PlayersRepository players)
     {
         string[] parts = callbackQueryDataCore.Split(FieldSeparator);
 
@@ -23,7 +24,7 @@ internal abstract class CompleteCardData : GameButtonData
             case < 3: return null;
         }
 
-        Arrangement? arrangement = TryGetArrangement(parts[0], parts[1]);
+        Arrangement? arrangement = TryGetArrangement(parts[0], parts[1], players);
         if (arrangement is null)
         {
             return null;

@@ -21,7 +21,11 @@ internal sealed class RevealCard : Operation<RevealCardData>
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
         out RevealCardData? data)
     {
-        data = RevealCardData.From(callbackQueryDataCore);
+        data = null;
+        if (_bot.Players is not null)
+        {
+            data = RevealCardData.From(callbackQueryDataCore, _bot.Players);
+        }
         return data is not null;
     }
 
