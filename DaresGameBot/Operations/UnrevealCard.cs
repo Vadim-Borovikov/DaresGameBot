@@ -15,7 +15,10 @@ internal sealed class UnrevealCard : Operation
 
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore) => true;
 
-    protected override Task ExecuteAsync(Message message, User sender) => _bot.UnrevealCardAsync(message.MessageId);
+    protected override Task ExecuteAsync(Message message, User sender, string callbackQueryDataCore)
+    {
+        return _bot.UnrevealCardAsync(message.MessageId);
+    }
 
     private readonly Bot _bot;
 }

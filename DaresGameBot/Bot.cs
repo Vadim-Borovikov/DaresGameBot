@@ -367,7 +367,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
         MessageTemplateText template = texts.TurnFormatShort.Format(game.Players.Current, partnersText);
         template.KeyboardProvider = CreateArrangementKeyboard(chat.Id);
-        return EditMessageAsync(_adminChat, template, cardMessageId);
+        return EditMessageAsync(chat, template, cardMessageId);
     }
 
     private async Task EditMessageAsync(Chat chat, MessageTemplate template, int messageId)
