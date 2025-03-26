@@ -245,7 +245,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return texts.LangToggled.SendAsync(_core.UpdateSender, chat);
     }
 
-    internal async Task RevealCardAsync(int messageId, RevealCardData revealData)
+    internal async Task RevealCardAsync(RevealCardData revealData)
     {
         if (_state.Game?.CurrentArrangement is null)
         {
@@ -254,10 +254,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
 
         if (_state.AdminState?.CardMessageId is null || _state.PlayerState?.CardMessageId is null)
-        {
-            return;
-        }
-        if ((messageId != _state.AdminState.CardMessageId) && (messageId != _state.PlayerState.CardMessageId))
         {
             return;
         }
@@ -282,7 +278,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    internal async Task UnrevealCardAsync(int messageId)
+    internal async Task UnrevealCardAsync()
     {
         if (_state.Game?.CurrentArrangement is null)
         {
@@ -291,10 +287,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
 
         if (_state.AdminState?.CardMessageId is null || _state.PlayerState?.CardMessageId is null)
-        {
-            return;
-        }
-        if ((messageId != _state.AdminState.CardMessageId) && (messageId != _state.PlayerState.CardMessageId))
         {
             return;
         }
@@ -308,28 +300,39 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    internal Task CompleteCardAsync(CompleteCardData data)
+    internal async Task CompleteCardAsync(CompleteCardData data)
     {
         if (_state.Game is null)
         {
-            return StartNewGameAsync();
+            await StartNewGameAsync();
+            return;
         }
 
+        if (_state.AdminState?.CardMessageId is null || _state.PlayerState?.CardMessageId is null)
+        {
+            return;
+        }
+
+        bool fully = true;
         if (data.Fully is null)
         {
             _state.Game.CompleteQuestion();
         }
         else
         {
-            _state.Game.CompleteAction(data.Fully.Value);
+            fully = data.Fully.Value;
+            _state.Game.CompleteAction(fully);
         }
 
-        _state.ResetUserMessageId(_adminChat.Id);
+        await ShowCardAsCompletedAsync(_playerChat, _state.PlayerState.CardMessageId.Value, data.MessageText, fully);
+        await ShowCardAsCompletedAsync(_adminChat, _state.AdminState.CardMessageId.Value, data.MessageText, fully);
+
         _state.ResetUserMessageId(_playerChat.Id);
+        _state.ResetUserMessageId(_adminChat.Id);
 
         _saveManager.Save(_state);
 
-        return DrawArrangementAsync(_state.Game);
+        await DrawArrangementAsync(_state.Game);
     }
 
     internal Task ShowRatesAsync() => _state.Game is null ? StartNewGameAsync() : ShowRatesAsync(_state.Game);
@@ -594,6 +597,16 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _state.SetUserMessageId(chat.Id, message.MessageId);
 
         _saveManager.Save(_state);
+    }
+
+    private Task ShowCardAsCompletedAsync(Chat chat, int messageId, string text, bool fully)
+    {
+        Texts texts = _textsProvider.GetTextsFor(chat.Id);
+
+        string completedPart = fully ? texts.Completed : texts.ActionCompletedPartially;
+        MessageTemplateText template = texts.CompletedCardFormat.Format(text, completedPart);
+
+        return EditMessageAsync(chat, template, messageId);
     }
 
     private Task ShowRatesAsync(Game.States.Game game)

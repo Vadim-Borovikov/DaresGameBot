@@ -165,6 +165,14 @@
     ]
   },
 
+  "CompletedCardFormat": {
+    "Text": [
+      "{0}",
+      "",
+      "{1}"
+    ]
+  },
+
   "Partner": "Partner",
   "Partners": "Partners",
 

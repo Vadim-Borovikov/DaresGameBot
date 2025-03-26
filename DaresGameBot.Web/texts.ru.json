@@ -153,6 +153,14 @@
     ]
   },
 
+  "CompletedCardFormat": {
+    "Text": [
+      "{0}",
+      "",
+      "{1}"
+    ]
+  },
+
   "Partner": "Партнёр",
   "Partners": "Партнёры",
 
