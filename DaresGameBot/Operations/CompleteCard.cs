@@ -21,8 +21,8 @@ internal sealed class CompleteCard : Operation<CompleteCardData>
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
         out CompleteCardData? data)
     {
-        data = CompleteCardData.From(callbackQueryDataCore);
-        return data is not null;
+        data = new CompleteCardData(callbackQueryDataCore);
+        return true;
     }
 
     protected override Task ExecuteAsync(CompleteCardData data, Message message, User sender)

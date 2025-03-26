@@ -24,6 +24,8 @@ public sealed class GameData
     public ArrangementData? CurrentArrangementData { get; set; }
 
     [UsedImplicitly]
+    public ushort? CurrentCardId { get; set; }
+    [UsedImplicitly]
     public string? ActionsVersion { get; set; }
 
     [UsedImplicitly]

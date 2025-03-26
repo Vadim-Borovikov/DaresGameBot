@@ -49,6 +49,8 @@ internal sealed class Game : IStateful<GameData>
         };
 
         CurrentState = null;
+        CurrentArrangement = null;
+        _currentCardId = null;
     }
 
     public Game(Deck<ActionData> actionsDeck, Deck<CardData> questionsDeck, string actionsVersion,
@@ -71,8 +73,8 @@ internal sealed class Game : IStateful<GameData>
         CurrentState = currentState;
     }
 
-    public ActionData GetActionData(ushort id) => _actionDeck.GetCard(id);
-    public CardData GetQuestionData(ushort id) => _questionDeck.GetCard(id);
+    public ActionData GetActionData() => _actionDeck.GetCard(_currentCardId!.Value);
+    public CardData GetQuestionData() => _questionDeck.GetCard(_currentCardId!.Value);
 
     public void DrawArrangement()
     {
@@ -89,39 +91,38 @@ internal sealed class Game : IStateful<GameData>
         CurrentState = State.ArrangementPurposed;
     }
 
-    public ushort DrawQuestion()
+    public void DrawQuestion()
     {
-        ushort id = _questionDeck.GetRandomId().Denull("No question found!");
+        _currentCardId = _questionDeck.GetRandomId().Denull("No question found!");
 
         CurrentState = State.CardRevealed;
-
-        return id;
     }
 
-    public ushort DrawAction(string tag)
+    public void DrawAction(string tag)
     {
+        _currentCardId =
+            _actionDeck.GetRandomId(c => (c.Tag == tag)
+                                         && (c.ArrangementType == CurrentArrangement!.GetArrangementType()))
+                       .Denull("No suitable cards found");
         CurrentState = State.CardRevealed;
-        return _actionDeck.GetRandomId(c => (c.Tag == tag)
-                                            && (c.ArrangementType == CurrentArrangement!.GetArrangementType()))
-                          .Denull("No suitable cards found");
     }
 
     public void ProcessCardUnrevealed() => CurrentState = State.ArrangementPurposed;
 
-    public void CompleteQuestion(ushort id)
+    public void CompleteQuestion()
     {
-        _questionDeck.Mark(id);
+        _questionDeck.Mark(_currentCardId!.Value);
 
         OnQuestionCompleted();
 
         StartNewTurn();
     }
 
-    public void CompleteAction(ushort id, bool fully)
+    public void CompleteAction(bool fully)
     {
-        _actionDeck.Mark(id);
+        _actionDeck.Mark(_currentCardId!.Value);
 
-        OnActionCompleted(id, fully);
+        OnActionCompleted(fully);
 
         StartNewTurn();
     }
@@ -139,7 +140,8 @@ internal sealed class Game : IStateful<GameData>
             PlayersRepositoryData = Players.Save(),
             GameStatsData = Stats.Save(),
             CurrentState = CurrentState?.ToString(),
-            CurrentArrangementData = CurrentArrangement?.Save()
+            CurrentArrangementData = CurrentArrangement?.Save(),
+            CurrentCardId = _currentCardId
         };
     }
 
@@ -171,6 +173,8 @@ internal sealed class Game : IStateful<GameData>
 
         CurrentArrangement = new Arrangement();
         CurrentArrangement.LoadFrom(data.CurrentArrangementData);
+
+        _currentCardId = data.CurrentCardId;
     }
 
     private void StartNewTurn() => Players.MoveNext();
@@ -183,13 +187,13 @@ internal sealed class Game : IStateful<GameData>
         }
     }
 
-    private void OnActionCompleted(ushort id, bool fully)
+    private void OnActionCompleted(bool fully)
     {
         if (CurrentArrangement is null)
         {
             throw new NullReferenceException("Current arrangement is null");
         }
-        ActionInfo info = new(id, CurrentArrangement);
+        ActionInfo info = new(_currentCardId!.Value, CurrentArrangement);
 
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
@@ -203,4 +207,5 @@ internal sealed class Game : IStateful<GameData>
     private readonly string _questionsVersion;
     private readonly List<IInteractionSubscriber> _interactionSubscribers;
     private readonly Matchmaker _matchmaker;
+    private ushort? _currentCardId;
 }
