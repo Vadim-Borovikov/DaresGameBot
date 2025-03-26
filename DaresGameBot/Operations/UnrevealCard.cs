@@ -21,11 +21,7 @@ internal sealed class UnrevealCard : Operation<UnervealCardData>
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
         out UnervealCardData? data)
     {
-        data = null;
-        if (_bot.Players is not null)
-        {
-            data = UnervealCardData.From(callbackQueryDataCore, _bot.Players);
-        }
+        data = UnervealCardData.From(callbackQueryDataCore);
         return data is not null;
     }
 

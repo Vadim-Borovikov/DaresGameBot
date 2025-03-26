@@ -1,16 +1,13 @@
-﻿using System.Linq;
-using DaresGameBot.Game;
-using DaresGameBot.Game.States;
+﻿using DaresGameBot.Game;
 using GoogleSheetsManager.Extensions;
-using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Operations.Data.GameButtons;
 
 internal abstract class GameButtonData
 {
-    protected static Arrangement? TryGetArrangement(string left, string right, PlayersRepository players)
+    protected static Arrangement? TryGetArrangement(string left, string right)
     {
-        string[]? partners = SplitList(left, players);
+        string[]? partners = SplitList(left);
         if (partners is null)
         {
             return null;
@@ -20,11 +17,9 @@ internal abstract class GameButtonData
         return compatablePartners is null ? null : new Arrangement(partners, compatablePartners.Value);
     }
 
-    private static string[]? SplitList(string s, PlayersRepository players)
+    private static string[]? SplitList(string s)
     {
-        return string.IsNullOrWhiteSpace(s)
-            ? null
-            : s.Split(PartnersSeparator).Select(p => p.ToInt()).SkipNulls().Select(players.NameAt).ToArray();
+        return string.IsNullOrWhiteSpace(s) ? null : s.Split(PartnersSeparator);
     }
 
     internal const string PartnersSeparator = ";";

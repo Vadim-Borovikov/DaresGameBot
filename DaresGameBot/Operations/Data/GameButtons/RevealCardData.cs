@@ -1,15 +1,13 @@
 ﻿using DaresGameBot.Game;
-using DaresGameBot.Game.States;
 
 namespace DaresGameBot.Operations.Data.GameButtons;
 
 internal abstract class RevealCardData : GameButtonData
 {
     public readonly Arrangement Arrangement;
-
     protected RevealCardData(Arrangement arrangement) => Arrangement = arrangement;
 
-    public static RevealCardData? From(string callbackQueryDataCore, PlayersRepository players)
+    public static RevealCardData? From(string callbackQueryDataCore)
     {
         string[] parts = callbackQueryDataCore.Split(FieldSeparator);
         if (parts.Length < 2)
@@ -17,7 +15,7 @@ internal abstract class RevealCardData : GameButtonData
             return null;
         }
 
-        Arrangement? arrangement = TryGetArrangement(parts[0], parts[1], players);
+        Arrangement? arrangement = TryGetArrangement(parts[0], parts[1]);
         if (arrangement is null)
         {
             return null;
