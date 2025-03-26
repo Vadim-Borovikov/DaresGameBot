@@ -1,35 +1,25 @@
-﻿using DaresGameBot.Game;
+﻿using DaresGameBot.Utilities;
 using DaresGameBot.Utilities.Extensions;
 using GoogleSheetsManager.Extensions;
 
 namespace DaresGameBot.Operations.Data.GameButtons;
 
-internal abstract class CompleteCardData : GameButtonData
+internal abstract class CompleteCardData
 {
-    public readonly Arrangement? Arrangement;
+    public readonly ushort Id;
 
-    protected CompleteCardData(Arrangement? arrangement) => Arrangement = arrangement;
+    protected CompleteCardData(ushort id) => Id = id;
 
     public static CompleteCardData? From(string callbackQueryDataCore)
     {
-        string[] parts = callbackQueryDataCore.Split(FieldSeparator);
+        string[] parts = callbackQueryDataCore.Split(TextHelper.FieldSeparator);
 
-        ushort? id;
-        switch (parts.Length)
-        {
-            case 1:
-                id = parts[0].ToUshort();
-                return id is null ? null : new CompleteQuestionData(id.Value);
-            case < 3: return null;
-        }
-
-        Arrangement? arrangement = TryGetArrangement(parts[0], parts[1]);
-        if (arrangement is null)
+        if (parts.Length == 0)
         {
             return null;
         }
 
-        id = parts[2].ToUshort();
+        ushort? id = parts[0].ToUshort();
         if (id is null)
         {
             return null;
@@ -37,13 +27,10 @@ internal abstract class CompleteCardData : GameButtonData
 
         switch (parts.Length)
         {
-            case 3:
-                return new CompleteQuestionData(id.Value, arrangement);
-            case 4:
-                ActionInfo actionInfo = new(id.Value, arrangement);
-
-                bool? completedFully = parts[3].ToBool();
-                return completedFully is null ? null : new CompleteActionData(actionInfo, completedFully.Value);
+            case 1: return new CompleteQuestionData(id.Value);
+            case 2:
+                bool? completedFully = parts[1].ToBool();
+                return completedFully is null ? null : new CompleteActionData(id.Value, completedFully.Value);
             default: return null;
         }
     }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
@@ -25,6 +26,8 @@ internal sealed class Game : IStateful<GameData>
     public readonly GameStats Stats;
 
     public State? CurrentState { get; private set; }
+
+    public Arrangement? CurrentArrangement { get; private set; }
 
     public Game(Dictionary<string, Option> actionOptions, string actionsVersion, string questionsVersion,
         SheetInfo sheetInfo)
@@ -71,20 +74,19 @@ internal sealed class Game : IStateful<GameData>
     public ActionData GetActionData(ushort id) => _actionDeck.GetCard(id);
     public CardData GetQuestionData(ushort id) => _questionDeck.GetCard(id);
 
-    public Arrangement? TryDrawArrangement()
+    public void DrawArrangement()
     {
         ushort? id = _actionDeck.GetRandomId(c => _matchmaker.CanPlay(c.ArrangementType));
         if (id is null)
         {
-            return null;
+            return;
         }
 
         ActionData card = _actionDeck.GetCard(id.Value);
-        Arrangement arrangement = _matchmaker.SelectCompanionsFor(card.ArrangementType);
+
+        CurrentArrangement = _matchmaker.SelectCompanionsFor(card.ArrangementType);
 
         CurrentState = State.ArrangementPurposed;
-
-        return arrangement;
     }
 
     public ushort DrawQuestion()
@@ -96,34 +98,30 @@ internal sealed class Game : IStateful<GameData>
         return id;
     }
 
-    public ActionInfo DrawAction(Arrangement arrangement, string tag)
+    public ushort DrawAction(string tag)
     {
-        ushort id =
-            _actionDeck.GetRandomId(c => (c.Tag == tag) && (c.ArrangementType == arrangement.GetArrangementType()))
-                       .Denull("No suitable cards found");
-        ActionInfo info = new(id, arrangement);
-
         CurrentState = State.CardRevealed;
-
-        return info;
+        return _actionDeck.GetRandomId(c => (c.Tag == tag)
+                                            && (c.ArrangementType == CurrentArrangement!.GetArrangementType()))
+                          .Denull("No suitable cards found");
     }
 
     public void ProcessCardUnrevealed() => CurrentState = State.ArrangementPurposed;
 
-    public void CompleteQuestion(ushort id, Arrangement? declinedArrangement)
+    public void CompleteQuestion(ushort id)
     {
         _questionDeck.Mark(id);
 
-        OnQuestionCompleted(declinedArrangement);
+        OnQuestionCompleted();
 
         StartNewTurn();
     }
 
-    public void CompleteAction(ActionInfo info, bool fully)
+    public void CompleteAction(ushort id, bool fully)
     {
-        _actionDeck.Mark(info.Id);
+        _actionDeck.Mark(id);
 
-        OnActionCompleted(info, fully);
+        OnActionCompleted(id, fully);
 
         StartNewTurn();
     }
@@ -140,7 +138,8 @@ internal sealed class Game : IStateful<GameData>
             QuestionsVersion = _questionsVersion,
             PlayersRepositoryData = Players.Save(),
             GameStatsData = Stats.Save(),
-            CurrentState = CurrentState?.ToString()
+            CurrentState = CurrentState?.ToString(),
+            CurrentArrangementData = CurrentArrangement?.Save()
         };
     }
 
@@ -164,20 +163,34 @@ internal sealed class Game : IStateful<GameData>
         Stats.LoadFrom(data.GameStatsData);
 
         CurrentState = data.CurrentState?.ToState();
+
+        if (data.CurrentArrangementData is null)
+        {
+            CurrentArrangement = null;
+        }
+
+        CurrentArrangement = new Arrangement();
+        CurrentArrangement.LoadFrom(data.CurrentArrangementData);
     }
 
     private void StartNewTurn() => Players.MoveNext();
 
-    private void OnQuestionCompleted(Arrangement? declinedArrangement)
+    private void OnQuestionCompleted()
     {
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnQuestionCompleted(Players.Current, declinedArrangement);
+            subscriber.OnQuestionCompleted(Players.Current, CurrentArrangement);
         }
     }
 
-    private void OnActionCompleted(ActionInfo info, bool fully)
+    private void OnActionCompleted(ushort id, bool fully)
     {
+        if (CurrentArrangement is null)
+        {
+            throw new NullReferenceException("Current arrangement is null");
+        }
+        ActionInfo info = new(id, CurrentArrangement);
+
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
             subscriber.OnActionCompleted(Players.Current, info, fully);

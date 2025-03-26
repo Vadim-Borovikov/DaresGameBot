@@ -9,4 +9,6 @@ internal static class TextHelper
     {
         return string.Join(separator, items.Select(i => string.Format(format, i)));
     }
+
+    public const string FieldSeparator = "|";
 }

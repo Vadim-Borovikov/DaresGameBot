@@ -1,4 +1,6 @@
-﻿namespace DaresGameBot.Game.Matchmaking.Interactions;
+﻿using DaresGameBot.Game.States;
+
+namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal interface IInteractionSubscriber
 {

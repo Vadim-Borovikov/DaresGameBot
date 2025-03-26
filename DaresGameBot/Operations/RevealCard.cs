@@ -21,8 +21,8 @@ internal sealed class RevealCard : Operation<RevealCardData>
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
         out RevealCardData? data)
     {
-        data = RevealCardData.From(callbackQueryDataCore);
-        return data is not null;
+        data = new RevealCardData(callbackQueryDataCore);
+        return true;
     }
 
     protected override Task ExecuteAsync(RevealCardData data, Message message, User sender)

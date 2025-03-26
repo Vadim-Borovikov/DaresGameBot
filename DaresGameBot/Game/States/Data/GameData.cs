@@ -21,6 +21,9 @@ public sealed class GameData
     public string? CurrentState { get; set; }
 
     [UsedImplicitly]
+    public ArrangementData? CurrentArrangementData { get; set; }
+
+    [UsedImplicitly]
     public string? ActionsVersion { get; set; }
 
     [UsedImplicitly]

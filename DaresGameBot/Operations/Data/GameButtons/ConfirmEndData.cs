@@ -2,7 +2,7 @@
 
 namespace DaresGameBot.Operations.Data.GameButtons;
 
-internal sealed class ConfirmEndData : GameButtonData
+internal sealed class ConfirmEndData
 {
     internal enum ActionAfterGameEnds
     {

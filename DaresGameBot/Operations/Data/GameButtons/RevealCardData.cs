@@ -1,33 +1,8 @@
-﻿using DaresGameBot.Game;
+﻿namespace DaresGameBot.Operations.Data.GameButtons;
 
-namespace DaresGameBot.Operations.Data.GameButtons;
-
-internal abstract class RevealCardData : GameButtonData
+internal sealed class RevealCardData
 {
-    public readonly Arrangement Arrangement;
-    protected RevealCardData(Arrangement arrangement) => Arrangement = arrangement;
+    public readonly string? Tag;
 
-    public static RevealCardData? From(string callbackQueryDataCore)
-    {
-        string[] parts = callbackQueryDataCore.Split(FieldSeparator);
-        if (parts.Length < 2)
-        {
-            return null;
-        }
-
-        Arrangement? arrangement = TryGetArrangement(parts[0], parts[1]);
-        if (arrangement is null)
-        {
-            return null;
-        }
-
-        switch (parts.Length)
-        {
-            case 2: return new RevealQuestionData(arrangement);
-            case 3:
-                string tag = parts[2];
-                return new RevealActionData(arrangement, tag);
-            default: return null;
-        }
-    }
+    public RevealCardData(string? tag) => Tag = tag;
 }
