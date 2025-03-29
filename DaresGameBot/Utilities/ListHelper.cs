@@ -17,23 +17,63 @@ internal static class ListHelper
 
     public static IEnumerable<IList<T>> EnumerateSubsets<T>(IList<T> set, uint size)
     {
-        if (set.Count <= size)
+        if (set.Count < size)
         {
-            if (set.Count == size)
-            {
-                yield return set;
-            }
             yield break;
         }
 
-        for (int i = 0; i < set.Count; i++)
+        if (set.Count == size)
         {
-            List<T> subset = new(set);
-            subset.RemoveAt(i);
-            foreach (IList<T> subsetOfSubset in EnumerateSubsets(subset, size))
+            yield return set;
+            yield break;
+        }
+
+        Dictionary<int, List<List<T>>> previousSubsetsByMaxIndex = ChopToSubsets(set);
+
+        for (uint s = 2; s <= size; s++)
+        {
+            Dictionary<int, List<List<T>>> currentSubsets = new();
+
+            foreach (int previousIndex in previousSubsetsByMaxIndex.Keys)
             {
-                yield return subsetOfSubset;
+                for (int i = previousIndex + 1; i < set.Count; i++)
+                {
+                    if (!currentSubsets.ContainsKey(i))
+                    {
+                        currentSubsets[i] = new List<List<T>>();
+                    }
+
+                    foreach (List<T> previous in previousSubsetsByMaxIndex[previousIndex])
+                    {
+                        List<T> current = Create(previous, set[i]);
+                        if (s == size)
+                        {
+                            yield return current;
+                        }
+                        else
+                        {
+                            currentSubsets[i].Add(current);
+                        }
+                    }
+                }
             }
+
+            previousSubsetsByMaxIndex = currentSubsets;
         }
     }
+
+    private static Dictionary<int, List<List<T>>> ChopToSubsets<T>(IList<T> set)
+    {
+        Dictionary<int, List<List<T>>> dict = new();
+        for (int i = 0; i < set.Count; i++)
+        {
+            dict[i] = new List<List<T>>
+            {
+                new() { set[i] }
+            };
+        }
+        return dict;
+    }
+
+    private static List<T> Create<T>(IEnumerable<T> subset, T element) => new(subset) { element };
 }
