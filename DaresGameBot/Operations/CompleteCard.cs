@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using AbstractBot.Models.Operations;
 using DaresGameBot.Operations.Data.GameButtons;
+using Telegram.Bot.Extensions;
 using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations;
@@ -21,7 +22,7 @@ internal sealed class CompleteCard : Operation<CompleteCardData>
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
         out CompleteCardData? data)
     {
-        data = CompleteCardData.From(message.Text, callbackQueryDataCore);
+        data = CompleteCardData.From(message.ToMarkdown(), callbackQueryDataCore);
         return data is not null;
     }
 

@@ -327,8 +327,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             _state.Game.CompleteAction(fully);
         }
 
-        await ShowCardAsCompletedAsync(_playerChat, _state.PlayerState.CardMessageId.Value, data.MessageText, fully);
-        await ShowCardAsCompletedAsync(_adminChat, _state.AdminState.CardMessageId.Value, data.MessageText, fully);
+        await ShowCardAsCompletedAsync(_playerChat, _state.PlayerState.CardMessageId.Value, data.Template, fully);
+        await ShowCardAsCompletedAsync(_adminChat, _state.AdminState.CardMessageId.Value, data.Template, fully);
 
         _state.ResetUserMessageId(_playerChat.Id);
         _state.ResetUserMessageId(_adminChat.Id);
@@ -602,12 +602,12 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    private Task ShowCardAsCompletedAsync(Chat chat, int messageId, string text, bool fully)
+    private Task ShowCardAsCompletedAsync(Chat chat, int messageId, MessageTemplateText original, bool fully)
     {
         Texts texts = _textsProvider.GetTextsFor(chat.Id);
 
         string completedPart = fully ? texts.Completed : texts.ActionCompletedPartially;
-        MessageTemplateText template = texts.CompletedCardFormat.Format(text, completedPart);
+        MessageTemplateText template = texts.CompletedCardFormat.Format(original, completedPart);
 
         return EditMessageAsync(chat, template, messageId);
     }
