@@ -23,12 +23,16 @@ internal static class Program
             logger.LogStartup();
 
             IServiceCollection services = builder.Services;
+            services.AddSingleton<Cpu.Timer>();
             services.AddControllersWithViews();
             services.ConfigureTelegramBotMvc();
 
             AddBotTo(services);
 
             WebApplication app = builder.Build();
+
+            Cpu.Timer cpuTimer = app.Services.GetRequiredService<Cpu.Timer>();
+            cpuTimer.Start();
 
             if (app.Environment.IsDevelopment())
             {
@@ -78,6 +82,10 @@ internal static class Program
             controller = "Update",
             action = "Post"
         };
-        app.UseEndpoints(endpoints => endpoints.MapControllerRoute("update", token, defaults));
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllerRoute("update", token, defaults);
+            endpoints.MapControllers();
+        });
     }
 }

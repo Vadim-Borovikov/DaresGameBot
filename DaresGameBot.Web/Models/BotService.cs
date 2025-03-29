@@ -2,7 +2,11 @@ namespace DaresGameBot.Web.Models;
 
 internal sealed class BotService : IHostedService
 {
-    public BotService(BotSingleton singleton) => _bot = singleton.Bot;
+    public BotService(BotSingleton singleton)
+    {
+        _bot = singleton.Bot;
+        _bot.CpuTimer.Start();
+    }
 
     public Task StartAsync(CancellationToken cancellationToken) => _bot.StartAsync(cancellationToken);
 

@@ -39,6 +39,9 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         Admin = 4
     }
 
+    [PublicAPI]
+    public readonly Cpu.Timer CpuTimer = new();
+
     internal PlayersRepository? Players => _game?.Players;
 
     public Bot(Config config) : base(config)
@@ -506,11 +509,11 @@ public sealed class Bot : BotWithSheets<Config, Texts, Context.Context, object, 
         MessageTemplateText messageTemplate = Config.Texts.TurnFormatShort.Format(players.Current, partnersText);
         messageTemplate.KeyboardProvider = CreateArrangementKeyboard(arrangement, players);
 
-        Message message = await messageTemplate.SendAsync(this, _adminChat);
-        SaveManager.SaveData.CardAdminMessageId = message.MessageId;
-
-        message = await messageTemplate.SendAsync(this, _playerChat);
+        Message message = await messageTemplate.SendAsync(this, _playerChat);
         SaveManager.SaveData.CardPlayerMessageId = message.MessageId;
+
+        message = await messageTemplate.SendAsync(this, _adminChat);
+        SaveManager.SaveData.CardAdminMessageId = message.MessageId;
     }
 
     private Task ShowRatesAsync(Context.Game game)
