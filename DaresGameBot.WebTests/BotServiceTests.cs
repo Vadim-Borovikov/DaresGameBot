@@ -49,8 +49,8 @@ public sealed class IntegrationTests
         await RunTestScenario(true, turns);
         await GetSnapshot(true, turns);
 
-        // await RunTestScenario(false, turns);
-        // await GetSnapshot(false, turns);
+        await RunTestScenario(false, turns);
+        await GetSnapshot(false, turns);
     }
 
     private static async Task RunTestScenario(bool test, byte turns)
