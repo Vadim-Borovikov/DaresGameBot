@@ -368,3 +368,5 @@ FodyWeavers.xsd
 /DaresGameBot.Web/Properties/launchSettings.json
 /DaresGameBot.Web/Images/*
 /NuGet.Config
+/DaresGameBot.WebTests/appsettings.json
+/DaresGameBot.WebTests/WTelegram.session

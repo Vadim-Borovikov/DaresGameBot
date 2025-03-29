@@ -2,7 +2,11 @@ namespace DaresGameBot.Web.Models;
 
 public sealed class BotService : IHostedService, IDisposable
 {
-    public BotService(Bot bot) => _bot = bot;
+    public BotService(Bot bot)
+    {
+        _bot = bot;
+        _bot.CpuTimer.Start();
+    }
 
     public void Dispose() => _bot.Dispose();
 

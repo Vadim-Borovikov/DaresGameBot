@@ -45,6 +45,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         Admin = 4
     }
 
+    [PublicAPI]
+    public readonly Cpu.Timer CpuTimer = new();
+
     public static async Task<Bot?> TryCreateAsync(Config config, CancellationToken cancellationToken)
     {
         BotCore? core = await BotCore.TryCreateAsync(config, cancellationToken);
