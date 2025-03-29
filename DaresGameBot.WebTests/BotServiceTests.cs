@@ -89,6 +89,7 @@ public sealed class IntegrationTests
 
             message = await GetNextMessage();
             await PressButtonAsync(_client, bot, message);
+            await _messages.SkipAsync(1);
         }
 
         await _messages.SkipAsync(1);
@@ -125,18 +126,7 @@ public sealed class IntegrationTests
         KeyboardButtonCallback? callback = button as KeyboardButtonCallback;
         Assert.IsNotNull(callback);
 
-#pragma warning disable CS4014
-        client.Messages_GetBotCallbackAnswer(user, message.id, callback.data);
-        await Task.CompletedTask;
-#pragma warning restore CS4014
-        /*try
-        {
-            await client.Messages_GetBotCallbackAnswer(user, message.id, callback.data);
-        }
-        catch (RpcException ex) when ((ex.Code == 400) && ex.Message.Contains("BOT_RESPONSE_TIMEOUT"))
-        {
-            // Bot didn't respond to callback — ignore if you're not expecting AnswerCallbackQuery
-        }*/
+        await client.Messages_GetBotCallbackAnswer(user, message.id, callback.data);
     }
 
     private static Task HandleUpdatesTestAsync(UpdatesBase updates) => HandleUpdatesAsync(_botTest, updates);
