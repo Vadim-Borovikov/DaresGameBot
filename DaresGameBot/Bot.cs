@@ -580,9 +580,14 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     private Turn CreateQuestionTurn(Game.States.Game game, long userId)
     {
         Texts texts = _textsProvider.GetTextsFor(userId);
-        CardData data = game.GetQuestionData();
         bool includeEn = _state.UserStates.ContainsKey(userId) && _state.UserStates[userId].IncludeEn;
-        return new Turn(texts,  includeEn, _config.ImagesFolder, texts.QuestionsTag, data, game.Players.Current);
+        CardData data = game.GetQuestionData();
+        List<string> players = new() { game.Players.Current };
+        if (game.CurrentArrangement is not null)
+        {
+            players.AddRange(game.CurrentArrangement.Partners);
+        }
+        return new Turn(texts,  includeEn, _config.ImagesFolder, texts.QuestionsTag, data, players);
     }
 
     private async Task ShowArrangementAsync(string player, Arrangement arrangement, Chat chat)

@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using System.IO;
 using AbstractBot.Models.MessageTemplates;
 using DaresGameBot.Configs;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.States;
+using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Game;
 
@@ -10,15 +12,16 @@ internal sealed class Turn
 {
     public Turn(Texts texts, bool includeEn, string imagesfolder, ActionData actionData, string player,
         Arrangement arrangement)
-        : this(texts, includeEn, imagesfolder, actionData.Tag, actionData, player, arrangement, actionData.ImagePath)
+        : this(texts, includeEn, imagesfolder, actionData.Tag, actionData, player.Yield(), arrangement,
+            actionData.ImagePath)
     {}
 
-    public Turn(Texts texts, bool includeEn, string imagesfolder, string tag, CardData cardData, string player,
-        Arrangement? arrangement = null, string? imagePath = null)
+    public Turn(Texts texts, bool includeEn, string imagesfolder, string tag, CardData cardData,
+        IEnumerable<string> players, Arrangement? arrangement = null, string? imagePath = null)
     {
         _texts = texts;
         _includeEn = includeEn;
-        _player = player;
+        _players = players;
         _arrangement = arrangement;
         _tagPart = new MessageTemplateText(tag);
         _descriprionRuPart = new MessageTemplateText(cardData.Description);
@@ -36,6 +39,8 @@ internal sealed class Turn
 
         MessageTemplate message = _texts.TurnFormatFull;
 
+        string playersPart = string.Join(_texts.DefaultSeparator, _players);
+
         MessageTemplateText? partnersPart = null;
         if (_arrangement is not null)
         {
@@ -47,7 +52,7 @@ internal sealed class Turn
             message = new MessageTemplateImage(message, _imagePath);
         }
 
-        return message.Format(_tagPart, _player, descriprionPart, partnersPart);
+        return message.Format(_tagPart, playersPart, descriprionPart, partnersPart);
     }
 
     public static MessageTemplateText GetPartnersPart(Texts texts, Arrangement arrangement)
@@ -61,7 +66,7 @@ internal sealed class Turn
     private readonly MessageTemplateText _tagPart;
     private readonly MessageTemplateText _descriprionRuPart;
     private readonly MessageTemplateText? _descriprionEnPart;
-    private readonly string _player;
+    private readonly IEnumerable<string> _players;
     private readonly Arrangement? _arrangement;
     private readonly Texts _texts;
     private readonly bool _includeEn;
