@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using DaresGameBot.Game.Matchmaking;
-using DaresGameBot.Game.Matchmaking.Interactions;
-using DaresGameBot.Operations.Data.PlayerListUpdates;
-using GryphonUtilities.Extensions;
+﻿using DaresGameBot.Configs;
 using DaresGameBot.Game.Data;
+using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Game.Matchmaking.Compatibility;
-using GryphonUtilities.Save;
-using DaresGameBot.Utilities.Extensions;
-using DaresGameBot.Configs;
+using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Game.States.Cores;
 using DaresGameBot.Game.States.Data;
+using DaresGameBot.Operations.Data.PlayerListUpdates;
+using DaresGameBot.Utilities;
+using DaresGameBot.Utilities.Extensions;
+using GryphonUtilities.Save;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DaresGameBot.Game.States;
 
@@ -78,32 +79,53 @@ internal sealed class Game : IStateful<GameData>
 
     public void DrawArrangement()
     {
-        ushort? id = _actionDeck.GetRandomId(c => _matchmaker.CanPlay(c.ArrangementType));
-        if (id is null)
+        IEnumerable<ushort> playableIds = _actionDeck.GetIds(c => _matchmaker.CanPlay(c.ArrangementType));
+
+        Dictionary<ArrangementType, HashSet<string>> arrangementTypes = new();
+        foreach (IGrouping<uint, ushort> group in _actionDeck.GroupByUses(playableIds))
         {
+            foreach (ActionData actionData in group.Select(_actionDeck.GetCard))
+            {
+                if (!arrangementTypes.ContainsKey(actionData.ArrangementType))
+                {
+                    arrangementTypes[actionData.ArrangementType] = new HashSet<string>();
+                }
+                arrangementTypes[actionData.ArrangementType].Add(actionData.Tag);
+            }
+
+            List<ArrangementType> fullTypes = arrangementTypes.Keys
+                                                              .Where(t => arrangementTypes[t].SetEquals(Stats.ActionTags))
+                                                              .ToList();
+            if (!fullTypes.Any())
+            {
+                continue;
+            }
+
+            ArrangementType randomFullType = RandomHelper.SelectItem(fullTypes);
+            CurrentArrangement = _matchmaker.SelectCompanionsFor(randomFullType);
+            CurrentState = State.ArrangementPurposed;
             return;
         }
-
-        ActionData card = _actionDeck.GetCard(id.Value);
-
-        CurrentArrangement = _matchmaker.SelectCompanionsFor(card.ArrangementType);
-
-        CurrentState = State.ArrangementPurposed;
     }
 
     public void DrawQuestion()
     {
-        _currentCardId = _questionDeck.GetRandomId().Denull("No question found!");
+        _currentCardId = RandomHelper.SelectItem(_questionDeck.FilterMinUses().ToList());
 
         CurrentState = State.CardRevealed;
     }
 
     public void DrawAction(string tag)
     {
-        _currentCardId =
-            _actionDeck.GetRandomId(c => (c.Tag == tag)
-                                         && (c.ArrangementType == CurrentArrangement!.GetArrangementType()))
-                       .Denull("No suitable cards found");
+        List<ushort> ids = _actionDeck.GetIds(c => (c.Tag == tag)
+                                                   && (c.ArrangementType == CurrentArrangement!.GetArrangementType()))
+                                      .ToList();
+        if (!ids.Any())
+        {
+            throw new Exception("No suitable cards found");
+        }
+
+        _currentCardId = RandomHelper.SelectItem(_actionDeck.FilterMinUses(ids).ToList());
         CurrentState = State.CardRevealed;
     }
 

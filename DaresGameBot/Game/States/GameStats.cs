@@ -14,6 +14,8 @@ namespace DaresGameBot.Game.States;
 
 internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsData>
 {
+    public IEnumerable<string> ActionTags => _core.ActionOptions.Keys;
+
     public GameStats(GameStatsStateCore core) => _core = core;
 
     public void OnQuestionCompleted(string player, Arrangement? declinedArrangement)

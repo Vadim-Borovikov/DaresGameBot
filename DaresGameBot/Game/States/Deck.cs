@@ -13,17 +13,18 @@ internal sealed class Deck<T> : IStateful<Dictionary<ushort, uint>>
 
     public T GetCard(ushort id) => _cards[id];
 
-    public ushort? GetRandomId(Func<T, bool>? predicate = null)
+    public IEnumerable<IGrouping<uint, ushort>> GroupByUses(IEnumerable<ushort> ids) => ids.GroupBy(id => _uses[id]);
+
+    public IEnumerable<ushort> GetIds(Func<T, bool>? predicate = null)
     {
-        List<ushort> ids = _cards.Keys.Where(id => predicate?.Invoke(_cards[id]) ?? true).ToList();
+        return predicate is null ? _cards.Keys : _cards.Keys.Where(id => predicate.Invoke(_cards[id]));
+    }
 
-        if (!ids.Any())
-        {
-            return null;
-        }
-
+    public IEnumerable<ushort> FilterMinUses(ICollection<ushort>? ids = null)
+    {
+        ids ??= _cards.Keys;
         uint minUses = ids.Min(id => _uses.GetValueOrDefault(id));
-        return RandomHelper.SelectItem(ids.Where(id => _uses.GetValueOrDefault(id) == minUses).ToList());
+        return ids.Where(id => _uses.GetValueOrDefault(id) == minUses);
     }
 
     public void Mark(ushort id) => _uses.CreateOrAdd(id, 1);
