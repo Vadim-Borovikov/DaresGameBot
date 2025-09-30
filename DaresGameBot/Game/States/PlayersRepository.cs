@@ -3,7 +3,6 @@ using System.Linq;
 using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Game.States.Data;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
-using DaresGameBot.Utilities;
 using GryphonUtilities.Save;
 
 namespace DaresGameBot.Game.States;
@@ -113,14 +112,9 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return (p1 != p2) && compatibility.AreCompatable(_infos[p1], _infos[p2]);
     }
 
-    public bool AreCompatable(IReadOnlyList<string> players, ICompatibility compatibility)
+    public bool IsCompatableWith(string player, IEnumerable<string> group, ICompatibility compatibility)
     {
-        return ListHelper.EnumeratePairs(players).All(p => AreCompatable(p, compatibility));
-    }
-
-    private bool AreCompatable((string, string) pair, ICompatibility compatibility)
-    {
-        return AreCompatable(pair.Item1, pair.Item2, compatibility);
+        return group.All(p => AreCompatable(player, p, compatibility));
     }
 
     private readonly List<string> _names = new();

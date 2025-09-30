@@ -43,9 +43,12 @@ internal abstract class Matchmaker
 
     protected IEnumerable<IReadOnlyList<string>> EnumerateIntercompatableGroups(IList<string> choices, byte size)
     {
-        return ListHelper.EnumerateSubsets(choices, size)
-                         .Select(s => s.AsReadOnly())
-                         .Where(g => Players.AreCompatable(g, _compatibility));
+        return ListHelper.EnumerateSubsets(choices, size, IsCompatableWith).Select(s => s.AsReadOnly());
+    }
+
+    private bool IsCompatableWith(string player, IEnumerable<string> group)
+    {
+        return Players.IsCompatableWith(player, group, _compatibility);
     }
 
     private bool AreThereAnyMatches(ArrangementType arrangementType)

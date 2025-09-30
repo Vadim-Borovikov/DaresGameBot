@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DaresGameBot.Utilities;
 
@@ -15,7 +16,8 @@ internal static class ListHelper
         }
     }
 
-    public static IEnumerable<IList<T>> EnumerateSubsets<T>(IList<T> set, uint size)
+    public static IEnumerable<IList<T>> EnumerateSubsets<T>(IList<T> set, uint size,
+        Func<T, IEnumerable<T>, bool> canBeAdded)
     {
         if (set.Count < size)
         {
@@ -45,6 +47,11 @@ internal static class ListHelper
 
                     foreach (List<T> previous in previousSubsetsByMaxIndex[previousIndex])
                     {
+                        if (!canBeAdded(set[i], previous))
+                        {
+                            continue;
+                        }
+
                         List<T> current = Create(previous, set[i]);
                         if (s == size)
                         {
