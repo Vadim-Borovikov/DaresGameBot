@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using DaresGameBot.Game.Data;
+﻿using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Game.States;
 using DaresGameBot.Utilities;
 using GryphonUtilities.Extensions;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DaresGameBot.Game.Matchmaking;
 
@@ -43,12 +43,26 @@ internal abstract class Matchmaker
 
     protected IEnumerable<IReadOnlyList<string>> EnumerateIntercompatableGroups(IList<string> choices, byte size)
     {
-        return ListHelper.EnumerateSubsets(choices, size, IsCompatableWith).Select(s => s.AsReadOnly());
-    }
+        if (choices.Count < size)
+        {
+            yield break;
+        }
 
-    private bool IsCompatableWith(string player, IEnumerable<string> group)
-    {
-        return Players.IsCompatableWith(player, group, _compatibility);
+        if (choices.Count == size)
+        {
+            IReadOnlyList<string> choisesAsReadOnly = choices.AsReadOnly();
+            if (Players.IsIntercompatable(choisesAsReadOnly, _compatibility))
+            {
+                yield return choisesAsReadOnly;
+            }
+            yield break;
+        }
+
+        foreach (IList<string> subset in
+                 ListHelper.EnumerateStrictSubsets(choices, size, (p, g) => Players.IsCompatableWith(p, g, _compatibility)))
+        {
+            yield return subset.AsReadOnly();
+        }
     }
 
     private bool AreThereAnyMatches(ArrangementType arrangementType)

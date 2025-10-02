@@ -16,17 +16,11 @@ internal static class ListHelper
         }
     }
 
-    public static IEnumerable<IList<T>> EnumerateSubsets<T>(IList<T> set, uint size,
+    public static IEnumerable<IList<T>> EnumerateStrictSubsets<T>(IList<T> set, uint size,
         Func<T, IEnumerable<T>, bool> canBeAdded)
     {
-        if (set.Count < size)
+        if (set.Count <= size)
         {
-            yield break;
-        }
-
-        if (set.Count == size)
-        {
-            yield return set;
             yield break;
         }
 
