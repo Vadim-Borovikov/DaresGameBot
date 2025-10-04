@@ -17,24 +17,20 @@ internal sealed class DistributedMatchmaker : Matchmaker
 
     protected override IEnumerable<string>? EnumerateMatches(ArrangementType arrangementType)
     {
-        IEnumerable<string> choices = EnumerateCompatablePlayers();
-        string[] shuffled = RandomHelper.Shuffle(choices);
-        if (shuffled.Length < arrangementType.Partners)
+        List<string> choices =
+            EnumerateCompatablePlayers().OrderBy(p => _gameStats.GetPropositions(Players.Current, p))
+                                        .ThenBy(_gameStats.GetPropositions)
+                                        .ThenByShuffled()
+                                        .ToList();
+
+        if (choices.Count < arrangementType.Partners)
         {
             return null;
         }
 
-        if (!arrangementType.CompatablePartners)
-        {
-            return shuffled.OrderBy(p => _gameStats.GetPropositions(Players.Current, p))
-                           .ThenBy(_gameStats.GetPropositions)
-                           .Take(arrangementType.Partners);
-        }
-
-        IEnumerable<IReadOnlyList<string>> groups = EnumerateIntercompatableGroups(shuffled, arrangementType.Partners);
-        return groups.OrderBy(g => _gameStats.GetPropositions(Players.Current, g))
-                     .ThenBy(g => g.Sum(p => _gameStats.GetPropositions(p)))
-                     .First();
+        return arrangementType.CompatablePartners
+            ? EnumerateIntercompatableGroups(choices, arrangementType.Partners).FirstOrDefault()
+            : choices.Take(arrangementType.Partners);
     }
 
     private readonly GameStats _gameStats;

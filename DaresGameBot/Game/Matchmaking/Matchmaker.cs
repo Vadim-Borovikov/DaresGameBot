@@ -59,7 +59,8 @@ internal abstract class Matchmaker
         }
 
         foreach (IList<string> subset in
-                 ListHelper.EnumerateStrictSubsets(choices, size, (p, g) => Players.IsCompatableWith(p, g, _compatibility)))
+                 ListHelper.EnumerateStrictSubsets(choices, size,
+                     (p, g) => Players.IsCompatableWith(p, g, _compatibility)))
         {
             yield return subset.AsReadOnly();
         }

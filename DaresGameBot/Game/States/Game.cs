@@ -101,7 +101,7 @@ internal sealed class Game : IStateful<GameData>
                 continue;
             }
 
-            ArrangementType randomFullType = RandomHelper.SelectItem(fullTypes);
+            ArrangementType randomFullType = fullTypes.RandomItem();
             CurrentArrangement = _matchmaker.SelectCompanionsFor(randomFullType);
             CurrentState = State.ArrangementPurposed;
             return;
@@ -110,7 +110,7 @@ internal sealed class Game : IStateful<GameData>
 
     public void DrawQuestion()
     {
-        _currentCardId = RandomHelper.SelectItem(_questionDeck.FilterMinUses().ToList());
+        _currentCardId = _questionDeck.FilterMinUses().RandomItem();
 
         CurrentState = State.CardRevealed;
     }
@@ -125,7 +125,7 @@ internal sealed class Game : IStateful<GameData>
             throw new Exception("No suitable cards found");
         }
 
-        _currentCardId = RandomHelper.SelectItem(_actionDeck.FilterMinUses(ids).ToList());
+        _currentCardId = _actionDeck.FilterMinUses(ids).RandomItem();
         CurrentState = State.CardRevealed;
     }
 

@@ -6,12 +6,15 @@ namespace DaresGameBot.Utilities;
 
 internal static class RandomHelper
 {
-    public static T SelectItem<T>(IList<T> source) => source[Random.Shared.Next(source.Count)];
+    public static T RandomItem<T>(this IEnumerable<T> source) => source.OrderByShuffled().First();
 
-    public static T[] Shuffle<T>(IEnumerable<T> source)
+    public static IOrderedEnumerable<T> ThenByShuffled<T>(this IOrderedEnumerable<T> source)
     {
-        T[] value = source.ToArray();
-        Random.Shared.Shuffle(value);
-        return value;
+        return source.ThenBy(_ => Random.Shared.Next());
+    }
+
+    private static IOrderedEnumerable<T> OrderByShuffled<T>(this IEnumerable<T> source)
+    {
+        return source.OrderBy(_ => Random.Shared.Next());
     }
 }

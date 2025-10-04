@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Game.States.Cores;
@@ -76,12 +75,6 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
     {
         string key = GetKey(p1, p2);
         return _propositions.GetValueOrDefault(key);
-    }
-
-    public uint GetPropositions(string player, IReadOnlyList<string> players)
-    {
-        return (uint) (players.Sum(p => GetPropositions(player, p))
-                       + ListHelper.EnumeratePairs(players).Sum(pair => GetPropositions(pair.Item1, pair.Item2)));
     }
 
     public float? GetRatio(string player)
