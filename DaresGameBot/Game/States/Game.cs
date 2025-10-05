@@ -110,7 +110,11 @@ internal sealed class Game : IStateful<GameData>
 
     public void DrawQuestion()
     {
-        _currentCardId = _questionDeck.FilterMinUses().RandomItem();
+        if (_revealedQuestionId is null || !_questionDeck.CheckCard(_revealedQuestionId.Value))
+        {
+            _revealedQuestionId = _questionDeck.FilterMinUses().RandomItem();
+        }
+        _currentCardId = _revealedQuestionId;
 
         CurrentState = State.CardRevealed;
     }
@@ -125,7 +129,12 @@ internal sealed class Game : IStateful<GameData>
             throw new Exception("No suitable cards found");
         }
 
-        _currentCardId = _actionDeck.FilterMinUses(ids).RandomItem();
+        if (!_revealedActionIds.ContainsKey(tag) || !ids.Contains(_revealedActionIds[tag]))
+        {
+            _revealedActionIds[tag] = _actionDeck.FilterMinUses(ids).RandomItem();
+        }
+        _currentCardId = _revealedActionIds[tag];
+
         CurrentState = State.CardRevealed;
     }
 
@@ -199,7 +208,12 @@ internal sealed class Game : IStateful<GameData>
         _currentCardId = data.CurrentCardId;
     }
 
-    private void StartNewTurn() => Players.MoveNext();
+    private void StartNewTurn()
+    {
+        _revealedQuestionId = null;
+        _revealedActionIds.Clear();
+        Players.MoveNext();
+    }
 
     private void OnQuestionCompleted()
     {
@@ -230,4 +244,7 @@ internal sealed class Game : IStateful<GameData>
     private readonly List<IInteractionSubscriber> _interactionSubscribers;
     private readonly Matchmaker _matchmaker;
     private ushort? _currentCardId;
+    private ushort? _revealedQuestionId;
+
+    private readonly Dictionary<string, ushort> _revealedActionIds = new();
 }
