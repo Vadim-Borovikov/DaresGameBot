@@ -13,7 +13,10 @@ internal sealed class Deck<T> : IStateful<Dictionary<ushort, uint>>
 
     public T GetCard(ushort id) => _cards[id];
 
-    public IEnumerable<IGrouping<uint, ushort>> GroupByUses(IEnumerable<ushort> ids) => ids.GroupBy(id => _uses[id]);
+    public IEnumerable<IGrouping<uint, ushort>> GroupByUses(IEnumerable<ushort> ids)
+    {
+        return ids.GroupBy(_uses.GetValueOrDefault);
+    }
 
     public IEnumerable<ushort> GetIds(Func<T, bool>? predicate = null)
     {
