@@ -76,7 +76,8 @@
     "Text": [
       "Игроки:",
       "{0}"
-    ]
+    ],
+    "MarkdownV2": true
   },
 
   "NewGameStart": {
@@ -110,8 +111,18 @@
 
   "TagSeparator": " ",
 
-  "PlayerFormatActive": "{0}. {1}",
-  "PlayerFormatInactive": "`— {0}. {1}`",
+  "PlayerFormatActive": {
+    "Text": [
+      "{0}. {1}"
+    ]
+  },
+  "PlayerFormatInactive": {
+    "Text": [
+      "||— {0}\\. {1}||"
+    ],
+    "MarkdownV2": true
+  },
+
   "PlayersSeparator": "\n",
 
   "QuestionsTag": "❓",

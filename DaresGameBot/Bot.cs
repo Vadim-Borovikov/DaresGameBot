@@ -678,15 +678,16 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
 
         List<(string Name, bool Active)> players = game.Players.GetAllNamesWithStatus().ToList();
-        List<string> playerLines = new();
+        List<MessageTemplateText> playerLines = new();
         for (int i = 0; i < players.Count; ++i)
         {
-            string format = players[i].Active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
-            string line = string.Format(format, i, players[i].Name);
+            MessageTemplateText format = players[i].Active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
+            MessageTemplateText line = format.Format(i, players[i].Name);
             playerLines.Add(line);
         }
+        MessageTemplateText allLines = MessageTemplateText.JoinTexts(playerLines);
 
-        MessageTemplateText messageText = texts.PlayersFormat.Format(string.Join(texts.PlayersSeparator, playerLines));
+        MessageTemplateText messageText = texts.PlayersFormat.Format(allLines);
 
         if (_state.PlayersMessageId is null)
         {
