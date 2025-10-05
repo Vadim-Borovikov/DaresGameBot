@@ -26,6 +26,14 @@ internal abstract class Matchmaker
         return (arrangementType.Partners == 0) || AreThereAnyMatches(arrangementType);
     }
 
+    public bool CanBePlayed(Arrangement arrangement)
+    {
+        List<string> compatable = EnumerateCompatablePlayers().ToList();
+
+        return arrangement.Partners.All(compatable.Contains)
+               && (!arrangement.CompatablePartners || Players.IsIntercompatable(arrangement.Partners, _compatibility));
+    }
+
     public Arrangement SelectCompanionsFor(ArrangementType arrangementType)
     {
         List<string> partners = new();

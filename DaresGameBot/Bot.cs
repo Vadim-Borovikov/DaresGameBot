@@ -187,6 +187,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
                 return;
             }
 
+            string currentPlayer = _state.Game.Players.Current;
+
             bool changed = _state.Game.UpdatePlayers(updates);
             if (!changed)
             {
@@ -196,7 +198,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
             await adminTexts.Accepted.SendAsync(_core.UpdateSender, _adminChat);
 
-            await DrawArrangementAsync(_state.Game);
+            if ((_state.Game.Players.Current != currentPlayer) || !_state.Game.IsCurrentArrangementValid())
+            {
+                await DrawArrangementAsync(_state.Game);
+            }
 
             await ReportAndPinPlayersAsync(_state.Game);
         }

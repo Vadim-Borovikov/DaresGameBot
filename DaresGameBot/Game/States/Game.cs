@@ -77,6 +77,11 @@ internal sealed class Game : IStateful<GameData>
     public ActionData GetActionData() => _actionDeck.GetCard(_currentCardId!.Value);
     public CardData GetQuestionData() => _questionDeck.GetCard(_currentCardId!.Value);
 
+    public bool IsCurrentArrangementValid()
+    {
+        return CurrentArrangement is not null && _matchmaker.CanBePlayed(CurrentArrangement);
+    }
+
     public void DrawArrangement()
     {
         IEnumerable<ushort> playableIds = _actionDeck.GetIds(c => _matchmaker.CanPlay(c.ArrangementType));
