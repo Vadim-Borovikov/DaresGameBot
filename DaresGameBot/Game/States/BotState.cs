@@ -12,6 +12,7 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>
     public Game? Game;
 
     public int? PlayersMessageId;
+    public bool InactivePlayersVisible;
 
     public UserState? AdminState => UserStates.GetValueOrDefault(_adminId);
     public UserState? PlayerState => UserStates.GetValueOrDefault(_playerId);
@@ -48,6 +49,8 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>
 
         data.PlayersMessageId = PlayersMessageId;
 
+        data.InactivePlayersVisible = InactivePlayersVisible;
+
         return data;
     }
 
@@ -67,6 +70,7 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>
         }
 
         PlayersMessageId = data.PlayersMessageId;
+        InactivePlayersVisible = data.InactivePlayersVisible;
     }
 
     private readonly long _adminId;

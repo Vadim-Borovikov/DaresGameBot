@@ -172,7 +172,9 @@ internal sealed class Game : IStateful<GameData>
             GameStatsData = Stats.Save(),
             CurrentState = CurrentState?.ToString(),
             CurrentArrangementData = CurrentArrangement?.Save(),
-            CurrentCardId = _currentCardId
+            CurrentCardId = _currentCardId,
+            RevealedQuestionId = _revealedQuestionId,
+            RevealedActionIds = _revealedActionIds
         };
     }
 
@@ -206,6 +208,10 @@ internal sealed class Game : IStateful<GameData>
         CurrentArrangement.LoadFrom(data.CurrentArrangementData);
 
         _currentCardId = data.CurrentCardId;
+        _revealedQuestionId = data.RevealedQuestionId;
+
+        _revealedActionIds.Clear();
+        _revealedActionIds.AddAll(data.RevealedActionIds);
     }
 
     private void StartNewTurn()

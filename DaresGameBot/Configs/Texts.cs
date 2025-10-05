@@ -95,6 +95,14 @@ public class Texts : AbstractBot.Models.Config.Texts
 
     [Required]
     [MinLength(1)]
+    public string ShowInactive { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
+    public string HideInactive { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
     public string Completed { get; init; } = null!;
 
     [Required]

@@ -1,4 +1,4 @@
-using AbstractBot;
+﻿using AbstractBot;
 using DaresGameBot.Configs;
 using DaresGameBot.Game.Matchmaking;
 using DaresGameBot.Operations;
@@ -128,6 +128,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new UpdateCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new LangCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new UpdatePlayers(this, _textsProvider));
+        _core.UpdateReceiver.Operations.Add(new ToggleInactivePlayers(this));
         _core.UpdateReceiver.Operations.Add(new RevealCard(this));
         _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
         _core.UpdateReceiver.Operations.Add(new CompleteCard(this));
@@ -339,6 +340,19 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     }
 
     internal Task ShowRatesAsync() => _state.Game is null ? StartNewGameAsync() : ShowRatesAsync(_state.Game);
+
+    internal Task ToggleInactivePlayersVisibility()
+    {
+        if (_state.Game is null)
+        {
+            return StartNewGameAsync();
+        }
+
+        _state.InactivePlayersVisible = !_state.InactivePlayersVisible;
+        _saveManager.Save(_state);
+
+        return ReportAndPinPlayersAsync(_state.Game);
+    }
 
     private Task RevealQuestionAsync(Game.States.Game game, int cardMessageId, Chat chat)
     {
@@ -679,8 +693,18 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         List<(string Name, bool Active)> players = game.Players.GetAllNamesWithStatus().ToList();
         List<MessageTemplateText> playerLines = new();
+        bool areThereInactivePlayers = false;
         for (int i = 0; i < players.Count; ++i)
         {
+            if (!players[i].Active)
+            {
+                areThereInactivePlayers = true;
+                if (!_state.InactivePlayersVisible)
+                {
+                    continue;
+                }
+            }
+
             MessageTemplateText format = players[i].Active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
             MessageTemplateText line = format.Format(i, players[i].Name);
             playerLines.Add(line);
@@ -688,6 +712,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         MessageTemplateText allLines = MessageTemplateText.JoinTexts(playerLines);
 
         MessageTemplateText messageText = texts.PlayersFormat.Format(allLines);
+
+        messageText.KeyboardProvider =
+            areThereInactivePlayers ? CreateToggleInactivePlayersKeyboard(texts) : InlineKeyboardMarkup.Empty();
 
         if (_state.PlayersMessageId is null)
         {
@@ -791,6 +818,17 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         Texts texts = _textsProvider.GetTextsFor(userId);
         string caption = fully ? texts.Completed : texts.ActionCompletedPartially;
         return CreateOneButtonRow<CompleteCard>(caption, fully);
+    }
+
+    private InlineKeyboardMarkup CreateToggleInactivePlayersKeyboard(Texts texts)
+    {
+        List<List<InlineKeyboardButton>> keyboard = new()
+        {
+            CreateOneButtonRow<ToggleInactivePlayers>(
+                _state.InactivePlayersVisible ? texts.HideInactive : texts.ShowInactive)
+        };
+
+        return new InlineKeyboardMarkup(keyboard);
     }
 
     private static List<InlineKeyboardButton> CreateOneButtonRow<TData>(string caption, params object[] args)

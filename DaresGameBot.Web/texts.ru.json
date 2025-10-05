@@ -113,12 +113,13 @@
 
   "PlayerFormatActive": {
     "Text": [
-      "{0}. {1}"
-    ]
+      "{0}\\. `{1}`"
+    ],
+    "MarkdownV2": true
   },
   "PlayerFormatInactive": {
     "Text": [
-      "||— {0}\\. {1}||"
+      "_— {0}\\._ `{1}`"
     ],
     "MarkdownV2": true
   },
@@ -128,6 +129,10 @@
   "QuestionsTag": "❓",
 
   "Unreveal": "◀️",
+
+  "ShowInactive": "👀",
+
+  "HideInactive": "🙈",
 
   "Completed": "✅",
 
