@@ -6,5 +6,5 @@ internal sealed class AddOrUpdatePlayerData : PlayerListUpdateData
 {
     public readonly GroupsInfo Info;
 
-    public AddOrUpdatePlayerData(string name, GroupsInfo info) : base(name) => Info = info;
+    public AddOrUpdatePlayerData(string name, GroupsInfo info, byte? index = null) : base(name, index) => Info = info;
 }

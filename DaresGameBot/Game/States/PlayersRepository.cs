@@ -3,6 +3,7 @@ using DaresGameBot.Game.States.Data;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 using DaresGameBot.Utilities;
 using GryphonUtilities.Save;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -54,9 +55,17 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
             changed = true;
         }
 
-        if (!_names.Contains(a.Name))
+        if (_names.Contains(a.Name))
         {
-            _names.Add(a.Name);
+            if (a.Index.HasValue)
+            {
+                changed |= MoveTo(a.Name, a.Index.Value);
+            }
+        }
+        else
+        {
+            int index = a.Index.HasValue ? Math.Min(a.Index.Value, _names.Count) : _names.Count;
+            _names.Insert(index, a.Name);
         }
 
         return changed;
@@ -67,6 +76,11 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         if (!_infos.ContainsKey(data.Name))
         {
             return false;
+        }
+
+        if (data.Index.HasValue)
+        {
+            MoveTo(data.Name, data.Index.Value);
         }
 
         if (_infos[data.Name].Active)
@@ -134,6 +148,26 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     private bool AreCompatable((string, string) pair, ICompatibility compatibility)
     {
         return AreCompatable(pair.Item1, pair.Item2, compatibility);
+    }
+
+    private bool MoveTo(string name, byte index)
+    {
+        int newIndex = Math.Min(index, _names.Count);
+        if (newIndex == _names.IndexOf(name))
+        {
+            return false;
+        }
+
+        string currentPlayer = Current;
+
+        _names.Insert(newIndex, name);
+
+        int firstIndex = _names.IndexOf(name);
+        int lastIndex = _names.LastIndexOf(name);
+        _names.RemoveAt(firstIndex == newIndex ? lastIndex : firstIndex);
+
+        _currentIndex = _names.IndexOf(currentPlayer);
+        return true;
     }
 
     private readonly List<string> _names = new();

@@ -2,5 +2,5 @@
 
 internal sealed class TogglePlayerData : PlayerListUpdateData
 {
-    public TogglePlayerData(string name) : base(name) { }
+    public TogglePlayerData(string name, byte? order = null) : base(name, order) { }
 }
