@@ -111,7 +111,10 @@ public class Texts : AbstractBot.Models.Config.Texts
 
     [Required]
     [MinLength(1)]
-    public string PlayerFormat { get; init; } = null!;
+    public string PlayerFormatActive { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string PlayerFormatInactive { get; init; } = null!;
 
     [Required]
     public MessageTemplateText StatusMessageEndSuccessFormat { get; init; } = null!;

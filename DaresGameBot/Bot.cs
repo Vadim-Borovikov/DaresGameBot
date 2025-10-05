@@ -676,8 +676,17 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     private async Task ReportAndPinPlayersAsync(Game.States.Game game)
     {
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
-        IEnumerable<string> players = game.Players.GetActiveNames().Select(p => string.Format(texts.PlayerFormat, p));
-        MessageTemplateText messageText = texts.PlayersFormat.Format(string.Join(texts.PlayersSeparator, players));
+
+        List<(string Name, bool Active)> players = game.Players.GetAllNamesWithStatus().ToList();
+        List<string> playerLines = new();
+        for (int i = 0; i < players.Count; ++i)
+        {
+            string format = players[i].Active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
+            string line = string.Format(format, i, players[i].Name);
+            playerLines.Add(line);
+        }
+
+        MessageTemplateText messageText = texts.PlayersFormat.Format(string.Join(texts.PlayersSeparator, playerLines));
 
         if (_state.PlayersMessageId is null)
         {

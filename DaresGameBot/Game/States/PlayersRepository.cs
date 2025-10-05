@@ -24,6 +24,14 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         while (!_infos[Current].Active);
     }
 
+    public IEnumerable<(string Name, bool Active)> GetAllNamesWithStatus()
+    {
+        foreach (string name in _names)
+        {
+            yield return (name, _infos[name].Active);
+        }
+    }
+
     public bool AddOrUpdatePlayerData(AddOrUpdatePlayerData a)
     {
         bool changed = false;

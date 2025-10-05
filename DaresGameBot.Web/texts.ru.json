@@ -110,7 +110,8 @@
 
   "TagSeparator": " ",
 
-  "PlayerFormat": "• {0}",
+  "PlayerFormatActive": "{0}. {1}",
+  "PlayerFormatInactive": "`— {0}. {1}`",
   "PlayersSeparator": "\n",
 
   "QuestionsTag": "❓",
