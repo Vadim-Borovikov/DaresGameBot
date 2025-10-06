@@ -84,33 +84,13 @@ internal sealed class Game : IStateful<GameData>
 
     public void DrawArrangement()
     {
-        IEnumerable<ushort> playableIds = _actionDeck.GetIds(c => _matchmaker.CanPlay(c.ArrangementType));
-
-        Dictionary<ArrangementType, HashSet<string>> arrangementTypes = new();
-        foreach (IGrouping<uint, ushort> group in _actionDeck.GroupByUses(playableIds))
+        ArrangementType? arrangementType = SelectArrangementType();
+        if (arrangementType is null)
         {
-            foreach (ActionData actionData in group.Select(_actionDeck.GetCard))
-            {
-                if (!arrangementTypes.ContainsKey(actionData.ArrangementType))
-                {
-                    arrangementTypes[actionData.ArrangementType] = new HashSet<string>();
-                }
-                arrangementTypes[actionData.ArrangementType].Add(actionData.Tag);
-            }
-
-            List<ArrangementType> fullTypes = arrangementTypes.Keys
-                                                              .Where(t => arrangementTypes[t].SetEquals(Stats.ActionTags))
-                                                              .ToList();
-            if (!fullTypes.Any())
-            {
-                continue;
-            }
-
-            ArrangementType randomFullType = fullTypes.RandomItem();
-            CurrentArrangement = _matchmaker.SelectCompanionsFor(randomFullType);
-            CurrentState = State.ArrangementPurposed;
             return;
         }
+        CurrentArrangement = _matchmaker.SelectCompanionsFor(arrangementType.Value);
+        CurrentState = State.ArrangementPurposed;
     }
 
     public void DrawQuestion()
@@ -224,6 +204,34 @@ internal sealed class Game : IStateful<GameData>
         _revealedQuestionId = null;
         _revealedActionIds.Clear();
         Players.MoveNext();
+    }
+
+    private ArrangementType? SelectArrangementType()
+    {
+        IEnumerable<ushort> playableIds = _actionDeck.GetIds(c => _matchmaker.CanPlay(c.ArrangementType));
+
+        Dictionary<ArrangementType, HashSet<string>> types = new();
+        foreach (IGrouping<uint, ushort> group in _actionDeck.GroupByUses(playableIds))
+        {
+            foreach (ActionData actionData in group.Select(_actionDeck.GetCard))
+            {
+                if (!types.ContainsKey(actionData.ArrangementType))
+                {
+                    types[actionData.ArrangementType] = new HashSet<string>();
+                }
+
+                types[actionData.ArrangementType].Add(actionData.Tag);
+            }
+
+            List<ArrangementType> fullTypes = types.Keys
+                                                   .Where(t => types[t].SetEquals(Stats.ActionTags))
+                                                   .ToList();
+            if (fullTypes.Any())
+            {
+                return fullTypes.RandomItem();
+            }
+        }
+        return null;
     }
 
     private void OnQuestionCompleted()
