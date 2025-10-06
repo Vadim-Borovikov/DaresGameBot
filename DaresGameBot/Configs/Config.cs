@@ -1,9 +1,10 @@
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using AbstractBot.Interfaces.Modules.Config;
 using AbstractBot.Models.Config;
 using DaresGameBot.Game.Data;
+using DaresGameBot.Operations.Data.GameButtons;
 using JetBrains.Annotations;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
 
@@ -69,9 +70,20 @@ public class Config : ConfigWithSheets, ILocalizationConfig<Texts>
     [MinLength(1)]
     public string ImagesKeySeparator { get; set; } = null!;
 
-    internal string? GetArrangementImage(ArrangementType type)
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string ImagesQuestionTag { get; set; } = null!;
+
+    internal string? GetArrangementImage(ArrangementType type, RevealCardData? revealData = null)
     {
         string key = $"{type.Partners}{ImagesKeySeparator}{type.CompatablePartners}";
+        if (revealData is not null)
+        {
+            string tag = string.IsNullOrEmpty(revealData.Tag) ? ImagesQuestionTag : revealData.Tag;
+            key += $"{ImagesKeySeparator}{tag}";
+        }
+
         return Images.GetValueOrDefault(key);
     }
 }

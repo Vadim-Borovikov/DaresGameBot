@@ -268,13 +268,13 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        bool hasImage = !string.IsNullOrWhiteSpace(GetArrangementImage(_state.Game.CurrentArrangement));
+        string image = GetArrangementImage(_state.Game.CurrentArrangement, revealData);
 
         if (string.IsNullOrEmpty(revealData.Tag))
         {
             _state.Game.DrawQuestion();
-            await RevealQuestionAsync(_state.Game, _state.PlayerState.CardMessageId.Value, _playerChat, hasImage);
-            await RevealQuestionAsync(_state.Game, _state.AdminState.CardMessageId.Value, _adminChat, hasImage);
+            await RevealQuestionAsync(_state.Game, _state.PlayerState.CardMessageId.Value, _playerChat, image);
+            await RevealQuestionAsync(_state.Game, _state.AdminState.CardMessageId.Value, _adminChat, image);
         }
         else
         {
@@ -282,9 +282,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             ActionData data = _state.Game.GetActionData();
             bool includePartial = _config.ActionOptions[revealData.Tag].PartialPoints.HasValue;
             await RevealActionAsync(_state.Game.Players.Current, _state.Game.CurrentArrangement, data, includePartial,
-                _state.PlayerState.CardMessageId.Value, _playerChat, hasImage);
+                _state.PlayerState.CardMessageId.Value, _playerChat, image);
             await RevealActionAsync(_state.Game.Players.Current, _state.Game.CurrentArrangement, data, includePartial,
-                _state.AdminState.CardMessageId.Value, _adminChat, hasImage);
+                _state.AdminState.CardMessageId.Value, _adminChat, image);
         }
 
         _saveManager.Save(_state);
@@ -303,12 +303,12 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        bool hasImage = !string.IsNullOrWhiteSpace(GetArrangementImage(_state.Game.CurrentArrangement));
+        string image = GetArrangementImage(_state.Game.CurrentArrangement);
 
         await UnrevealCardAsync(_state.Game, _state.Game.CurrentArrangement, _playerChat,
-            _state.PlayerState.CardMessageId.Value, hasImage);
+            _state.PlayerState.CardMessageId.Value, image);
         await UnrevealCardAsync(_state.Game, _state.Game.CurrentArrangement, _adminChat,
-            _state.AdminState.CardMessageId.Value, hasImage);
+            _state.AdminState.CardMessageId.Value, image);
 
         _state.Game.ProcessCardUnrevealed();
         _saveManager.Save(_state);
@@ -338,12 +338,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             _state.Game.CompleteAction(fully);
         }
 
-        bool hasImage = !string.IsNullOrWhiteSpace(GetArrangementImage(_state.Game.CurrentArrangement));
-
-        await ShowCardAsCompletedAsync(_playerChat, _state.PlayerState.CardMessageId.Value, data.Template, fully,
-            hasImage);
-        await ShowCardAsCompletedAsync(_adminChat, _state.AdminState.CardMessageId.Value, data.Template, fully,
-            hasImage);
+        await ShowCardAsCompletedAsync(_playerChat, _state.PlayerState.CardMessageId.Value, data.Template, fully);
+        await ShowCardAsCompletedAsync(_adminChat, _state.AdminState.CardMessageId.Value, data.Template, fully);
 
         _state.ResetUserMessageId(_playerChat.Id);
         _state.ResetUserMessageId(_adminChat.Id);
@@ -368,13 +364,14 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return ReportAndPinPlayersAsync(_state.Game);
     }
 
-    private string? GetArrangementImage(Arrangement? arrangement = null)
+    private string GetArrangementImage(Arrangement? arrangement = null, RevealCardData? revealData = null)
     {
         arrangement ??= _state.Game?.CurrentArrangement;
-        return arrangement is null ? null : _config.GetArrangementImage(arrangement.GetArrangementType());
+        return Path.Combine(_config.ImagesFolder,
+            _config.GetArrangementImage(arrangement!.GetArrangementType(), revealData)!);
     }
 
-    private Task RevealQuestionAsync(Game.States.Game game, int cardMessageId, Chat chat, bool hasImage)
+    private Task RevealQuestionAsync(Game.States.Game game, int cardMessageId, Chat chat, string image)
     {
         Turn turn = CreateQuestionTurn(game, chat.Id);
         MessageTemplateText template = turn.GetMessage();
@@ -383,22 +380,25 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         {
             template.KeyboardProvider = keyboard;
         }
-        return EditMessageAsync(chat, template, cardMessageId, hasImage);
+
+        MessageTemplateImage templateImage = new(template, image);
+        return EditMessageAsync(chat, templateImage, cardMessageId);
     }
 
     private Task RevealActionAsync(string player, Arrangement arrangement, ActionData data, bool includePartial,
-        int cardMessageId, Chat chat, bool hasImage)
+        int cardMessageId, Chat chat, string image)
     {
         Texts texts = _textsProvider.GetTextsFor(chat.Id);
         bool includeEn = _state.UserStates.ContainsKey(chat.Id) && _state.UserStates[chat.Id].IncludeEn;
         Turn turn = new(texts, includeEn, data, player, arrangement);
         MessageTemplateText template = turn.GetMessage();
         template.KeyboardProvider = CreateActionKeyboard(includePartial, chat.Id);
-        return EditMessageAsync(chat, template, cardMessageId, hasImage);
+        MessageTemplateImage templateImage = new(template, image);
+        return EditMessageAsync(chat, templateImage, cardMessageId);
     }
 
     private Task UnrevealCardAsync(Game.States.Game game, Arrangement arrangement, Chat chat, int cardMessageId,
-        bool hasImage)
+        string image)
     {
         Texts texts = _textsProvider.GetTextsFor(chat.Id);
         MessageTemplateText? partnersText = null;
@@ -408,14 +408,19 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
         MessageTemplateText template = texts.TurnFormatShort.Format(game.Players.Current, partnersText);
         template.KeyboardProvider = CreateArrangementKeyboard(chat.Id);
-        return EditMessageAsync(chat, template, cardMessageId, hasImage);
+        MessageTemplateImage templateImage = new(template, image);
+        return EditMessageAsync(chat, templateImage, cardMessageId);
     }
 
-    private Task EditMessageAsync(Chat chat, MessageTemplateText template, int messageId, bool hasImage)
+    private async Task EditMessageAsync(Chat chat, MessageTemplateText template, int messageId)
     {
-        return hasImage
-            ? template.EditMessageCaptionWithSelfAsync(_core.UpdateSender, chat, false, messageId)
-            : template.EditMessageWithSelfAsync(_core.UpdateSender, chat, messageId);
+        await template.EditMessageCaptionWithSelfAsync(_core.UpdateSender, chat, false, messageId);
+    }
+
+    private async Task EditMessageAsync(Chat chat, MessageTemplateImage template, int messageId)
+    {
+        await template.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, messageId);
+        await template.EditMessageCaptionWithSelfAsync(_core.UpdateSender, chat, messageId);
     }
 
     private Task DoRequestedActionAsync(ConfirmEndData.ActionAfterGameEnds after)
@@ -575,8 +580,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        await ShowArrangementAsync(game.Players.Current, game.CurrentArrangement, _adminChat);
-        await ShowArrangementAsync(game.Players.Current, game.CurrentArrangement, _playerChat);
+        string image = GetArrangementImage(game.CurrentArrangement);
+        await ShowArrangementAsync(game.Players.Current, game.CurrentArrangement, _adminChat, image);
+        await ShowArrangementAsync(game.Players.Current, game.CurrentArrangement, _playerChat, image);
 
         _saveManager.Save(_state);
     }
@@ -617,7 +623,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return new Turn(texts,  includeEn, texts.QuestionsTag, data, players);
     }
 
-    private async Task ShowArrangementAsync(string player, Arrangement arrangement, Chat chat)
+    private async Task ShowArrangementAsync(string player, Arrangement arrangement, Chat chat, string image)
     {
         Texts texts = _textsProvider.GetTextsFor(chat.Id);
         MessageTemplateText? partnersText = null;
@@ -626,29 +632,24 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             partnersText = Turn.GetPartnersPart(texts, arrangement);
         }
         MessageTemplate messageTemplate = texts.TurnFormatShort.Format(player, partnersText);
-        messageTemplate.KeyboardProvider = CreateArrangementKeyboard(chat.Id);
-
-        string? imageName = GetArrangementImage(arrangement);
-        if (!string.IsNullOrWhiteSpace(imageName))
+        messageTemplate = new MessageTemplateImage(messageTemplate, image)
         {
-            messageTemplate = new MessageTemplateImage(messageTemplate, Path.Combine(_config.ImagesFolder, imageName));
-        }
-
+            KeyboardProvider = CreateArrangementKeyboard(chat.Id)
+        };
         Message message = await messageTemplate.SendAsync(_core.UpdateSender, chat);
         _state.SetUserMessageId(chat.Id, message.MessageId);
 
         _saveManager.Save(_state);
     }
 
-    private Task ShowCardAsCompletedAsync(Chat chat, int messageId, MessageTemplateText original, bool fully,
-        bool hasImage)
+    private Task ShowCardAsCompletedAsync(Chat chat, int messageId, MessageTemplateText original, bool fully)
     {
         Texts texts = _textsProvider.GetTextsFor(chat.Id);
 
         string completedPart = fully ? texts.Completed : texts.ActionCompletedPartially;
         MessageTemplateText template = texts.CompletedCardFormat.Format(original, completedPart);
 
-        return EditMessageAsync(chat, template, messageId, hasImage);
+        return EditMessageAsync(chat, template, messageId);
     }
 
     private Task ShowRatesAsync(Game.States.Game game)
