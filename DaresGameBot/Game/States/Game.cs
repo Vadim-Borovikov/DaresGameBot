@@ -210,25 +210,33 @@ internal sealed class Game : IStateful<GameData>
     {
         IEnumerable<ushort> playableIds = _actionDeck.GetIds(c => _matchmaker.CanPlay(c.ArrangementType));
 
-        Dictionary<ArrangementType, HashSet<string>> types = new();
+        Dictionary<ArrangementType, Dictionary<string, ushort>> types = new();
+        HashSet<string> tags = new(Stats.ActionTags);
         foreach (IGrouping<uint, ushort> group in _actionDeck.GroupByUses(playableIds))
         {
             foreach (ActionData actionData in group.Select(_actionDeck.GetCard))
             {
                 if (!types.ContainsKey(actionData.ArrangementType))
                 {
-                    types[actionData.ArrangementType] = new HashSet<string>();
+                    types[actionData.ArrangementType] = new Dictionary<string, ushort>();
                 }
 
-                types[actionData.ArrangementType].Add(actionData.Tag);
+                if (types[actionData.ArrangementType].ContainsKey(actionData.Tag))
+                {
+                    ++types[actionData.ArrangementType][actionData.Tag];
+                }
+                else
+                {
+                    types[actionData.ArrangementType][actionData.Tag] = 1;
+                }
             }
 
-            List<ArrangementType> fullTypes = types.Keys
-                                                   .Where(t => types[t].SetEquals(Stats.ActionTags))
-                                                   .ToList();
+            Dictionary<ArrangementType, ushort> fullTypes = types.Keys
+                                                                 .Where(t => tags.SetEquals(types[t].Keys))
+                                                                 .ToDictionary(t => t, t => types[t].Values.Min());
             if (fullTypes.Any())
             {
-                return fullTypes.RandomItem();
+                return fullTypes.RandomItemWeighted();
             }
         }
         return null;
