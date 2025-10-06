@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using AbstractBot.Interfaces.Modules.Config;
 using AbstractBot.Models.Config;
+using DaresGameBot.Game.Data;
 using JetBrains.Annotations;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
@@ -58,4 +59,19 @@ public class Config : ConfigWithSheets, ILocalizationConfig<Texts>
 
     [UsedImplicitly]
     public Dictionary<string, Texts> AllTexts { get; set; } = new();
+
+    [UsedImplicitly]
+    [Required]
+    public Dictionary<string, string> Images { get; set; } = new();
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string ImagesKeySeparator { get; set; } = null!;
+
+    internal string? GetArrangementImage(ArrangementType type)
+    {
+        string key = $"{type.Partners}{ImagesKeySeparator}{type.CompatablePartners}";
+        return Images.GetValueOrDefault(key);
+    }
 }
