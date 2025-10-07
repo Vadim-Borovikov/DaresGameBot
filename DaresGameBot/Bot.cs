@@ -382,7 +382,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
 
         MessageTemplateImage templateImage = new(template, image);
-        return EditMessageAsync(chat, templateImage, cardMessageId);
+        return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
     private Task RevealActionAsync(string player, Arrangement arrangement, ActionData data, bool includePartial,
@@ -394,7 +394,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         MessageTemplateText template = turn.GetMessage();
         template.KeyboardProvider = CreateActionKeyboard(includePartial, chat.Id);
         MessageTemplateImage templateImage = new(template, image);
-        return EditMessageAsync(chat, templateImage, cardMessageId);
+        return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
     private Task UnrevealCardAsync(Game.States.Game game, Arrangement arrangement, Chat chat, int cardMessageId,
@@ -409,18 +409,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         MessageTemplateText template = texts.TurnFormatShort.Format(game.Players.Current, partnersText);
         template.KeyboardProvider = CreateArrangementKeyboard(chat.Id);
         MessageTemplateImage templateImage = new(template, image);
-        return EditMessageAsync(chat, templateImage, cardMessageId);
-    }
-
-    private async Task EditMessageAsync(Chat chat, MessageTemplateText template, int messageId)
-    {
-        await template.EditMessageCaptionWithSelfAsync(_core.UpdateSender, chat, false, messageId);
-    }
-
-    private async Task EditMessageAsync(Chat chat, MessageTemplateImage template, int messageId)
-    {
-        await template.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, messageId);
-        await template.EditMessageCaptionWithSelfAsync(_core.UpdateSender, chat, messageId);
+        return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
     private Task DoRequestedActionAsync(ConfirmEndData.ActionAfterGameEnds after)
@@ -649,7 +638,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         string completedPart = fully ? texts.Completed : texts.ActionCompletedPartially;
         MessageTemplateText template = texts.CompletedCardFormat.Format(original, completedPart);
 
-        return EditMessageAsync(chat, template, messageId);
+        return template.EditMessageCaptionWithSelfAsync(_core.UpdateSender, chat, false, messageId);
     }
 
     private Task ShowRatesAsync(Game.States.Game game)
