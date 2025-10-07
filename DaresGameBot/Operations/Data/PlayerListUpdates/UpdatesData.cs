@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Configs;
 using DaresGameBot.Game.States;
@@ -15,7 +16,8 @@ internal sealed class UpdatesData
     public static UpdatesData? From(IEnumerable<string> lines, Texts texts)
     {
         List<PlayerListUpdateData> datas = new();
-        foreach (string[] parts in lines.Select(l => l.Split(texts.UpdatePartsSeparator)))
+        foreach (string[] parts in
+                 lines.Select(l => l.Split(texts.UpdatePartsSeparator, StringSplitOptions.TrimEntries)))
         {
             PlayerListUpdateData data;
             string player;
