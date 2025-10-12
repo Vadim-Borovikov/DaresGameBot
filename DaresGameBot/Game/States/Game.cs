@@ -30,8 +30,8 @@ internal sealed class Game : IStateful<GameData>
 
     public Arrangement? CurrentArrangement { get; private set; }
 
-    public Game(Dictionary<string, Option> actionOptions, string actionsVersion, string questionsVersion,
-        SheetInfo sheetInfo)
+    public Game(Dictionary<string, Option> actionOptions, ushort? questionPoints, string actionsVersion,
+        string questionsVersion, SheetInfo sheetInfo)
     {
         _actionDeck = new Deck<ActionData>(sheetInfo.Actions);
         _questionDeck = new Deck<CardData>(sheetInfo.Questions);
@@ -39,7 +39,7 @@ internal sealed class Game : IStateful<GameData>
         _questionsVersion = questionsVersion;
         Players = new PlayersRepository();
 
-        GameStatsStateCore gameStatsStateCore = new(actionOptions, sheetInfo.Actions, Players);
+        GameStatsStateCore gameStatsStateCore = new(actionOptions, questionPoints, sheetInfo.Actions, Players);
         Stats = new GameStats(gameStatsStateCore);
         GroupCompatibility compatibility = new();
         _matchmaker = new DistributedMatchmaker(Players, Stats, compatibility);

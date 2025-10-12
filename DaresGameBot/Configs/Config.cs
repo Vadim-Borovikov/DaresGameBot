@@ -48,6 +48,9 @@ public class Config : ConfigWithSheets, ILocalizationConfig<Texts>
     public Dictionary<string, Option> ActionOptions { get; init; } = null!;
 
     [UsedImplicitly]
+    public ushort? QuestionPoints { get; init; }
+
+    [UsedImplicitly]
     [Required]
     public long AdminChatId { get; init; }
     [UsedImplicitly]

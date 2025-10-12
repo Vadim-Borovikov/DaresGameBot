@@ -71,7 +71,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
 
         Texts defaultTexts = localization.GetDefaultTexts();
-        BotStateCore stateCore = new(config.ActionOptions, defaultTexts.ActionsTitle, defaultTexts.QuestionsTitle);
+        BotStateCore stateCore =
+            new(config.ActionOptions, config.QuestionPoints, defaultTexts.ActionsTitle, defaultTexts.QuestionsTitle);
         BotState state = new(stateCore, userStates, config.AdminChatId, config.PlayerChatId);
         Greeter greeter = new(core.UpdateSender, localization);
         LocalizationUserRegistrator registrator = new(state, saveManager);
@@ -548,7 +549,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         PlayersRepository repository = new();
         GameStatsStateCore gameStatsStateCore =
-            new(_state.Core.ActionOptions, _state.Core.SheetInfo.Actions, repository);
+            new(_state.Core.ActionOptions, _state.Core.QuestionPoints, _state.Core.SheetInfo.Actions, repository);
         GameStats gameStats = new(gameStatsStateCore);
 
         gameStats.UpdateList(updates);
@@ -784,7 +785,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup? CreateQuestionKeyboard(bool arrangementWasDeclined, long userId)
+    private InlineKeyboardMarkup? CreateQuestionKeyboard(bool areOtherOptionsAvailable, long userId)
     {
         if (userId != _adminChat.Id)
         {
@@ -795,7 +796,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         List<List<InlineKeyboardButton>> keyboard = new();
 
         List<InlineKeyboardButton> complete;
-        if (arrangementWasDeclined)
+        if (areOtherOptionsAvailable)
         {
             List<InlineKeyboardButton> unreveal = CreateOneButtonRow<UnrevealCard>(texts.Unreveal);
             complete = CreateOneButtonRow<CompleteCard>(texts.Completed);

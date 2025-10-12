@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using DaresGameBot.Game.Data;
+﻿using DaresGameBot.Game.Data;
 using DaresGameBot.Game.Matchmaking.Interactions;
 using DaresGameBot.Game.States.Cores;
 using DaresGameBot.Game.States.Data;
@@ -8,6 +6,9 @@ using DaresGameBot.Operations.Data.PlayerListUpdates;
 using DaresGameBot.Utilities;
 using DaresGameBot.Utilities.Extensions;
 using GryphonUtilities.Save;
+using System;
+using System.Collections.Generic;
+using GryphonUtilities.Extensions;
 
 namespace DaresGameBot.Game.States;
 
@@ -17,17 +18,22 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
 
     public GameStats(GameStatsStateCore core) => _core = core;
 
-    public void OnQuestionCompleted(string player, Arrangement? declinedArrangement)
+    public void OnQuestionCompleted(string player, Arrangement? arrangement)
     {
-        if (declinedArrangement is null)
+        if (arrangement is null)
         {
             RegisterProposition(player);
         }
         else
         {
-            RegisterPropositions(player, declinedArrangement);
+            RegisterPropositions(player, arrangement);
         }
         RegisterTurn();
+
+        if (_core.QuestionPoints.HasValue)
+        {
+            RegisterPoints(player, arrangement, _core.QuestionPoints.Value);
+        }
     }
 
     public void OnActionCompleted(string player, ActionInfo info, bool fully)
@@ -35,18 +41,14 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         RegisterPropositions(player, info.Arrangement);
         RegisterTurn();
 
-        ActionData? data = _core.Actions.GetValueOrDefault(info.Id);
-        uint? points = GetPoints(data?.Tag, fully);
+        ActionData data = _core.Actions.GetValueOrDefault(info.Id).Denull($"No card data for ({info.Id})");
+        string tag = data.Tag.Denull($"No tag for card ({info})");
+        uint? points = GetPoints(tag, fully);
         if (points is null)
         {
-            throw new NullReferenceException($"No points in config for ({data?.Tag}, {fully})");
+            throw new NullReferenceException($"No points in config for ({data.Tag}, {fully})");
         }
-
-        _points.CreateOrAdd(player, points.Value);
-        foreach (string partner in info.Arrangement.Partners)
-        {
-            _points.CreateOrAdd(partner, points.Value);
-        }
+        RegisterPoints(player, info.Arrangement, points.Value);
     }
 
     public bool UpdateList(List<PlayerListUpdateData> updateDatas)
@@ -113,13 +115,27 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         _turns.AddAll(data.Turns);
     }
 
-    private uint? GetPoints(string? tag, bool completedFully)
+    private ushort? GetPoints(string? tag, bool completedFully)
     {
         if (string.IsNullOrWhiteSpace(tag) || !_core.ActionOptions.ContainsKey(tag))
         {
             return null;
         }
         return completedFully ? _core.ActionOptions[tag].Points : _core.ActionOptions[tag].PartialPoints;
+    }
+
+    private void RegisterPoints(string player, Arrangement? arrangement, uint points)
+    {
+        _points.CreateOrAdd(player, points);
+
+        if (arrangement is null)
+        {
+            return;
+        }
+        foreach (string partner in arrangement.Partners)
+        {
+            _points.CreateOrAdd(partner, points);
+        }
     }
 
     private void RegisterPropositions(string player, Arrangement arrangement)
