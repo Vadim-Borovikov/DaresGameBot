@@ -279,13 +279,13 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
         else
         {
-            _state.Game.DrawAction(revealData.Tag);
+            _state.Game.ProcessCardRevealed(revealData.Tag);
             ActionData data = _state.Game.GetActionData();
             bool includePartial = _config.ActionOptions[revealData.Tag].PartialPoints.HasValue;
-            await RevealActionAsync(_state.Game.Players.Current, _state.Game.CurrentArrangement, data, includePartial,
-                _state.PlayerState.CardMessageId.Value, _playerChat, image);
-            await RevealActionAsync(_state.Game.Players.Current, _state.Game.CurrentArrangement, data, includePartial,
-                _state.AdminState.CardMessageId.Value, _adminChat, image);
+            await RevealActionAsync(_state.Game.Players.Current, _state.Game.CurrentArrangement, data, revealData.Tag,
+                includePartial, _state.PlayerState.CardMessageId.Value, _playerChat, image);
+            await RevealActionAsync(_state.Game.Players.Current, _state.Game.CurrentArrangement, data, revealData.Tag,
+                includePartial, _state.AdminState.CardMessageId.Value, _adminChat, image);
         }
 
         _saveManager.Save(_state);
@@ -386,12 +386,12 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
-    private Task RevealActionAsync(string player, Arrangement arrangement, ActionData data, bool includePartial,
-        int cardMessageId, Chat chat, string image)
+    private Task RevealActionAsync(string player, Arrangement arrangement, ActionData data, string tag,
+        bool includePartial, int cardMessageId, Chat chat, string image)
     {
         Texts texts = _textsProvider.GetTextsFor(chat.Id);
-        bool includeEn = _state.UserStates.ContainsKey(chat.Id) && _state.UserStates[chat.Id].IncludeEn;
-        Turn turn = new(texts, includeEn, data, player, arrangement);
+        string? descriptionEn = _state.ShouldIncludeEnFor(chat.Id) ? data.Descriprions[tag].en : null;
+        Turn turn = new(texts, tag, data.Descriprions[tag].ru, descriptionEn, player, arrangement);
         MessageTemplateText template = turn.GetMessage();
         template.KeyboardProvider = CreateActionKeyboard(includePartial, chat.Id);
         MessageTemplateImage templateImage = new(template, image);
@@ -433,27 +433,20 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     {
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
 
-        _decksLoadErrors.Clear();
+        string firstTag = _config.ActionOptions.MinBy(p => p.Value.Points).Key;
+        string secondTag = _config.ActionOptions.MaxBy(p => p.Value.Points).Key;
         _decksEquipment.Clear();
         await using (await StatusMessage.CreateAsync(_core.UpdateSender, _adminChat, texts.ReadingDecks,
                          texts.StatusMessageStartFormat, texts.StatusMessageEndFormat, GetDecksLoadStatus))
         {
             List<ActionData> actionsList = await _actionsSheet.LoadAsync<ActionData>(_config.ActionsRange);
 
-            HashSet<string> allTags = new();
-            Dictionary<int, HashSet<string>> tags = new();
             foreach (ActionData data in actionsList)
             {
                 data.ArrangementType = new ArrangementType(data.Partners, data.CompatablePartners);
 
-                int hash = data.ArrangementType.GetHashCode();
-                allTags.Add(data.Tag);
-
-                if (!tags.ContainsKey(hash))
-                {
-                    tags[hash] = new HashSet<string>();
-                }
-                tags[hash].Add(data.Tag);
+                data.Descriprions[firstTag] = (data.Description1, data.DescriptionEn1);
+                data.Descriprions[secondTag] = (data.Description2, data.DescriptionEn2);
 
                 if (data.Equipment is not null && (data.Equipment.Length > 0))
                 {
@@ -464,39 +457,12 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
                 }
             }
 
-            List<string> optionsTags = _config.ActionOptions.Keys.ToList();
-            if (allTags.SetEquals(optionsTags))
-            {
-                foreach (int hash in tags.Keys)
-                {
-                    if (allTags.SetEquals(tags[hash]))
-                    {
-                        continue;
-                    }
+            Dictionary<ushort, ActionData> actions = GetIndexDictionary(actionsList);
 
-                    ActionData data = actionsList.First(a => a.ArrangementType.GetHashCode() == hash);
-                    string line = string.Format(texts.WrongArrangementFormat, data.Partners,
-                        data.CompatablePartners, string.Join(texts.TagSeparator, tags[hash]));
-                    _decksLoadErrors.Add(line);
-                }
+            List<QuestionData> questionsList = await _questionsSheet.LoadAsync<QuestionData>(_config.QuestionsRange);
+            Dictionary<ushort, QuestionData> questions = GetIndexDictionary(questionsList);
 
-                if (_decksLoadErrors.Count == 0)
-                {
-                    Dictionary<ushort, ActionData> actions = GetIndexDictionary(actionsList);
-
-                    List<CardData> questionsList = await _questionsSheet.LoadAsync<CardData>(_config.QuestionsRange);
-                    Dictionary<ushort, CardData> questions = GetIndexDictionary(questionsList);
-
-                    _state.Core.SheetInfo = new SheetInfo(actions, questions);
-                }
-            }
-            else
-            {
-                string line = string.Format(texts.WrongTagsFormat,
-                    string.Join(texts.TagSeparator, allTags),
-                    string.Join(texts.TagSeparator, optionsTags));
-                _decksLoadErrors.Add(line);
-            }
+            _state.Core.SheetInfo = new SheetInfo(actions, questions);
         }
     }
 
@@ -513,21 +479,14 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     private MessageTemplateText GetDecksLoadStatus()
     {
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
-
-        if (_decksLoadErrors.Count == 0)
+        MessageTemplateText? equipmentPart = null;
+        if (_decksEquipment.Count > 0)
         {
-            MessageTemplateText? equipmentPart = null;
-            if (_decksEquipment.Count > 0)
-            {
-                string equipment =
-                    TextHelper.FormatAndJoin(_decksEquipment, texts.EquipmentFormat, texts.EquipmentSeparatorMessage);
-                equipmentPart = texts.EquipmentPrefixFormat.Format(equipment);
-            }
-            return texts.StatusMessageEndSuccessFormat.Format(equipmentPart);
+            string equipment =
+                TextHelper.FormatAndJoin(_decksEquipment, texts.EquipmentFormat, texts.EquipmentSeparatorMessage);
+            equipmentPart = texts.EquipmentPrefixFormat.Format(equipment);
         }
-
-        string errors = TextHelper.FormatAndJoin(_decksLoadErrors, texts.ErrorFormat, texts.ErrorsSeparator);
-        return texts.StatusMessageEndFailedFormat.Format(errors);
+        return texts.StatusMessageEndSuccessFormat.Format(equipmentPart);
     }
 
     private Task ReportUnknownToggleAsync(IEnumerable<string> names)
@@ -545,11 +504,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             throw new ArgumentNullException(nameof(_state.Core.SheetInfo));
         }
         Deck<ActionData> actionDeck = new(_state.Core.SheetInfo.Actions);
-        Deck<CardData> questionDeck = new(_state.Core.SheetInfo.Questions);
+        Deck<QuestionData> questionDeck = new(_state.Core.SheetInfo.Questions);
 
         PlayersRepository repository = new();
-        GameStatsStateCore gameStatsStateCore =
-            new(_state.Core.ActionOptions, _state.Core.QuestionPoints, _state.Core.SheetInfo.Actions, repository);
+        GameStatsStateCore gameStatsStateCore = new(_state.Core.ActionOptions, _state.Core.QuestionPoints, repository);
         GameStats gameStats = new(gameStatsStateCore);
 
         gameStats.UpdateList(updates);
@@ -563,7 +521,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
     private async Task DrawArrangementAsync(Game.States.Game game)
     {
-        game.DrawArrangement();
+        game.DrawAction();
         if (game.CurrentArrangement is null)
         {
             await DrawAndSendQuestionAsync(game);
@@ -603,14 +561,15 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     private Turn CreateQuestionTurn(Game.States.Game game, long userId)
     {
         Texts texts = _textsProvider.GetTextsFor(userId);
-        bool includeEn = _state.UserStates.ContainsKey(userId) && _state.UserStates[userId].IncludeEn;
-        CardData data = game.GetQuestionData();
+        QuestionData data = game.GetQuestionData();
         List<string> players = new() { game.Players.Current };
         if (game.CurrentArrangement is not null)
         {
             players.AddRange(game.CurrentArrangement.Partners);
         }
-        return new Turn(texts,  includeEn, texts.QuestionsTag, data, players);
+
+        string? descriptionEn = _state.ShouldIncludeEnFor(userId) ? data.DescriptionEn : null;
+        return new Turn(texts, texts.QuestionsTag, data.Description, descriptionEn, players);
     }
 
     private async Task ShowArrangementAsync(string player, Arrangement arrangement, Chat chat, string image)
@@ -863,7 +822,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     private readonly Sheet _actionsSheet;
     private readonly Sheet _questionsSheet;
     private readonly HashSet<string> _decksEquipment = new();
-    private readonly List<string> _decksLoadErrors = new();
     private readonly Chat _adminChat;
     private readonly Chat _playerChat;
     private readonly Manager _sheetsManager;

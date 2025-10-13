@@ -111,14 +111,6 @@ public class Texts : AbstractBot.Models.Config.Texts
 
     [Required]
     [MinLength(1)]
-    public string WrongTagsFormat { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
-    public string WrongArrangementFormat { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
     public MessageTemplateText PlayerFormatActive { get; init; } = null!;
     [Required]
     public MessageTemplateText PlayerFormatInactive { get; init; } = null!;
@@ -126,20 +118,11 @@ public class Texts : AbstractBot.Models.Config.Texts
     [Required]
     public MessageTemplateText StatusMessageEndSuccessFormat { get; init; } = null!;
     [Required]
-    public MessageTemplateText StatusMessageEndFailedFormat { get; init; } = null!;
-    [Required]
     public MessageTemplateText EquipmentPrefixFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
     public string TagSeparator { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
-    public string ErrorsSeparator { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string ErrorFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

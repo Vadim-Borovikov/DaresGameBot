@@ -6,9 +6,9 @@ namespace DaresGameBot;
 internal sealed class SheetInfo
 {
     public readonly Dictionary<ushort, ActionData> Actions;
-    public readonly Dictionary<ushort, CardData> Questions;
+    public readonly Dictionary<ushort, QuestionData> Questions;
 
-    public SheetInfo(Dictionary<ushort, ActionData> actions, Dictionary<ushort, CardData> questions)
+    public SheetInfo(Dictionary<ushort, ActionData> actions, Dictionary<ushort, QuestionData> questions)
     {
         Actions = actions;
         Questions = questions;

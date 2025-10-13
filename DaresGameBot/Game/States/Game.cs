@@ -34,12 +34,12 @@ internal sealed class Game : IStateful<GameData>
         string questionsVersion, SheetInfo sheetInfo)
     {
         _actionDeck = new Deck<ActionData>(sheetInfo.Actions);
-        _questionDeck = new Deck<CardData>(sheetInfo.Questions);
+        _questionDeck = new Deck<QuestionData>(sheetInfo.Questions);
         _actionsVersion = actionsVersion;
         _questionsVersion = questionsVersion;
         Players = new PlayersRepository();
 
-        GameStatsStateCore gameStatsStateCore = new(actionOptions, questionPoints, sheetInfo.Actions, Players);
+        GameStatsStateCore gameStatsStateCore = new(actionOptions, questionPoints, Players);
         Stats = new GameStats(gameStatsStateCore);
         GroupCompatibility compatibility = new();
         _matchmaker = new DistributedMatchmaker(Players, Stats, compatibility);
@@ -54,7 +54,7 @@ internal sealed class Game : IStateful<GameData>
         _currentCardId = null;
     }
 
-    public Game(Deck<ActionData> actionsDeck, Deck<CardData> questionsDeck, string actionsVersion,
+    public Game(Deck<ActionData> actionsDeck, Deck<QuestionData> questionsDeck, string actionsVersion,
         string questionsVersion, PlayersRepository players, GameStats stats, Matchmaker matchmaker,
         State? currentState = null)
     {
@@ -75,22 +75,11 @@ internal sealed class Game : IStateful<GameData>
     }
 
     public ActionData GetActionData() => _actionDeck.GetCard(_currentCardId!.Value);
-    public CardData GetQuestionData() => _questionDeck.GetCard(_currentCardId!.Value);
+    public QuestionData GetQuestionData() => _questionDeck.GetCard(_currentCardId!.Value);
 
     public bool IsCurrentArrangementValid()
     {
         return CurrentArrangement is not null && _matchmaker.CanBePlayed(CurrentArrangement);
-    }
-
-    public void DrawArrangement()
-    {
-        ArrangementType? arrangementType = SelectArrangementType();
-        if (arrangementType is null)
-        {
-            return;
-        }
-        CurrentArrangement = _matchmaker.SelectCompanionsFor(arrangementType.Value);
-        CurrentState = State.ArrangementPurposed;
     }
 
     public void DrawQuestion()
@@ -104,26 +93,17 @@ internal sealed class Game : IStateful<GameData>
         CurrentState = State.CardRevealed;
     }
 
-    public void DrawAction(string tag)
+    public void ProcessCardRevealed(string tag)
     {
-        List<ushort> ids = _actionDeck.GetIds(c => (c.Tag == tag)
-                                                   && (c.ArrangementType == CurrentArrangement!.GetArrangementType()))
-                                      .ToList();
-        if (!ids.Any())
-        {
-            throw new Exception("No suitable cards found");
-        }
-
-        if (!_revealedActionIds.ContainsKey(tag) || !ids.Contains(_revealedActionIds[tag]))
-        {
-            _revealedActionIds[tag] = _actionDeck.FilterMinUses(ids).RandomItem();
-        }
-        _currentCardId = _revealedActionIds[tag];
-
+        _currentCardTag = tag;
         CurrentState = State.CardRevealed;
     }
 
-    public void ProcessCardUnrevealed() => CurrentState = State.ArrangementPurposed;
+    public void ProcessCardUnrevealed()
+    {
+        _currentCardTag = null;
+        CurrentState = State.ArrangementPurposed;
+    }
 
     public void CompleteQuestion()
     {
@@ -158,8 +138,8 @@ internal sealed class Game : IStateful<GameData>
             CurrentState = CurrentState?.ToString(),
             CurrentArrangementData = CurrentArrangement?.Save(),
             CurrentCardId = _currentCardId,
-            RevealedQuestionId = _revealedQuestionId,
-            RevealedActionIds = _revealedActionIds
+            CurrentCardTag = _currentCardTag,
+            RevealedQuestionId = _revealedQuestionId
         };
     }
 
@@ -193,53 +173,28 @@ internal sealed class Game : IStateful<GameData>
         CurrentArrangement.LoadFrom(data.CurrentArrangementData);
 
         _currentCardId = data.CurrentCardId;
+        _currentCardTag = data.CurrentCardTag;
         _revealedQuestionId = data.RevealedQuestionId;
-
-        _revealedActionIds.Clear();
-        _revealedActionIds.AddAll(data.RevealedActionIds);
     }
 
     private void StartNewTurn()
     {
         _revealedQuestionId = null;
-        _revealedActionIds.Clear();
         Players.MoveNext();
     }
 
-    private ArrangementType? SelectArrangementType()
+    public void DrawAction()
     {
-        IEnumerable<ushort> playableIds = _actionDeck.GetIds(c => _matchmaker.CanPlay(c.ArrangementType));
-
-        Dictionary<ArrangementType, Dictionary<string, ushort>> types = new();
-        HashSet<string> tags = new(Stats.ActionTags);
-        foreach (IGrouping<uint, ushort> group in _actionDeck.GroupByUses(playableIds))
+        List<ushort> playableIds = _actionDeck.GetIds(c => _matchmaker.CanPlay(c.ArrangementType)).ToList();
+        _currentCardId = playableIds.Count == 0 ? null : _actionDeck.FilterMinUses(playableIds).RandomItem();
+        if (_currentCardId is null)
         {
-            foreach (ActionData actionData in group.Select(_actionDeck.GetCard))
-            {
-                if (!types.ContainsKey(actionData.ArrangementType))
-                {
-                    types[actionData.ArrangementType] = new Dictionary<string, ushort>();
-                }
-
-                if (types[actionData.ArrangementType].ContainsKey(actionData.Tag))
-                {
-                    ++types[actionData.ArrangementType][actionData.Tag];
-                }
-                else
-                {
-                    types[actionData.ArrangementType][actionData.Tag] = 1;
-                }
-            }
-
-            Dictionary<ArrangementType, ushort> fullTypes = types.Keys
-                                                                 .Where(t => tags.SetEquals(types[t].Keys))
-                                                                 .ToDictionary(t => t, t => types[t].Values.Min());
-            if (fullTypes.Any())
-            {
-                return fullTypes.RandomItemWeighted();
-            }
+            return;
         }
-        return null;
+
+        ActionData data = GetActionData();
+        CurrentArrangement = _matchmaker.SelectCompanionsFor(data.ArrangementType);
+        CurrentState = State.ArrangementPurposed;
     }
 
     private void OnQuestionCompleted()
@@ -256,22 +211,24 @@ internal sealed class Game : IStateful<GameData>
         {
             throw new NullReferenceException("Current arrangement is null");
         }
-        ActionInfo info = new(_currentCardId!.Value, CurrentArrangement);
 
+        if (_currentCardTag is null)
+        {
+            throw new NullReferenceException("Current tag is null");
+        }
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnActionCompleted(Players.Current, info, fully);
+            subscriber.OnActionCompleted(Players.Current, CurrentArrangement, _currentCardTag, fully);
         }
     }
 
     private readonly Deck<ActionData> _actionDeck;
-    private readonly Deck<CardData> _questionDeck;
+    private readonly Deck<QuestionData> _questionDeck;
     private readonly string _actionsVersion;
     private readonly string _questionsVersion;
     private readonly List<IInteractionSubscriber> _interactionSubscribers;
     private readonly Matchmaker _matchmaker;
     private ushort? _currentCardId;
+    private string? _currentCardTag;
     private ushort? _revealedQuestionId;
-
-    private readonly Dictionary<string, ushort> _revealedActionIds = new();
 }

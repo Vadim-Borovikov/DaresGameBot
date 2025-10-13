@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using AbstractBot.Models.MessageTemplates;
 using DaresGameBot.Configs;
-using DaresGameBot.Game.Data;
 using DaresGameBot.Game.States;
 using GryphonUtilities.Extensions;
 
@@ -9,26 +8,26 @@ namespace DaresGameBot.Game;
 
 internal sealed class Turn
 {
-    public Turn(Texts texts, bool includeEn, ActionData actionData, string player, Arrangement arrangement)
-        : this(texts, includeEn, actionData.Tag, actionData, player.Yield(), arrangement)
+    public Turn(Texts texts, string tag, string description, string? descriptionEn, string player,
+        Arrangement arrangement)
+        : this(texts, tag, description, descriptionEn, player.Yield(), arrangement)
     {}
 
-    public Turn(Texts texts, bool includeEn, string tag, CardData cardData, IEnumerable<string> players,
+    public Turn(Texts texts, string tag, string description, string? descriptionEn, IEnumerable<string> players,
         Arrangement? arrangement = null)
     {
         _texts = texts;
-        _includeEn = includeEn;
         _players = players;
         _arrangement = arrangement;
         _tagPart = new MessageTemplateText(tag);
-        _descriprionRuPart = new MessageTemplateText(cardData.Description);
-        _descriprionEnPart = new MessageTemplateText(cardData.DescriptionEn);
+        _descriprionRuPart = new MessageTemplateText(description);
+        _descriprionEnPart = descriptionEn is null ? null : new MessageTemplateText(descriptionEn);
     }
 
     public MessageTemplateText GetMessage()
     {
         MessageTemplateText descriprionPart = _descriprionRuPart;
-        if (_includeEn && _descriprionEnPart is not null)
+        if (IncludeEn)
         {
             descriprionPart = _texts.TurnDescriptionRuEnFormat.Format(_descriprionRuPart, _descriprionEnPart);
         }
@@ -60,5 +59,6 @@ internal sealed class Turn
     private readonly IEnumerable<string> _players;
     private readonly Arrangement? _arrangement;
     private readonly Texts _texts;
-    private readonly bool _includeEn;
+
+    private bool IncludeEn => _descriprionEnPart is not null;
 }

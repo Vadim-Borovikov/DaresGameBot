@@ -25,13 +25,12 @@ public sealed class GameData
 
     [UsedImplicitly]
     public ushort? CurrentCardId { get; set; }
+    [UsedImplicitly]
+    public string? CurrentCardTag { get; set; }
 
 
     [UsedImplicitly]
     public ushort? RevealedQuestionId { get; set; }
-
-    [UsedImplicitly]
-    public Dictionary<string, ushort> RevealedActionIds { get; set; } = null!;
 
     [UsedImplicitly]
     public string? ActionsVersion { get; set; }

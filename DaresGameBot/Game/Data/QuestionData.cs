@@ -6,7 +6,7 @@ namespace DaresGameBot.Game.Data;
 
 // ReSharper disable NullableWarningSuppressionIsUsed
 
-internal class CardData
+internal sealed class QuestionData
 {
     [UsedImplicitly]
     [Required]

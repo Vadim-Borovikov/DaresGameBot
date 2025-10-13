@@ -15,11 +15,6 @@ internal sealed class Deck<T> : IStateful<Dictionary<ushort, uint>>
 
     public bool CheckCard(ushort id) => _cards.ContainsKey(id);
 
-    public IEnumerable<IGrouping<uint, ushort>> GroupByUses(IEnumerable<ushort> ids)
-    {
-        return ids.GroupBy(_uses.GetValueOrDefault);
-    }
-
     public IEnumerable<ushort> GetIds(Func<T, bool>? predicate = null)
     {
         return predicate is null ? _cards.Keys : _cards.Keys.Where(id => predicate.Invoke(_cards[id]));
