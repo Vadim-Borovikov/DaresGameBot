@@ -133,6 +133,9 @@ public class Texts : AbstractBot.Models.Config.Texts
     [Required]
     [MinLength(1)]
     public string EquipmentSeparatorSheet { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string LetsGo { get; init; } = null!;
 
     [Required]
     public MessageTemplateText UnknownToggleFormat { get; init; } = null!;

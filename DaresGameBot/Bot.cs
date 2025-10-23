@@ -135,6 +135,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
         _core.UpdateReceiver.Operations.Add(new CompleteCard(this));
         _core.UpdateReceiver.Operations.Add(new ConfirmEnd(this));
+        _core.UpdateReceiver.Operations.Add(new DrawFirstCard(this));
 
         await Commands.UpdateForAll(cancellationToken);
     }
@@ -152,7 +153,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     }
 
     internal bool CanBeUpdated() => _state.Game is null
-                                    || (_state.Game.CurrentState == Game.States.Game.State.ArrangementPurposed);
+                                    || (_state.Game.CurrentState != Game.States.Game.State.CardRevealed);
 
     internal async Task UpdatePlayersAsync(List<PlayerListUpdateData> updates)
     {
@@ -175,8 +176,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
             _state.PlayersMessageId = null;
             await ReportAndPinPlayersAsync(_state.Game);
-
-            await DrawArrangementAsync(_state.Game);
         }
         else
         {
@@ -200,7 +199,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
             await adminTexts.Accepted.SendAsync(_core.UpdateSender, _adminChat);
 
-            if ((_state.Game.Players.Current != currentPlayer) || !_state.Game.IsCurrentArrangementValid())
+            if ((_state.Game.CurrentState != Game.States.Game.State.Fresh)
+                && ((_state.Game.Players.Current != currentPlayer) || !_state.Game.IsCurrentArrangementValid()))
             {
                 await DrawArrangementAsync(_state.Game);
             }
@@ -363,6 +363,18 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
 
         return ReportAndPinPlayersAsync(_state.Game);
+    }
+
+    internal async Task DrawFirstCardAsync()
+    {
+        if (_state.Game is null)
+        {
+            await StartNewGameAsync();
+            return;
+        }
+
+        await DrawArrangementAsync(_state.Game);
+        await ReportAndPinPlayersAsync(_state.Game);
     }
 
     private string GetArrangementImage(Arrangement? arrangement = null, RevealCardData? revealData = null)
@@ -661,6 +673,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     {
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
 
+        bool includeStartButton = game.CurrentState == Game.States.Game.State.Fresh;
+
         List<(string Name, bool Active)> players = game.Players.GetAllNamesWithStatus().ToList();
         List<MessageTemplateText> playerLines = new();
         bool areThereInactivePlayers = false;
@@ -683,8 +697,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         MessageTemplateText messageText = texts.PlayersFormat.Format(allLines);
 
-        messageText.KeyboardProvider =
-            areThereInactivePlayers ? CreateToggleInactivePlayersKeyboard(texts) : InlineKeyboardMarkup.Empty();
+        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, includeStartButton, areThereInactivePlayers);
 
         if (_state.PlayersMessageId is null)
         {
@@ -790,15 +803,25 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return CreateOneButtonRow<CompleteCard>(caption, fully);
     }
 
-    private InlineKeyboardMarkup CreateToggleInactivePlayersKeyboard(Texts texts)
+    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, bool includeStartButton,
+        bool includeInactivePlayers)
     {
-        List<List<InlineKeyboardButton>> keyboard = new()
-        {
-            CreateOneButtonRow<ToggleInactivePlayers>(
-                _state.InactivePlayersVisible ? texts.HideInactive : texts.ShowInactive)
-        };
+        List<List<InlineKeyboardButton>> keyboard = new();
 
-        return new InlineKeyboardMarkup(keyboard);
+        if (includeStartButton)
+        {
+            List<InlineKeyboardButton> row = CreateOneButtonRow<DrawFirstCard>(texts.LetsGo);
+            keyboard.Add(row);
+        }
+
+        if (includeInactivePlayers)
+        {
+            List<InlineKeyboardButton> row = CreateOneButtonRow<ToggleInactivePlayers>(
+                _state.InactivePlayersVisible ? texts.HideInactive : texts.ShowInactive);
+            keyboard.Add(row);
+        }
+
+        return keyboard.Count == 0 ? InlineKeyboardMarkup.Empty() : new InlineKeyboardMarkup(keyboard);
     }
 
     private static List<InlineKeyboardButton> CreateOneButtonRow<TData>(string caption, params object[] args)

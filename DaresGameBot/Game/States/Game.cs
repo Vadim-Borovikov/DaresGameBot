@@ -19,6 +19,7 @@ internal sealed class Game : IStateful<GameData>
 {
     public enum State
     {
+        Fresh,
         ArrangementPurposed,
         CardRevealed
     }
@@ -49,14 +50,14 @@ internal sealed class Game : IStateful<GameData>
             Stats
         };
 
-        CurrentState = null;
+        CurrentState = State.Fresh;
         CurrentArrangement = null;
         _currentCardId = null;
     }
 
     public Game(Deck<ActionData> actionsDeck, Deck<QuestionData> questionsDeck, string actionsVersion,
         string questionsVersion, PlayersRepository players, GameStats stats, Matchmaker matchmaker,
-        State? currentState = null)
+        State? currentState = State.Fresh)
     {
         _actionDeck = actionsDeck;
         _questionDeck = questionsDeck;
