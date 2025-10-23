@@ -617,7 +617,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     {
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
         Dictionary<string, float> ratios = new();
-        foreach (string player in game.Players.GetActiveNames())
+        foreach (string player in game.Players.AllNames)
         {
             float? rate = game.Stats.GetRatio(player);
             if (rate is not null)
@@ -643,7 +643,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             string rate = ratios[player].ToString("0.##");
             uint turns = game.Stats.GetTurns(player);
 
-            MessageTemplateText line = texts.RateFormat.Format(player, points, propositions, rate, turns);
+            MessageTemplateText format = game.Players.IsActive(player) ? texts.RateFormat : texts.RateFormatHidden;
+            MessageTemplateText line = format.Format(player, points, propositions, rate, turns);
             if (Math.Abs(ratios[player] - bestRate) < float.Epsilon)
             {
                 line = texts.BestRateFormat.Format(line);

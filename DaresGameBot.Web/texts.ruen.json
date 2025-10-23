@@ -270,6 +270,12 @@
     ],
     "MarkdownV2": true
   },
+  "RateFormatHidden": {
+    "Text": [
+      "||{0}: {3}✩, {4}↻ {1}✧ / {2}↑||"
+    ],
+    "MarkdownV2": true
+  },
 
   "WrongTagsFormat": "Колоды ({0}) не соответствуют настройкам ({1}).",
   "WrongArrangementFormat": "Карточки с ({0} {1}) есть только в ({2})."

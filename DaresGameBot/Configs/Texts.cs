@@ -158,6 +158,8 @@ public class Texts : AbstractBot.Models.Config.Texts
     public MessageTemplateText BestRateFormat { get; init; } = null!;
     [Required]
     public MessageTemplateText RateFormat { get; init; } = null!;
+    [Required]
+    public MessageTemplateText RateFormatHidden { get; init; } = null!;
 
     [Required]
     public MessageTemplateText CompletedCardFormat { get; init; } = null!;

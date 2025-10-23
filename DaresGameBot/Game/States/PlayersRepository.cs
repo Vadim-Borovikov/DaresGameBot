@@ -130,6 +130,8 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         _currentIndex = data.CurrentIndex;
     }
 
+    public bool IsActive(string name) => _infos.ContainsKey(name) && _infos[name].Active;
+
     public bool IsIntercompatable(IReadOnlyList<string> group, ICompatibility compatibility)
     {
         return ListHelper.EnumeratePairs(group).All(pair => AreCompatable(pair, compatibility));
