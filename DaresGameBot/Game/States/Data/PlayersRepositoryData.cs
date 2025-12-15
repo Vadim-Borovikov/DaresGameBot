@@ -8,7 +8,7 @@ namespace DaresGameBot.Game.States.Data;
 public sealed class PlayersRepositoryData
 {
     [UsedImplicitly]
-    public List<string> Names { get; init; } = null!;
+    public List<string> Ids { get; init; } = null!;
     [UsedImplicitly]
     public Dictionary<string, PlayerData> Infos { get; init; } = null!;
     [UsedImplicitly]

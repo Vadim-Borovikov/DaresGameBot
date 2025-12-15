@@ -45,13 +45,13 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         RegisterPoints(player, arrangement, points.Value);
     }
 
-    public bool UpdateList(List<AddOrUpdatePlayerData> updateDatas)
+    public bool UpdateList(List<AddOrUpdatePlayerData> updateDatas, string handlerSeparator)
     {
         bool changed = false;
 
         foreach (AddOrUpdatePlayerData data in updateDatas)
         {
-            changed |= _core.Players.AddOrUpdatePlayerData(data);
+            changed |= _core.Players.AddOrUpdatePlayerData(data, handlerSeparator);
         }
 
         return changed;
@@ -159,7 +159,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
 
     private void RegisterTurn()
     {
-        foreach (string player in _core.Players.GetActiveNames())
+        foreach (string player in _core.Players.GetActiveIds())
         {
             _turns.CreateOrAdd(player, 1);
         }

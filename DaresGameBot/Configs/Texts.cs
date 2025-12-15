@@ -77,6 +77,10 @@ public class Texts : AbstractBot.Models.Config.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
+    public string UpdatePlayerSeparator { get; init; } = null!;
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
     public string UpdateGroupsSeparator { get; init; } = null!;
 
     [UsedImplicitly]

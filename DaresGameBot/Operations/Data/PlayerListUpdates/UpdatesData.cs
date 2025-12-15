@@ -28,7 +28,18 @@ internal sealed class UpdatesData
             string[] groups = parts[2].Split(texts.UpdateGroupsSeparator);
             HashSet<string> compatableGroups = new(groups);
             GroupsInfo info = new(group, compatableGroups);
-            AddOrUpdatePlayerData data = new(player, info);
+
+            string[] playerParts = player.Split(texts.UpdatePlayerSeparator);
+            string? handler = null;
+            switch (playerParts.Length)
+            {
+                case 0 or > 2: return null;
+                case 2 :
+                    handler = playerParts[1];
+                    break;
+            }
+            string name = playerParts[0];
+            AddOrUpdatePlayerData data = new(name, handler, info);
 
             datas.Add(data);
         }

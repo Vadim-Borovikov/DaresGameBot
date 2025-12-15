@@ -18,7 +18,7 @@ internal abstract class Matchmaker
 
     public bool CanPlay(ArrangementType arrangementType)
     {
-        if (arrangementType.Partners >= Players.GetActiveNames().Count())
+        if (arrangementType.Partners >= Players.GetActiveIds().Count())
         {
             return false;
         }
@@ -46,7 +46,7 @@ internal abstract class Matchmaker
 
     protected IEnumerable<string> EnumerateCompatablePlayers()
     {
-        return Players.GetActiveNames().Where(p => Players.AreCompatable(p, Players.Current, _compatibility));
+        return Players.GetActiveIds().Where(p => Players.AreCompatable(p, Players.Current, _compatibility));
     }
 
     protected IEnumerable<IReadOnlyList<string>> EnumerateIntercompatableGroups(IList<string> choices, byte size)
