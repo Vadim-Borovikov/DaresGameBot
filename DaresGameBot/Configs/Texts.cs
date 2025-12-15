@@ -132,10 +132,6 @@ public class Texts : AbstractBot.Models.Config.Texts
 
     [Required]
     [MinLength(1)]
-    public string TagSeparator { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
     public string EquipmentFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]

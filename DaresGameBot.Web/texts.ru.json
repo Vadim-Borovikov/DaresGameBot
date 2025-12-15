@@ -99,8 +99,6 @@
   "EquipmentSeparatorMessage": "\n",
   "EquipmentSeparatorSheet": ", ",
 
-  "TagSeparator": " ",
-
   "PlayerFormatActive": {
     "Text": [
       "{0}\\. `{1}`"
