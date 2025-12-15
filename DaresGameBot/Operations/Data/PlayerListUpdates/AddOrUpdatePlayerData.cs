@@ -2,9 +2,14 @@
 
 namespace DaresGameBot.Operations.Data.PlayerListUpdates;
 
-internal sealed class AddOrUpdatePlayerData : PlayerListUpdateData
+internal sealed class AddOrUpdatePlayerData
 {
+    public readonly string Name;
     public readonly GroupsInfo Info;
 
-    public AddOrUpdatePlayerData(string name, GroupsInfo info, byte? index = null) : base(name, index) => Info = info;
+    public AddOrUpdatePlayerData(string name, GroupsInfo info)
+    {
+        Name = name;
+        Info = info;
+    }
 }

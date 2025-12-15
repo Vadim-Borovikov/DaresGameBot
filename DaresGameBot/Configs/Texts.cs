@@ -103,6 +103,16 @@ public class Texts : AbstractBot.Models.Config.Texts
 
     [Required]
     [MinLength(1)]
+    public string ActivePlayerFormat { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string InactivePlayerFormat { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string MovePlayerDownFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
     public string Completed { get; init; } = null!;
 
     [Required]
@@ -136,9 +146,6 @@ public class Texts : AbstractBot.Models.Config.Texts
     [Required]
     [MinLength(1)]
     public string LetsGo { get; init; } = null!;
-
-    [Required]
-    public MessageTemplateText UnknownToggleFormat { get; init; } = null!;
 
     [Required]
     public MessageTemplateText NothingChanges { get; init; } = null!;

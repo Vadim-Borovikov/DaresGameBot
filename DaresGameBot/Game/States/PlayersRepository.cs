@@ -3,7 +3,6 @@ using DaresGameBot.Game.States.Data;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 using DaresGameBot.Utilities;
 using GryphonUtilities.Save;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -55,46 +54,63 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
             changed = true;
         }
 
-        if (_names.Contains(a.Name))
+        if (!_names.Contains(a.Name))
         {
-            if (a.Index.HasValue)
-            {
-                changed |= MoveTo(a.Name, a.Index.Value);
-            }
-        }
-        else
-        {
-            int index = a.Index.HasValue ? Math.Min(a.Index.Value, _names.Count) : _names.Count;
-            _names.Insert(index, a.Name);
+            _names.Add(a.Name);
         }
 
         return changed;
     }
 
-    public bool TogglePlayerData(TogglePlayerData data)
+    public bool Toggle(string name)
     {
-        if (!_infos.ContainsKey(data.Name))
+        if (!_infos.ContainsKey(name))
         {
             return false;
         }
 
-        if (data.Index.HasValue)
+        if (_infos[name].Active)
         {
-            MoveTo(data.Name, data.Index.Value);
-        }
-
-        if (_infos[data.Name].Active)
-        {
-            _infos[data.Name].Active = false;
-            if (Current == data.Name)
+            _infos[name].Active = false;
+            if (Current == name)
             {
                 MoveNext();
             }
         }
         else
         {
-            _infos[data.Name].Active = true;
+            _infos[name].Active = true;
         }
+
+        return true;
+    }
+
+    public bool MoveDown(string name)
+    {
+        List<string> activeNames = GetActiveNames().ToList();
+        if ((activeNames.Count < 2) || !activeNames.Contains(name))
+        {
+            return false;
+        }
+
+        string currentPlayer = Current;
+
+        int oldIndex = _names.IndexOf(name);
+
+        while (true)
+        {
+            int newIndex = (oldIndex + 1) % _names.Count;
+            _names[oldIndex] = _names[newIndex];
+            _names[newIndex] = name;
+
+            if (_infos[_names[oldIndex]].Active)
+            {
+                break;
+            }
+            oldIndex = newIndex;
+        }
+
+        _currentIndex = _names.IndexOf(currentPlayer);
 
         return true;
     }
@@ -150,26 +166,6 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     private bool AreCompatable((string, string) pair, ICompatibility compatibility)
     {
         return AreCompatable(pair.Item1, pair.Item2, compatibility);
-    }
-
-    private bool MoveTo(string name, byte index)
-    {
-        int newIndex = Math.Min(index, _names.Count);
-        if (newIndex == _names.IndexOf(name))
-        {
-            return false;
-        }
-
-        string currentPlayer = Current;
-
-        _names.Insert(newIndex, name);
-
-        int firstIndex = _names.IndexOf(name);
-        int lastIndex = _names.LastIndexOf(name);
-        _names.RemoveAt(firstIndex == newIndex ? lastIndex : firstIndex);
-
-        _currentIndex = _names.IndexOf(currentPlayer);
-        return true;
     }
 
     private readonly List<string> _names = new();

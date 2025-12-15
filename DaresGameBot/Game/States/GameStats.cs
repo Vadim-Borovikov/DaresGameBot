@@ -45,21 +45,13 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         RegisterPoints(player, arrangement, points.Value);
     }
 
-    public bool UpdateList(List<PlayerListUpdateData> updateDatas)
+    public bool UpdateList(List<AddOrUpdatePlayerData> updateDatas)
     {
         bool changed = false;
 
-        foreach (PlayerListUpdateData data in updateDatas)
+        foreach (AddOrUpdatePlayerData data in updateDatas)
         {
-            switch (data)
-            {
-                case AddOrUpdatePlayerData a:
-                    changed |= _core.Players.AddOrUpdatePlayerData(a);
-                    break;
-                case TogglePlayerData t:
-                    changed |= _core.Players.TogglePlayerData(t);
-                    break;
-            }
+            changed |= _core.Players.AddOrUpdatePlayerData(data);
         }
 
         return changed;
