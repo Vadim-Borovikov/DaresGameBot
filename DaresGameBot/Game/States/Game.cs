@@ -52,7 +52,8 @@ internal sealed class Game : IStateful<GameData>
 
         CurrentState = State.Fresh;
         CurrentArrangement = null;
-        _currentCardId = null;
+        _currentActionId = null;
+        _currentQuestionId = null;
     }
 
     public Game(Deck<ActionData> actionsDeck, Deck<QuestionData> questionsDeck, string actionsVersion,
@@ -75,8 +76,8 @@ internal sealed class Game : IStateful<GameData>
         CurrentState = currentState;
     }
 
-    public ActionData GetActionData() => _actionDeck.GetCard(_currentCardId!.Value);
-    public QuestionData GetQuestionData() => _questionDeck.GetCard(_currentCardId!.Value);
+    public ActionData GetActionData() => _actionDeck.GetCard(_currentActionId!.Value);
+    public QuestionData GetQuestionData() => _questionDeck.GetCard(_currentQuestionId!.Value);
 
     public bool IsCurrentArrangementValid()
     {
@@ -85,11 +86,10 @@ internal sealed class Game : IStateful<GameData>
 
     public void DrawQuestion()
     {
-        if (_revealedQuestionId is null || !_questionDeck.CheckCard(_revealedQuestionId.Value))
+        if (_currentQuestionId is null || !_questionDeck.CheckCard(_currentQuestionId.Value))
         {
-            _revealedQuestionId = _questionDeck.FilterMinUses().RandomItem();
+            _currentQuestionId = _questionDeck.FilterMinUses().RandomItem();
         }
-        _currentCardId = _revealedQuestionId;
 
         CurrentState = State.CardRevealed;
     }
@@ -108,7 +108,7 @@ internal sealed class Game : IStateful<GameData>
 
     public void CompleteQuestion()
     {
-        _questionDeck.Mark(_currentCardId!.Value);
+        _questionDeck.Mark(_currentQuestionId!.Value);
 
         OnQuestionCompleted();
 
@@ -117,7 +117,7 @@ internal sealed class Game : IStateful<GameData>
 
     public void CompleteAction(bool fully)
     {
-        _actionDeck.Mark(_currentCardId!.Value);
+        _actionDeck.Mark(_currentActionId!.Value);
 
         OnActionCompleted(fully);
 
@@ -141,9 +141,9 @@ internal sealed class Game : IStateful<GameData>
             GameStatsData = Stats.Save(),
             CurrentState = CurrentState?.ToString(),
             CurrentArrangementData = CurrentArrangement?.Save(),
-            CurrentCardId = _currentCardId,
             CurrentCardTag = _currentCardTag,
-            RevealedQuestionId = _revealedQuestionId
+            CurrentActionId = _currentActionId,
+            CurrentQuestionId = _currentQuestionId
         };
     }
 
@@ -176,22 +176,23 @@ internal sealed class Game : IStateful<GameData>
         CurrentArrangement = new Arrangement();
         CurrentArrangement.LoadFrom(data.CurrentArrangementData);
 
-        _currentCardId = data.CurrentCardId;
         _currentCardTag = data.CurrentCardTag;
-        _revealedQuestionId = data.RevealedQuestionId;
+        _currentActionId = data.CurrentActionId;
+        _currentQuestionId = data.CurrentQuestionId;
     }
 
     private void StartNewTurn()
     {
-        _revealedQuestionId = null;
+        _currentActionId = null;
+        _currentQuestionId = null;
         Players.MoveNext();
     }
 
     public void DrawAction()
     {
         List<ushort> playableIds = _actionDeck.GetIds(c => _matchmaker.CanPlay(c.ArrangementType)).ToList();
-        _currentCardId = playableIds.Count == 0 ? null : _actionDeck.FilterMinUses(playableIds).RandomItem();
-        if (_currentCardId is null)
+        _currentActionId = playableIds.Count == 0 ? null : _actionDeck.FilterMinUses(playableIds).RandomItem();
+        if (_currentActionId is null)
         {
             return;
         }
@@ -232,7 +233,7 @@ internal sealed class Game : IStateful<GameData>
     private readonly string _questionsVersion;
     private readonly List<IInteractionSubscriber> _interactionSubscribers;
     private readonly Matchmaker _matchmaker;
-    private ushort? _currentCardId;
     private string? _currentCardTag;
-    private ushort? _revealedQuestionId;
+    private ushort? _currentActionId;
+    private ushort? _currentQuestionId;
 }

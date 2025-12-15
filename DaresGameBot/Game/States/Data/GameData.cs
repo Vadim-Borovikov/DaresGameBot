@@ -24,13 +24,12 @@ public sealed class GameData
     public ArrangementData? CurrentArrangementData { get; set; }
 
     [UsedImplicitly]
-    public ushort? CurrentCardId { get; set; }
-    [UsedImplicitly]
     public string? CurrentCardTag { get; set; }
 
-
     [UsedImplicitly]
-    public ushort? RevealedQuestionId { get; set; }
+    public ushort? CurrentActionId { get; set; }
+    [UsedImplicitly]
+    public ushort? CurrentQuestionId { get; set; }
 
     [UsedImplicitly]
     public string? ActionsVersion { get; set; }
