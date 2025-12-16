@@ -113,7 +113,7 @@ public class Texts : AbstractBot.Models.Config.Texts
     public string InactivePlayerFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]
-    public string MovePlayerDownFormat { get; init; } = null!;
+    public string MovePlayerToTopFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

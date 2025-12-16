@@ -132,7 +132,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new UpdatePlayers(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new ToggleInactivePlayers(this));
         _core.UpdateReceiver.Operations.Add(new TogglePlayer(this));
-        _core.UpdateReceiver.Operations.Add(new MovePlayerDown(this));
+        _core.UpdateReceiver.Operations.Add(new MovePlayerToTop(this));
         _core.UpdateReceiver.Operations.Add(new RevealCard(this));
         _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
         _core.UpdateReceiver.Operations.Add(new CompleteCard(this));
@@ -224,7 +224,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    internal async Task MovePlayerDown(string name)
+    internal async Task MovePlayerToTop(string id)
     {
         if (_state.Game is null)
         {
@@ -232,7 +232,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        bool moved = _state.Game.Players.MoveDown(name);
+        bool moved = _state.Game.Players.MoveToTop(id);
         if (!moved)
         {
             return;
@@ -857,11 +857,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
         else
         {
-            foreach (string name in players.Where(p => p.Active).Select(p => p.Id))
+            foreach (string id in players.Where(p => p.Active).Select(p => p.Id))
             {
-                string format = texts.MovePlayerDownFormat;
                 List<InlineKeyboardButton> playerRow =
-                    CreateOneButtonRow<MovePlayerDown>(string.Format(format, name), name);
+                    CreateOneButtonRow<MovePlayerToTop>(string.Format(texts.MovePlayerToTopFormat, id), id);
                 keyboard.Add(playerRow);
             }
         }

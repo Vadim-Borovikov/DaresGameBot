@@ -145,7 +145,7 @@
 
   "ActivePlayerFormat": "✔️ {0}",
   "InactivePlayerFormat": "❌ {0}",
-  "MovePlayerDownFormat": "🔽 {0}",
+  "MovePlayerToTopFormat": "⏫ {0}",
 
   "Completed": "✅",
 
