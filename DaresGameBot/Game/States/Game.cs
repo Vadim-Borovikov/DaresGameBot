@@ -27,7 +27,7 @@ internal sealed class Game : IStateful<GameData>
     public readonly PlayersRepository Players;
     public readonly GameStats Stats;
 
-    public State? CurrentState { get; private set; }
+    public State CurrentState { get; private set; }
 
     public Arrangement? CurrentArrangement { get; private set; }
 
@@ -58,7 +58,7 @@ internal sealed class Game : IStateful<GameData>
 
     public Game(Deck<ActionData> actionsDeck, Deck<QuestionData> questionsDeck, string actionsVersion,
         string questionsVersion, PlayersRepository players, GameStats stats, Matchmaker matchmaker,
-        State? currentState = State.Fresh)
+        State currentState = State.Fresh)
     {
         _actionDeck = actionsDeck;
         _questionDeck = questionsDeck;
@@ -139,7 +139,7 @@ internal sealed class Game : IStateful<GameData>
             QuestionsVersion = _questionsVersion,
             PlayersRepositoryData = Players.Save(),
             GameStatsData = Stats.Save(),
-            CurrentState = CurrentState?.ToString(),
+            CurrentState = CurrentState.ToString(),
             CurrentArrangementData = CurrentArrangement?.Save(),
             CurrentCardTag = _currentCardTag,
             CurrentActionId = _currentActionId,
@@ -166,7 +166,7 @@ internal sealed class Game : IStateful<GameData>
 
         Stats.LoadFrom(data.GameStatsData);
 
-        CurrentState = data.CurrentState?.ToState();
+        CurrentState = data.CurrentState?.ToState() ?? State.Fresh;
 
         if (data.CurrentArrangementData is null)
         {
