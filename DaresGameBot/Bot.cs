@@ -232,7 +232,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        bool moved = _state.Game.Players.MoveToTop(id);
+        bool moved = _state.Game.Players.MoveToTop(id, _state.Game.CurrentState != Game.States.Game.State.Fresh);
         if (!moved)
         {
             return;

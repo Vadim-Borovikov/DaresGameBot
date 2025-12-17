@@ -91,7 +91,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return true;
     }
 
-    public bool MoveToTop(string id)
+    public bool MoveToTop(string id, bool preserveCurrent)
     {
         List<string> activeIds = GetActiveIds().ToList();
         if ((activeIds.Count < 2) || !activeIds.Contains(id))
@@ -104,7 +104,10 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         _ids.Remove(id);
         _ids.Insert(0, id);
 
-        _currentIndex = _ids.IndexOf(currentPlayer);
+        if (preserveCurrent)
+        {
+            _currentIndex = _ids.IndexOf(currentPlayer);
+        }
 
         return true;
     }
