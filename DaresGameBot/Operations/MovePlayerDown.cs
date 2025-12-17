@@ -5,11 +5,11 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class MovePlayerToTop : Operation<string>
+internal sealed class MovePlayerDown : Operation<string>
 {
     public override Enum AccessRequired => Bot.AccessType.Admin;
 
-    public MovePlayerToTop(Bot bot) : base(bot.Core.Accesses, bot.Core.UpdateSender) => _bot = bot;
+    public MovePlayerDown(Bot bot) : base(bot.Core.Accesses, bot.Core.UpdateSender) => _bot = bot;
 
     protected override bool IsInvokingBy(Message message, User sender, out string? name)
     {
@@ -18,16 +18,13 @@ internal sealed class MovePlayerToTop : Operation<string>
     }
 
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
-        out string? id)
+        out string? name)
     {
-        id = callbackQueryDataCore;
+        name = callbackQueryDataCore;
         return true;
     }
 
-    protected override Task ExecuteAsync(string id, Message message, User sender)
-    {
-        return _bot.MovePlayerToTop(id);
-    }
+    protected override Task ExecuteAsync(string name, Message message, User sender) => _bot.MovePlayerDown(name);
 
     private readonly Bot _bot;
 }

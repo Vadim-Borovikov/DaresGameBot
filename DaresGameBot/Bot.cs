@@ -130,9 +130,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new UpdateCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new LangCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new UpdatePlayers(this, _textsProvider));
-        _core.UpdateReceiver.Operations.Add(new ToggleInactivePlayers(this));
+        _core.UpdateReceiver.Operations.Add(new TogglePlayersMessageState(this));
         _core.UpdateReceiver.Operations.Add(new TogglePlayer(this));
-        _core.UpdateReceiver.Operations.Add(new MovePlayerToTop(this));
+        _core.UpdateReceiver.Operations.Add(new MovePlayerDown(this));
+        _core.UpdateReceiver.Operations.Add(new MovePlayerToBottom(this));
         _core.UpdateReceiver.Operations.Add(new RevealCard(this));
         _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
         _core.UpdateReceiver.Operations.Add(new CompleteCard(this));
@@ -170,6 +171,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             await playerTexts.NewGameStart.SendAsync(_core.UpdateSender, _playerChat);
 
             _state.PlayersMessageId = null;
+            _state.CurrentPlayersMessageState = BotState.PlayersMessageState.Activity;
             await ReportAndPinPlayersAsync(_state.Game);
         }
         else
@@ -224,7 +226,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    internal async Task MovePlayerToTop(string id)
+    internal async Task MovePlayerDown(string name, bool toBottom = false)
     {
         if (_state.Game is null)
         {
@@ -232,7 +234,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        bool moved = _state.Game.Players.MoveToTop(id, _state.Game.CurrentState != Game.States.Game.State.Fresh);
+        bool moved =
+            _state.Game.Players.MoveDown(name, toBottom, _state.Game.CurrentState != Game.States.Game.State.Fresh);
         if (!moved)
         {
             return;
@@ -384,14 +387,14 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
     internal Task ShowRatesAsync() => _state.Game is null ? StartNewGameAsync() : ShowRatesAsync(_state.Game);
 
-    internal Task ToggleInactivePlayersVisibility()
+    internal Task TogglePlayersMessageState()
     {
         if (_state.Game is null)
         {
             return StartNewGameAsync();
         }
 
-        _state.InactivePlayersVisible = !_state.InactivePlayersVisible;
+        _state.CurrentPlayersMessageState = _state.GetNextPlayersMessageState();
         _saveManager.Save(_state);
 
         return ReportAndPinPlayersAsync(_state.Game);
@@ -711,7 +714,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         {
             if (!players[i].Active)
             {
-                if (!_state.InactivePlayersVisible)
+                if (_state.CurrentPlayersMessageState != BotState.PlayersMessageState.Activity)
                 {
                     continue;
                 }
@@ -842,30 +845,48 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             keyboard.Add(startRow);
         }
 
-        List<InlineKeyboardButton> row = CreateOneButtonRow<ToggleInactivePlayers>(
-            _state.InactivePlayersVisible ? texts.HideInactive : texts.ShowInactive);
+        List<InlineKeyboardButton> row =
+            CreateTogglePlayersMessageStateRow(_state.GetNextPlayersMessageState(), texts);
         keyboard.Add(row);
-        if (_state.InactivePlayersVisible)
+
+        if (_state.CurrentPlayersMessageState == BotState.PlayersMessageState.Activity)
         {
-            foreach ((string Id, bool Active) player in players)
+            foreach ((string? id, bool active) in players)
             {
-                string format = player.Active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
-                List<InlineKeyboardButton> playerRow =
-                    CreateOneButtonRow<TogglePlayer>(string.Format(format, player.Id), player.Id);
+                string format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
+                List<InlineKeyboardButton> playerRow = CreateOneButtonRow<TogglePlayer>(string.Format(format, id), id);
                 keyboard.Add(playerRow);
             }
         }
         else
         {
+            bool fast = _state.CurrentPlayersMessageState == BotState.PlayersMessageState.FastMovement;
+            string format = fast ? texts.MovePlayerToBottomFormat : texts.MovePlayerDownFormat;
             foreach (string id in players.Where(p => p.Active).Select(p => p.Id))
             {
-                List<InlineKeyboardButton> playerRow =
-                    CreateOneButtonRow<MovePlayerToTop>(string.Format(texts.MovePlayerToTopFormat, id), id);
+                string caption = string.Format(format, id);
+                List<InlineKeyboardButton> playerRow = fast
+                    ? CreateOneButtonRow<MovePlayerToBottom>(caption, id)
+                    : CreateOneButtonRow<MovePlayerDown>(caption, id);
                 keyboard.Add(playerRow);
             }
         }
 
         return keyboard.Count == 0 ? InlineKeyboardMarkup.Empty() : new InlineKeyboardMarkup(keyboard);
+    }
+
+    private static List<InlineKeyboardButton> CreateTogglePlayersMessageStateRow(BotState.PlayersMessageState next,
+        Texts texts)
+    {
+        string caption = next switch
+        {
+            BotState.PlayersMessageState.Activity     => texts.PlayersMessageStateActivity,
+            BotState.PlayersMessageState.FastMovement => texts.PlayersMessageStateFastMovement,
+            BotState.PlayersMessageState.Movement     => texts.PlayersMessageStateMovement,
+            _                                         => throw new ArgumentOutOfRangeException()
+        };
+
+        return CreateOneButtonRow<TogglePlayersMessageState>(caption);
     }
 
     private static List<InlineKeyboardButton> CreateOneButtonRow<TData>(string caption, params object[] args)

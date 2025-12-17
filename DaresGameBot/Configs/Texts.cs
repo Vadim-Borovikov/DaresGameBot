@@ -99,11 +99,13 @@ public class Texts : AbstractBot.Models.Config.Texts
 
     [Required]
     [MinLength(1)]
-    public string ShowInactive { get; init; } = null!;
-
+    public string PlayersMessageStateActivity { get; init; } = null!;
     [Required]
     [MinLength(1)]
-    public string HideInactive { get; init; } = null!;
+    public string PlayersMessageStateMovement { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string PlayersMessageStateFastMovement { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
@@ -113,7 +115,10 @@ public class Texts : AbstractBot.Models.Config.Texts
     public string InactivePlayerFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]
-    public string MovePlayerToTopFormat { get; init; } = null!;
+    public string MovePlayerDownFormat { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string MovePlayerToBottomFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

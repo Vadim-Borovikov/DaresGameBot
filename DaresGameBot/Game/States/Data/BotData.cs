@@ -13,5 +13,5 @@ internal sealed class BotData : BotStateData<UserStateData>
     [UsedImplicitly]
     public int? PlayersMessageId { get; set; }
     [UsedImplicitly]
-    public bool InactivePlayersVisible { get; set; }
+    public string? CurentPinState { get; set; }
 }

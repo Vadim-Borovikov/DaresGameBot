@@ -22,4 +22,13 @@ internal static class ObjectExtensions
         }
         return Enum.TryParse(o?.ToString(), out s) ? s : null;
     }
+
+    public static Game.States.BotState.PlayersMessageState? ToPlayersMessageState(this object? o)
+    {
+        if (o is Game.States.BotState.PlayersMessageState s)
+        {
+            return s;
+        }
+        return Enum.TryParse(o?.ToString(), out s) ? s : null;
+    }
 }

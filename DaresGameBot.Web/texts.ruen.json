@@ -139,13 +139,14 @@
 
   "Unreveal": "◀️",
 
-  "ShowInactive": "👀",
-
-  "HideInactive": "🙈",
+  "PlayersMessageStateActivity": "✔️",
+  "PlayersMessageStateMovement": "🔽",
+  "PlayersMessageStateFastMovement": "⏬",
 
   "ActivePlayerFormat": "✔️ {0}",
   "InactivePlayerFormat": "❌ {0}",
-  "MovePlayerToTopFormat": "⏫ {0}",
+  "MovePlayerDownFormat": "🔽 {0}",
+  "MovePlayerToBottomFormat": "⏬ {0}",
 
   "Completed": "✅",
 
