@@ -196,7 +196,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         await ReportAndPinPlayersAsync(_state.Game);
     }
 
-    internal async Task TogglePlayer(string id)
+    internal async Task TogglePlayerAsync(string id)
     {
         if (_state.Game is null)
         {
@@ -251,7 +251,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         await ReportAndPinPlayersAsync(_state.Game);
     }
 
-    internal async Task MovePlayerDown(string name, bool toBottom = false)
+    internal async Task MovePlayerDownAsync(string name, bool toBottom = false)
     {
         if (_state.Game is null)
         {
@@ -420,7 +420,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
     internal Task ShowRatesAsync() => _state.Game is null ? StartNewGameAsync() : ShowRatesAsync(_state.Game);
 
-    internal Task TogglePlayersMessageState()
+    internal Task TogglePlayersMessageStateAsync()
     {
         if (_state.Game is null)
         {

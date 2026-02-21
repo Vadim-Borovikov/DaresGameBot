@@ -15,7 +15,7 @@ internal sealed class TogglePlayersMessageState : Operation
 
     protected override Task ExecuteAsync(Message message, User sender, string callbackQueryDataCore)
     {
-        return _bot.TogglePlayersMessageState();
+        return _bot.TogglePlayersMessageStateAsync();
     }
 
     private readonly Bot _bot;

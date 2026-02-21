@@ -26,7 +26,7 @@ internal sealed class TogglePlayer : Operation<string>
 
     protected override Task ExecuteAsync(string name, Message message, User sender)
     {
-        return _bot.TogglePlayer(name);
+        return _bot.TogglePlayerAsync(name);
     }
 
     private readonly Bot _bot;

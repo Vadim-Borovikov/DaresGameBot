@@ -24,7 +24,7 @@ internal sealed class MovePlayerDown : Operation<string>
         return true;
     }
 
-    protected override Task ExecuteAsync(string name, Message message, User sender) => _bot.MovePlayerDown(name);
+    protected override Task ExecuteAsync(string name, Message message, User sender) => _bot.MovePlayerDownAsync(name);
 
     private readonly Bot _bot;
 }
