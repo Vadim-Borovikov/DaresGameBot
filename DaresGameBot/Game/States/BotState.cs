@@ -12,6 +12,7 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>
     public enum PlayersMessageState
     {
         Activity,
+        Selection,
         FastMovement,
         Movement
     }

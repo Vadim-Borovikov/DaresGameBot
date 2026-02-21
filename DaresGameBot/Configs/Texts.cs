@@ -102,6 +102,9 @@ public class Texts : AbstractBot.Models.Config.Texts
     public string PlayersMessageStateActivity { get; init; } = null!;
     [Required]
     [MinLength(1)]
+    public string PlayersMessageStateSelection { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
     public string PlayersMessageStateMovement { get; init; } = null!;
     [Required]
     [MinLength(1)]
