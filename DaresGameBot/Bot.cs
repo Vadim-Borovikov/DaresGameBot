@@ -155,9 +155,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.Dispose();
     }
 
-    internal bool CanBeUpdated() => _state.Game is null
-                                    || (_state.Game.CurrentState != Game.States.Game.State.CardRevealed);
-
     internal async Task UpdatePlayersAsync(List<AddOrUpdatePlayerData> updates)
     {
         Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
@@ -172,7 +169,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
             _state.PlayersMessageId = null;
             _state.CurrentPlayersMessageState = BotState.PlayersMessageState.Activity;
-            await ReportAndPinPlayersAsync(_state.Game);
+        }
+        else if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
+        {
+            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
+            return;
         }
         else
         {
@@ -185,19 +186,17 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
             if (!_state.Game.IsCurrentArrangementValid())
             {
-                // TODO delete message
-                ;
+                await DeleteCardMessagesAsync();
             }
 
             await adminTexts.Accepted.SendAsync(_core.UpdateSender, _adminChat);
-
-            await ReportAndPinPlayersAsync(_state.Game);
         }
 
+        await ReportAndPinPlayersAsync(_state.Game);
         _saveManager.Save(_state);
     }
 
-    internal async Task TogglePlayer(string name)
+    internal async Task TogglePlayer(string id)
     {
         if (_state.Game is null)
         {
@@ -205,7 +204,14 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        bool toggled = _state.Game.Players.Toggle(name);
+        if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
+        {
+            Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
+            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
+            return;
+        }
+
+        bool toggled = _state.Game.Players.Toggle(id);
         if (!toggled)
         {
             return;
@@ -213,8 +219,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         if (!_state.Game.IsCurrentArrangementValid())
         {
-            // TODO delete message
-            ;
+            await DeleteCardMessagesAsync();
         }
 
         await ReportAndPinPlayersAsync(_state.Game);
@@ -230,6 +235,13 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
+        if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
+        {
+            Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
+            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
+            return;
+        }
+
         bool moved =
             _state.Game.Players.MoveDown(name, toBottom, _state.Game.CurrentState != Game.States.Game.State.Fresh);
         if (!moved)
@@ -239,8 +251,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         if (!_state.Game.IsCurrentArrangementValid())
         {
-            // TODO delete message
-            ;
+            await DeleteCardMessagesAsync();
         }
 
         await ReportAndPinPlayersAsync(_state.Game);
@@ -402,9 +413,36 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return ReportAndPinPlayersAsync(_state.Game);
     }
 
-    internal Task DrawArrangementAsync()
+    internal async Task DrawCardAsync()
     {
-        return _state.Game is null ? StartNewGameAsync() : DrawArrangementAsync(_state.Game);
+        if (_state.Game is null)
+        {
+            await StartNewGameAsync();
+            return;
+        }
+
+        if (!_state.Game.Players.IsActive(_state.Game.Players.Current))
+        {
+            _state.Game.Players.MoveNext();
+        }
+
+        await DeleteCardMessagesAsync();
+
+        await DrawArrangementAsync(_state.Game);
+    }
+
+    private async Task DeleteCardMessagesAsync()
+    {
+        if (_state.AdminState?.CardMessageId is null || _state.PlayerState?.CardMessageId is null)
+        {
+            return;
+        }
+
+        await _core.UpdateSender.DeleteMessageAsync(_playerChat, _state.PlayerState.CardMessageId.Value);
+        await _core.UpdateSender.DeleteMessageAsync(_adminChat, _state.AdminState.CardMessageId.Value);
+
+        _state.ResetUserMessageId(_playerChat.Id);
+        _state.ResetUserMessageId(_adminChat.Id);
     }
 
     private string GetArrangementImage(Arrangement? arrangement = null, RevealCardData? revealData = null)

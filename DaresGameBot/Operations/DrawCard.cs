@@ -15,7 +15,7 @@ internal sealed class DrawCard : Operation
 
     protected override Task ExecuteAsync(Message message, User sender, string callbackQueryDataCore)
     {
-        return _bot.DrawArrangementAsync();
+        return _bot.DrawCardAsync();
     }
 
     private readonly Bot _bot;

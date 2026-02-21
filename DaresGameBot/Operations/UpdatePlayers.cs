@@ -52,10 +52,7 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
 
     protected override Task ExecuteAsync(UpdatesData data, Message message, User sender)
     {
-        Texts texts = _textsProvider.GetTextsFor(sender.Id);
-        return _bot.CanBeUpdated()
-            ? _bot.UpdatePlayersAsync(data.Datas)
-            : texts.Refuse.SendAsync(_bot.Core.UpdateSender, message.Chat);
+        return _bot.UpdatePlayersAsync(data.Datas);
     }
 
     private readonly Bot _bot;
