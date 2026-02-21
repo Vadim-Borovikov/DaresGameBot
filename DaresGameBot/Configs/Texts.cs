@@ -150,7 +150,7 @@ public class Texts : AbstractBot.Models.Config.Texts
     public string EquipmentSeparatorSheet { get; init; } = null!;
     [Required]
     [MinLength(1)]
-    public string LetsGo { get; init; } = null!;
+    public string DrawCard { get; init; } = null!;
 
     [Required]
     public MessageTemplateText NothingChanges { get; init; } = null!;

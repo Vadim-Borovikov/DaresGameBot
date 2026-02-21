@@ -5,17 +5,17 @@ using Telegram.Bot.Types;
 
 namespace DaresGameBot.Operations;
 
-internal sealed class DrawFirstCard : Operation
+internal sealed class DrawCard : Operation
 {
     public override Enum AccessRequired => Bot.AccessType.Admin;
 
-    public DrawFirstCard(Bot bot) : base(bot.Core.Accesses, bot.Core.UpdateSender) => _bot = bot;
+    public DrawCard(Bot bot) : base(bot.Core.Accesses, bot.Core.UpdateSender) => _bot = bot;
 
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore) => true;
 
     protected override Task ExecuteAsync(Message message, User sender, string callbackQueryDataCore)
     {
-        return _bot.DrawFirstCardAsync();
+        return _bot.DrawArrangementAsync();
     }
 
     private readonly Bot _bot;

@@ -138,7 +138,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
         _core.UpdateReceiver.Operations.Add(new CompleteCard(this));
         _core.UpdateReceiver.Operations.Add(new ConfirmEnd(this));
-        _core.UpdateReceiver.Operations.Add(new DrawFirstCard(this));
+        _core.UpdateReceiver.Operations.Add(new DrawCard(this));
 
         await Commands.UpdateForAll(cancellationToken);
     }
@@ -176,8 +176,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
         else
         {
-            string currentPlayer = _state.Game.Players.Current;
-
             bool changed = _state.Game.UpdatePlayers(updates, _textsProvider.GetDefaultTexts().UpdatePlayerSeparator);
             if (!changed)
             {
@@ -185,13 +183,13 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
                 return;
             }
 
-            await adminTexts.Accepted.SendAsync(_core.UpdateSender, _adminChat);
-
-            if ((_state.Game.CurrentState != Game.States.Game.State.Fresh)
-                && ((_state.Game.Players.Current != currentPlayer) || !_state.Game.IsCurrentArrangementValid()))
+            if (!_state.Game.IsCurrentArrangementValid())
             {
-                await DrawArrangementAsync(_state.Game);
+                // TODO delete message
+                ;
             }
+
+            await adminTexts.Accepted.SendAsync(_core.UpdateSender, _adminChat);
 
             await ReportAndPinPlayersAsync(_state.Game);
         }
@@ -207,18 +205,16 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        string currentPlayer = _state.Game.Players.Current;
-
         bool toggled = _state.Game.Players.Toggle(name);
         if (!toggled)
         {
             return;
         }
 
-        if ((_state.Game.CurrentState != Game.States.Game.State.Fresh)
-            && ((_state.Game.Players.Current != currentPlayer) || !_state.Game.IsCurrentArrangementValid()))
+        if (!_state.Game.IsCurrentArrangementValid())
         {
-            await DrawArrangementAsync(_state.Game);
+            // TODO delete message
+            ;
         }
 
         await ReportAndPinPlayersAsync(_state.Game);
@@ -239,6 +235,12 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         if (!moved)
         {
             return;
+        }
+
+        if (!_state.Game.IsCurrentArrangementValid())
+        {
+            // TODO delete message
+            ;
         }
 
         await ReportAndPinPlayersAsync(_state.Game);
@@ -400,16 +402,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return ReportAndPinPlayersAsync(_state.Game);
     }
 
-    internal async Task DrawFirstCardAsync()
+    internal Task DrawArrangementAsync()
     {
-        if (_state.Game is null)
-        {
-            await StartNewGameAsync();
-            return;
-        }
-
-        await DrawArrangementAsync(_state.Game);
-        await ReportAndPinPlayersAsync(_state.Game);
+        return _state.Game is null ? StartNewGameAsync() : DrawArrangementAsync(_state.Game);
     }
 
     private string GetArrangementImage(Arrangement? arrangement = null, RevealCardData? revealData = null)
@@ -706,8 +701,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     {
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
 
-        bool includeStartButton = game.CurrentState == Game.States.Game.State.Fresh;
-
         List<(string Id, bool Active)> players = game.Players.GetAllIdsWithStatus().ToList();
         List<MessageTemplateText> playerLines = new();
         for (int i = 0; i < players.Count; ++i)
@@ -728,7 +721,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         MessageTemplateText messageText = texts.PlayersFormat.Format(allLines);
 
-        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, includeStartButton, players);
+        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, players);
 
         if (_state.PlayersMessageId is null)
         {
@@ -828,20 +821,16 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return CreateOneButtonRow<CompleteCard>(caption, fully);
     }
 
-    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts,
-        bool includeStartButton, List<(string Id, bool Active)> players)
+    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, List<(string Id, bool Active)> players)
     {
-        List<List<InlineKeyboardButton>> keyboard = new();
-
-        if (includeStartButton)
+        List<List<InlineKeyboardButton>> keyboard = new()
         {
-            List<InlineKeyboardButton> startRow = CreateOneButtonRow<DrawFirstCard>(texts.LetsGo);
-            keyboard.Add(startRow);
-        }
+            CreateOneButtonRow<DrawCard>(texts.DrawCard)
+        };
 
-        List<InlineKeyboardButton> row =
+        List<InlineKeyboardButton> modeToggle =
             CreateTogglePlayersMessageStateRow(_state.GetNextPlayersMessageState(), texts);
-        keyboard.Add(row);
+        keyboard.Add(modeToggle);
 
         if (_state.CurrentPlayersMessageState == BotState.PlayersMessageState.Activity)
         {
