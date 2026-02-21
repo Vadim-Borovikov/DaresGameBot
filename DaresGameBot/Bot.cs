@@ -763,6 +763,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
     private InlineKeyboardMarkup CreateActionKeyboard(bool includePartial, long userId)
     {
+        if (userId != _adminChat.Id)
+        {
+            return InlineKeyboardMarkup.Empty();
+        }
+
         Texts texts = _textsProvider.GetTextsFor(userId);
         List<InlineKeyboardButton> unreveal = CreateOneButtonRow<UnrevealCard>(texts.Unreveal);
         List<InlineKeyboardButton> question = CreateOneButtonRow<RevealCard>(texts.QuestionsTag);
@@ -770,21 +775,16 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         List<InlineKeyboardButton> partial = CreateActionButtonRow(false, userId);
         List<InlineKeyboardButton> full = CreateActionButtonRow(true, userId);
 
-        List<List<InlineKeyboardButton>> keyboard = new();
-        if (userId == _adminChat.Id)
+        List<List<InlineKeyboardButton>> keyboard = new()
         {
-            keyboard.Add(unreveal);
-            keyboard.Add(question);
-            if (includePartial)
-            {
-                keyboard.Add(partial);
-            }
-            keyboard.Add(full);
-        }
-        else
+            unreveal,
+            question
+        };
+        if (includePartial)
         {
-            keyboard.Add(question);
+            keyboard.Add(partial);
         }
+        keyboard.Add(full);
         return new InlineKeyboardMarkup(keyboard);
     }
 
@@ -795,23 +795,17 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return null;
         }
 
-        Texts texts = _textsProvider.GetTextsFor(userId);
         List<List<InlineKeyboardButton>> keyboard = new();
 
-        List<InlineKeyboardButton> complete;
+        Texts texts = _textsProvider.GetTextsFor(userId);
         if (areOtherOptionsAvailable)
         {
             List<InlineKeyboardButton> unreveal = CreateOneButtonRow<UnrevealCard>(texts.Unreveal);
-            complete = CreateOneButtonRow<CompleteCard>(texts.Completed);
-
             keyboard.Add(unreveal);
-            keyboard.Add(complete);
         }
-        else
-        {
-            complete = CreateOneButtonRow<CompleteCard>(texts.Completed);
-            keyboard.Add(complete);
-        }
+
+        List<InlineKeyboardButton> complete = CreateOneButtonRow<CompleteCard>(texts.Completed);
+        keyboard.Add(complete);
 
         return new InlineKeyboardMarkup(keyboard);
     }
