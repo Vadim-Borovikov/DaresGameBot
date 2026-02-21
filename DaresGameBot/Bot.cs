@@ -424,6 +424,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         if (!_state.Game.Players.IsActive(_state.Game.Players.Current))
         {
             _state.Game.Players.MoveNext();
+            await ReportAndPinPlayersAsync(_state.Game);
         }
 
         await DeleteCardMessagesAsync();
@@ -752,6 +753,12 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             }
 
             MessageTemplateText format = players[i].Active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
+            if (players[i].Id == game.Players.Current)
+            {
+                MessageTemplateText currentFormat = new(texts.CurrentPlayerFormat);
+                format = currentFormat.Format(format);
+            }
+
             MessageTemplateText line = format.Format(i, players[i].Id);
             playerLines.Add(line);
         }
@@ -759,7 +766,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         MessageTemplateText messageText = texts.PlayersFormat.Format(allLines);
 
-        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, players);
+        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, game.Players.Current, players);
 
         if (_state.PlayersMessageId is null)
         {
@@ -859,7 +866,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return CreateOneButtonRow<CompleteCard>(caption, fully);
     }
 
-    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, List<(string Id, bool Active)> players)
+    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, string currentPlayer,
+        List<(string Id, bool Active)> players)
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
@@ -875,6 +883,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             foreach ((string? id, bool active) in players)
             {
                 string format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
+                if (id == currentPlayer)
+                {
+                    format = string.Format(texts.CurrentPlayerFormat, format);
+                }
                 List<InlineKeyboardButton> playerRow = CreateOneButtonRow<TogglePlayer>(string.Format(format, id), id);
                 keyboard.Add(playerRow);
             }
@@ -882,9 +894,13 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         else
         {
             bool fast = _state.CurrentPlayersMessageState == BotState.PlayersMessageState.FastMovement;
-            string format = fast ? texts.MovePlayerToBottomFormat : texts.MovePlayerDownFormat;
             foreach (string id in players.Where(p => p.Active).Select(p => p.Id))
             {
+                string format = fast ? texts.MovePlayerToBottomFormat : texts.MovePlayerDownFormat;
+                if (id == currentPlayer)
+                {
+                    format = string.Format(texts.CurrentPlayerFormat, format);
+                }
                 string caption = string.Format(format, id);
                 List<InlineKeyboardButton> playerRow = fast
                     ? CreateOneButtonRow<MovePlayerToBottom>(caption, id)

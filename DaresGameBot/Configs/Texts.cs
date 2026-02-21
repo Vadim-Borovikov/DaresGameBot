@@ -109,6 +109,10 @@ public class Texts : AbstractBot.Models.Config.Texts
 
     [Required]
     [MinLength(1)]
+    public string CurrentPlayerFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
     public string ActivePlayerFormat { get; init; } = null!;
     [Required]
     [MinLength(1)]

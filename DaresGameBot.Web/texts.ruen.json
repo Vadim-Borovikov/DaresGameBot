@@ -139,6 +139,8 @@
 
   "Unreveal": "◀️",
 
+  "CurrentPlayerFormat": "{0} 👈",
+
   "PlayersMessageStateActivity": "✔️",
   "PlayersMessageStateMovement": "🔽",
   "PlayersMessageStateFastMovement": "⏬",
