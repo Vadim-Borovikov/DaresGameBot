@@ -15,14 +15,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
 
     public string Current => _ids[_currentIndex];
 
-    public void MoveNext()
-    {
-        do
-        {
-            _currentIndex = (_currentIndex + 1) % _ids.Count;
-        }
-        while (!_infos[Current].Active);
-    }
+    public void MoveNext() => _currentIndex = GetNextActive(_currentIndex);
 
     public IEnumerable<(string Id, bool Active)> GetAllIdsWithStatus()
     {
@@ -75,26 +68,14 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
             return false;
         }
 
-        if (_infos[id].Active)
-        {
-            _infos[id].Active = false;
-            if (Current == id)
-            {
-                MoveNext();
-            }
-        }
-        else
-        {
-            _infos[id].Active = true;
-        }
-
+        _infos[id].Active = !_infos[id].Active;
         return true;
     }
 
     public bool MoveDown(string id, bool toBottom, bool preserveCurrent)
     {
-        List<string> activeIds = GetActiveIds().ToList();
-        if ((activeIds.Count < 2) || !activeIds.Contains(id))
+        int index = _ids.IndexOf(id);
+        if (index == -1)
         {
             return false;
         }
@@ -103,33 +84,30 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
 
         if (toBottom)
         {
-            _ids.Remove(id);
+            if (_ids.Count < 2)
+            {
+                return false;
+            }
+            _ids.RemoveAt(index);
             _ids.Add(id);
         }
         else
         {
-            int oldIndex = _ids.IndexOf(id);
-
-            while (true)
+            List<string> activeIds = GetActiveIds().ToList();
+            if (!activeIds.Contains(id) || (activeIds.Count < 2))
             {
-                int newIndex = (oldIndex + 1) % _ids.Count;
-                _ids[oldIndex] = _ids[newIndex];
-                _ids[newIndex] = id;
-
-                if (_infos[_ids[oldIndex]].Active)
-                {
-                    break;
-                }
-                oldIndex = newIndex;
+                return false;
             }
+            int newIndex = GetNextActive(index);
+            (_ids[index], _ids[newIndex]) = (_ids[newIndex], _ids[index]);
         }
 
         if (preserveCurrent)
         {
             _currentIndex = _ids.IndexOf(currentPlayer);
         }
-
         return true;
+
     }
 
     public PlayersRepositoryData Save()
@@ -188,6 +166,18 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     private bool AreCompatable((string, string) pair, ICompatibility compatibility)
     {
         return AreCompatable(pair.Item1, pair.Item2, compatibility);
+    }
+
+    private int GetNext(int index) => (index + 1) % _ids.Count;
+
+    private int GetNextActive(int index)
+    {
+        do
+        {
+            index = GetNext(index);
+        }
+        while (!_infos[_ids[index]].Active);
+        return index;
     }
 
     private readonly List<string> _ids = new();
