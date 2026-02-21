@@ -99,6 +99,10 @@ public class Texts : AbstractBot.Models.Config.Texts
 
     [Required]
     [MinLength(1)]
+    public string PlayersMessageStatesFormat { get; init; } = null!;
+
+    [Required]
+    [MinLength(1)]
     public string PlayersMessageStateActivity { get; init; } = null!;
     [Required]
     [MinLength(1)]

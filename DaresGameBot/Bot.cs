@@ -893,8 +893,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             CreateOneButtonRow<DrawCard>(texts.DrawCard)
         };
 
-        List<InlineKeyboardButton> modeToggle =
-            CreateTogglePlayersMessageStateRow(_state.GetNextPlayersMessageState(), texts);
+        List<InlineKeyboardButton> modeToggle = CreateTogglePlayersMessageStateRow(texts);
         keyboard.Add(modeToggle);
 
         switch (_state.CurrentPlayersMessageState)
@@ -946,10 +945,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return keyboard.Count == 0 ? InlineKeyboardMarkup.Empty() : new InlineKeyboardMarkup(keyboard);
     }
 
-    private static List<InlineKeyboardButton> CreateTogglePlayersMessageStateRow(BotState.PlayersMessageState next,
-        Texts texts)
+    private static string GetMessageStateText(BotState.PlayersMessageState state, Texts texts)
     {
-        string caption = next switch
+        return state switch
         {
             BotState.PlayersMessageState.Activity     => texts.PlayersMessageStateActivity,
             BotState.PlayersMessageState.Selection    => texts.PlayersMessageStateSelection,
@@ -957,7 +955,13 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             BotState.PlayersMessageState.Movement     => texts.PlayersMessageStateMovement,
             _                                         => throw new ArgumentOutOfRangeException()
         };
+    }
 
+    private List<InlineKeyboardButton> CreateTogglePlayersMessageStateRow(Texts texts)
+    {
+        string current = GetMessageStateText(_state.CurrentPlayersMessageState, texts);
+        string next = GetMessageStateText(_state.GetNextPlayersMessageState(), texts);
+        string caption = string.Format(texts.PlayersMessageStatesFormat, current, next);
         return CreateOneButtonRow<TogglePlayersMessageState>(caption);
     }
 

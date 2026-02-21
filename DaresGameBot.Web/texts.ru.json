@@ -120,6 +120,8 @@
 
   "CurrentPlayerFormat": "{0} 👈",
 
+  "PlayersMessageStatesFormat": "{0} → {1}",
+
   "PlayersMessageStateActivity": "✔️",
   "PlayersMessageStateSelection": "👈",
   "PlayersMessageStateMovement": "🔽",
