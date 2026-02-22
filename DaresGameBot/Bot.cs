@@ -461,10 +461,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         if (!_state.Game.Players.IsActive(_state.Game.Players.Current))
         {
             bool moved = _state.Game.Players.MoveNext();
-            if (moved)
+            if (!moved)
             {
-                await ReportAndPinPlayersAsync(_state.Game);
+                return;
             }
+            await ReportAndPinPlayersAsync(_state.Game);
         }
 
         await DeleteCardMessagesAsync();
@@ -935,10 +936,12 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, string currentPlayer,
         IReadOnlyCollection<string> activePlayers, List<(string Id, bool Active, byte Number)> players)
     {
-        List<List<InlineKeyboardButton>> keyboard = new()
+        List<List<InlineKeyboardButton>> keyboard = new();
+
+        if (activePlayers.Count > 0)
         {
-            CreateOneButtonRow<DrawCard>(texts.DrawCard)
-        };
+            keyboard.Add(CreateOneButtonRow<DrawCard>(texts.DrawCard));
+        }
 
         List<InlineKeyboardButton>? modeToggle = CreateTogglePlayersMessageStateRow(activePlayers.Count, texts);
         if (modeToggle is not null)
