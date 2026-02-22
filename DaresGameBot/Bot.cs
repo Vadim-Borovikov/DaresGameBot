@@ -788,7 +788,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         MessageTemplateText messageText = texts.PlayersFormat.Format(allLines);
 
-        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, game.Players.Current, players);
+        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, game.Players.Current,
+            game.Players.GetActiveIds().Last(), players);
 
         if (_state.PlayersMessageId is null)
         {
@@ -888,7 +889,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return CreateOneButtonRow<CompleteCard>(caption, fully);
     }
 
-    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, string currentPlayer,
+    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, string currentPlayer, string lastActivePlayer,
         List<(string Id, bool Active, byte Number)> players)
     {
         List<List<InlineKeyboardButton>> keyboard = new()
@@ -919,14 +920,18 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
                     break;
 
                 case BotState.PlayersMessageState.FastMovement:
+                    if (!active || (id == lastActivePlayer))
+                    {
+                        continue;
+                    }
+                    button = CreateButton<MovePlayerToBottom>(number.ToString(), id);
+                    break;
                 case BotState.PlayersMessageState.Movement:
                     if (!active)
                     {
                         continue;
                     }
-                    button = _state.CurrentPlayersMessageState == BotState.PlayersMessageState.FastMovement
-                        ? CreateButton<MovePlayerToBottom>(number.ToString(), id)
-                        : CreateButton<MovePlayerDown>(number.ToString(), id);
+                    button = CreateButton<MovePlayerDown>(number.ToString(), id);
                     break;
                 default: throw new ArgumentOutOfRangeException();
             }
