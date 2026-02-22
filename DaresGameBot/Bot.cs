@@ -900,57 +900,40 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         keyboard.Add(modeToggle);
 
         List<InlineKeyboardButton> playerButtons = new();
-        switch (_state.CurrentPlayersMessageState)
+        foreach ((string? id, bool active, byte number) in players)
         {
-            case BotState.PlayersMessageState.Activity:
+            InlineKeyboardButton button;
+            switch (_state.CurrentPlayersMessageState)
             {
-                foreach ((string? id, bool active, byte number) in players)
-                {
+                case BotState.PlayersMessageState.Activity:
                     string format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
-                    InlineKeyboardButton button = CreateButton<TogglePlayer>(string.Format(format, number), id);
-                    playerButtons.Add(button);
-                }
-                keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
-                                               .Select(b => b.ToList()));
+                    button = CreateButton<TogglePlayer>(string.Format(format, number), id);
+                    break;
 
-                break;
-            }
-            case BotState.PlayersMessageState.Selection:
-                foreach ((string? id, bool active, byte number) in players)
-                {
+                case BotState.PlayersMessageState.Selection:
                     if (!active || (id == currentPlayer))
                     {
                         continue;
                     }
+                    button = CreateButton<SelectPlayer>(number.ToString(), id);
+                    break;
 
-                    InlineKeyboardButton button = CreateButton<SelectPlayer>(number.ToString(), id);
-                    playerButtons.Add(button);
-                }
-                keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
-                                               .Select(b => b.ToList()));
-                break;
-            case BotState.PlayersMessageState.FastMovement:
-            case BotState.PlayersMessageState.Movement:
-            {
-                bool fast = _state.CurrentPlayersMessageState == BotState.PlayersMessageState.FastMovement;
-                foreach ((string? id, bool active, byte number) in players)
-                {
+                case BotState.PlayersMessageState.FastMovement:
+                case BotState.PlayersMessageState.Movement:
                     if (!active)
                     {
                         continue;
                     }
-
-                    InlineKeyboardButton button = fast
+                    button = _state.CurrentPlayersMessageState == BotState.PlayersMessageState.FastMovement
                         ? CreateButton<MovePlayerToBottom>(number.ToString(), id)
                         : CreateButton<MovePlayerDown>(number.ToString(), id);
-                    playerButtons.Add(button);
-                }
-                keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
-                                               .Select(b => b.ToList()));
-                break;
+                    break;
+                default: throw new ArgumentOutOfRangeException();
             }
-            default: throw new ArgumentOutOfRangeException();
+            playerButtons.Add(button);
         }
+        keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
+                                       .Select(b => b.ToList()));
 
         return keyboard.Count == 0 ? InlineKeyboardMarkup.Empty() : new InlineKeyboardMarkup(keyboard);
     }
