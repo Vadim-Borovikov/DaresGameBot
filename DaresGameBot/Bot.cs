@@ -29,6 +29,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MoreLinq;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -759,11 +760,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     {
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
 
-        List<(string Id, bool Active)> players = game.Players.GetAllIdsWithStatus().ToList();
         List<MessageTemplateText> playerLines = new();
-        for (int i = 0; i < players.Count; ++i)
+        List<(string Id, bool Active, byte Number)> players = new();
+        foreach ((string id, bool active) in game.Players.GetAllIdsWithStatus())
         {
-            if (!players[i].Active)
+            if (!active)
             {
                 if (_state.CurrentPlayersMessageState != BotState.PlayersMessageState.Activity)
                 {
@@ -771,14 +772,16 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
                 }
             }
 
-            MessageTemplateText format = players[i].Active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
-            if (players[i].Id == game.Players.Current)
+            MessageTemplateText format = active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
+            if (id == game.Players.Current)
             {
                 MessageTemplateText currentFormat = new(texts.CurrentPlayerFormat);
                 format = currentFormat.Format(format);
             }
 
-            MessageTemplateText line = format.Format(i, players[i].Id);
+            byte number = (byte) (playerLines.Count + 1);
+            players.Add((id, active, number));
+            MessageTemplateText line = format.Format(number, id);
             playerLines.Add(line);
         }
         MessageTemplateText allLines = MessageTemplateText.JoinTexts(playerLines);
@@ -886,7 +889,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     }
 
     private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, string currentPlayer,
-        List<(string Id, bool Active)> players)
+        List<(string Id, bool Active, byte Number)> players)
     {
         List<List<InlineKeyboardButton>> keyboard = new()
         {
@@ -896,47 +899,54 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         List<InlineKeyboardButton> modeToggle = CreateTogglePlayersMessageStateRow(texts);
         keyboard.Add(modeToggle);
 
+        List<InlineKeyboardButton> playerButtons = new();
         switch (_state.CurrentPlayersMessageState)
         {
             case BotState.PlayersMessageState.Activity:
             {
-                foreach ((string? id, bool active) in players)
+                foreach ((string? id, bool active, byte number) in players)
                 {
                     string format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
-                    if (id == currentPlayer)
-                    {
-                        format = string.Format(texts.CurrentPlayerFormat, format);
-                    }
-                    List<InlineKeyboardButton> playerRow = CreateOneButtonRow<TogglePlayer>(string.Format(format, id), id);
-                    keyboard.Add(playerRow);
+                    InlineKeyboardButton button = CreateButton<TogglePlayer>(string.Format(format, number), id);
+                    playerButtons.Add(button);
                 }
+                keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
+                                               .Select(b => b.ToList()));
 
                 break;
             }
             case BotState.PlayersMessageState.Selection:
-                keyboard.AddRange(players.Where(p => p.Active)
-                                         .Select(p => p.Id)
-                                         .Where(id => id != currentPlayer)
-                                         .Select(id => CreateOneButtonRow<SelectPlayer>(id, id)));
+                foreach ((string? id, bool active, byte number) in players)
+                {
+                    if (!active || (id == currentPlayer))
+                    {
+                        continue;
+                    }
+
+                    InlineKeyboardButton button = CreateButton<SelectPlayer>(number.ToString(), id);
+                    playerButtons.Add(button);
+                }
+                keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
+                                               .Select(b => b.ToList()));
                 break;
             case BotState.PlayersMessageState.FastMovement:
             case BotState.PlayersMessageState.Movement:
             {
                 bool fast = _state.CurrentPlayersMessageState == BotState.PlayersMessageState.FastMovement;
-                foreach (string id in players.Where(p => p.Active).Select(p => p.Id))
+                foreach ((string? id, bool active, byte number) in players)
                 {
-                    string format = fast ? texts.MovePlayerToBottomFormat : texts.MovePlayerDownFormat;
-                    if (id == currentPlayer)
+                    if (!active)
                     {
-                        format = string.Format(texts.CurrentPlayerFormat, format);
+                        continue;
                     }
-                    string caption = string.Format(format, id);
-                    List<InlineKeyboardButton> playerRow = fast
-                        ? CreateOneButtonRow<MovePlayerToBottom>(caption, id)
-                        : CreateOneButtonRow<MovePlayerDown>(caption, id);
-                    keyboard.Add(playerRow);
-                }
 
+                    InlineKeyboardButton button = fast
+                        ? CreateButton<MovePlayerToBottom>(number.ToString(), id)
+                        : CreateButton<MovePlayerDown>(number.ToString(), id);
+                    playerButtons.Add(button);
+                }
+                keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
+                                               .Select(b => b.ToList()));
                 break;
             }
             default: throw new ArgumentOutOfRangeException();

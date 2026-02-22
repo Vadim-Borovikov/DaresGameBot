@@ -24,6 +24,10 @@ public class Config : ConfigWithSheets, ILocalizationConfig<Texts>
 
     [UsedImplicitly]
     [Required]
+    public byte ButtonsPerRow { get; init; }
+
+    [UsedImplicitly]
+    [Required]
     [MinLength(1)]
     public string ActionsRange { get; init; } = null!;
 
