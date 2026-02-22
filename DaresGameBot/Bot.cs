@@ -136,6 +136,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new SelectPlayer(this));
         _core.UpdateReceiver.Operations.Add(new MovePlayerDown(this));
         _core.UpdateReceiver.Operations.Add(new MovePlayerToBottom(this));
+        _core.UpdateReceiver.Operations.Add(new RearrangePlayer(this));
         _core.UpdateReceiver.Operations.Add(new RevealCard(this));
         _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
         _core.UpdateReceiver.Operations.Add(new CompleteCard(this));
@@ -170,7 +171,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             await playerTexts.NewGameStart.SendAsync(_core.UpdateSender, _playerChat);
 
             _state.PlayersMessageId = null;
-            _state.CurrentPlayersMessageState = PlayersMessageState.Type.Activity;
+            _state.CurrentPlayersMessageState = PlayersMessageState.Type.NewRearrangement;
         }
         else if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
         {
@@ -221,6 +222,40 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         if (!_state.Game.IsCurrentArrangementValid())
         {
             await DeleteCardMessagesAsync();
+        }
+
+        await ReportAndPinPlayersAsync(_state.Game);
+    }
+
+    internal async Task RearrangePlayerAsync(string id)
+    {
+        if (_state.Game is null)
+        {
+            await StartNewGameAsync();
+            return;
+        }
+
+        bool newRearrangement = _state.CurrentPlayersMessageState == PlayersMessageState.Type.NewRearrangement;
+        if (newRearrangement)
+        {
+            _state.Game.Players.DeactivateAll();
+            _state.CurrentPlayersMessageState = PlayersMessageState.Type.Rearrangement;
+        }
+
+        bool toggled = _state.Game.Players.Toggle(id);
+        if (!toggled)
+        {
+            return;
+        }
+
+        if (newRearrangement)
+        {
+            _state.Game.Players.Select(id);
+        }
+
+        if (_state.Game.Players.IsActive(id))
+        {
+            _state.Game.Players.MoveDown(id, true, true);
         }
 
         await ReportAndPinPlayersAsync(_state.Game);
@@ -809,7 +844,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         {
             if (!active)
             {
-                if (_state.CurrentPlayersMessageState != PlayersMessageState.Type.Activity)
+                if (_state.CurrentPlayersMessageState is not PlayersMessageState.Type.NewRearrangement
+                    and not PlayersMessageState.Type.Rearrangement
+                    and not PlayersMessageState.Type.Activity)
                 {
                     continue;
                 }
@@ -955,8 +992,17 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             InlineKeyboardButton button;
             switch (_state.CurrentPlayersMessageState)
             {
-                case PlayersMessageState.Type.Activity:
+                case PlayersMessageState.Type.NewRearrangement:
+                    button = CreateButton<RearrangePlayer>(number.ToString(), id);
+                    break;
+
+                case PlayersMessageState.Type.Rearrangement:
                     string format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
+                    button = CreateButton<RearrangePlayer>(string.Format(format, number), id);
+                    break;
+
+                case PlayersMessageState.Type.Activity:
+                    format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
                     button = CreateButton<TogglePlayer>(string.Format(format, number), id);
                     break;
 
@@ -975,6 +1021,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
                     }
                     button = CreateButton<MovePlayerToBottom>(number.ToString(), id);
                     break;
+
                 case PlayersMessageState.Type.Movement:
                     if (!active)
                     {

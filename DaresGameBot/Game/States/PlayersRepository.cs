@@ -92,6 +92,14 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return true;
     }
 
+    public void DeactivateAll()
+    {
+        foreach (string id in _ids)
+        {
+            _infos[id].Active = false;
+        }
+    }
+
     public bool MoveDown(string id, bool toBottom, bool preserveCurrent)
     {
         int index = _ids.IndexOf(id);
@@ -131,7 +139,6 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
             _currentIndex = _ids.IndexOf(currentPlayer);
         }
         return true;
-
     }
 
     public PlayersRepositoryData Save()

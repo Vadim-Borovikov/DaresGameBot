@@ -126,9 +126,11 @@
   "PlayersMessageStateSelection": "👈",
   "PlayersMessageStateMovement": "🔽",
   "PlayersMessageStateFastMovement": "⏬",
+  "PlayersMessageStateRearrangement": "🔢",
 
   "ActivePlayerFormat": "✔️ {0}",
   "InactivePlayerFormat": "❌ {0}",
+  "UndefinedPlayerFormat": "🔢 {0}",
 
   "Completed": "✅",
 
@@ -202,6 +204,13 @@
   "UpdatePlayersOperationDescription": {
     "Text": [
       "*список имён и предпочтений на новых строках* – изменить игроков\\. Игра начнётся или продолжится с первого и пойдёт по порядку\\."
+    ],
+    "MarkdownV2": true
+  },
+
+  "RearrangePlayersOperationDescription": {
+    "Text": [
+      "*список номеров* – изменить игроков\\. Игра начнётся или продолжится с первого и пойдёт по порядку\\."
     ],
     "MarkdownV2": true
   },
