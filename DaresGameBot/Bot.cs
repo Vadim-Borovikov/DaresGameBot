@@ -434,6 +434,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _state.ResetUserMessageId(_adminChat.Id);
 
         await DrawArrangementAsync(_state.Game);
+
+        await ReportAndPinPlayersAsync(_state.Game);
     }
 
     internal Task ShowRatesAsync() => _state.Game is null ? StartNewGameAsync() : ShowRatesAsync(_state.Game);
