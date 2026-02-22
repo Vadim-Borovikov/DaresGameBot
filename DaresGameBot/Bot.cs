@@ -410,8 +410,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             _state.Game.CompleteAction(fully);
         }
 
-        await ShowCardAsCompletedAsync(_playerChat, _state.PlayerState.CardMessageId.Value, data.Template, fully);
-        await ShowCardAsCompletedAsync(_adminChat, _state.AdminState.CardMessageId.Value, data.Template, fully);
+        await ShowCardAsCompletedAsync(_playerChat, _state.PlayerState.CardMessageId.Value, data.Template,
+            data.HasPhoto, fully);
+        await ShowCardAsCompletedAsync(_adminChat, _state.AdminState.CardMessageId.Value, data.Template,
+            data.HasPhoto, fully);
 
         _state.ResetUserMessageId(_playerChat.Id);
         _state.ResetUserMessageId(_adminChat.Id);
@@ -443,8 +445,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         if (!_state.Game.Players.IsActive(_state.Game.Players.Current))
         {
-            _state.Game.Players.MoveNext();
-            await ReportAndPinPlayersAsync(_state.Game);
+            bool moved = _state.Game.Players.MoveNext();
+            if (moved)
+            {
+                await ReportAndPinPlayersAsync(_state.Game);
+            }
         }
 
         await DeleteCardMessagesAsync();
@@ -694,14 +699,17 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    private Task ShowCardAsCompletedAsync(Chat chat, int messageId, MessageTemplateText original, bool fully)
+    private Task ShowCardAsCompletedAsync(Chat chat, int messageId, MessageTemplateText original, bool hasPhoto,
+        bool fully)
     {
         Texts texts = _textsProvider.GetTextsFor(chat.Id);
 
         string completedPart = fully ? texts.Completed : texts.ActionCompletedPartially;
         MessageTemplateText template = texts.CompletedCardFormat.Format(original, completedPart);
 
-        return template.EditMessageCaptionWithSelfAsync(_core.UpdateSender, chat, false, messageId);
+        return hasPhoto
+            ? template.EditMessageCaptionWithSelfAsync(_core.UpdateSender, chat, false, messageId)
+            : template.EditMessageWithSelfAsync(_core.UpdateSender, chat, messageId);
     }
 
     private Task ShowRatesAsync(Game.States.Game game)

@@ -7,14 +7,16 @@ internal sealed class CompleteCardData
 {
     public readonly bool? Fully;
     public readonly MessageTemplateText Template;
+    public readonly bool HasPhoto;
 
-    private CompleteCardData(bool? fully, MessageTemplateText template)
+    private CompleteCardData(bool? fully, MessageTemplateText template, bool hasPhoto)
     {
         Fully = fully;
         Template = template;
+        HasPhoto = hasPhoto;
     }
 
-    public static CompleteCardData? From(string? markdown, string callbackQueryDataCore)
+    public static CompleteCardData? From(string? markdown, bool hasPhoto, string callbackQueryDataCore)
     {
         if (string.IsNullOrEmpty(markdown))
         {
@@ -23,6 +25,6 @@ internal sealed class CompleteCardData
 
         bool? fully = callbackQueryDataCore.ToBool();
         MessageTemplateText template = new(markdown, true);
-        return new CompleteCardData(fully, template);
+        return new CompleteCardData(fully, template, hasPhoto);
     }
 }
