@@ -788,7 +788,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         MessageTemplateText messageText = texts.PlayersFormat.Format(allLines);
 
-        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, game.Players.Current, players);
+        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, game.Players.Current,
+            game.Players.GetActiveIds().Last(), players);
 
         if (_state.PlayersMessageId is null)
         {
@@ -888,7 +889,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return CreateOneButtonRow<CompleteCard>(caption, fully);
     }
 
-    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, string currentPlayer,
+    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, string currentPlayer, string lastActivePlayer,
         List<(string Id, bool Active, byte Number)> players)
     {
         List<List<InlineKeyboardButton>> keyboard = new()
@@ -900,57 +901,44 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         keyboard.Add(modeToggle);
 
         List<InlineKeyboardButton> playerButtons = new();
-        switch (_state.CurrentPlayersMessageState)
+        foreach ((string? id, bool active, byte number) in players)
         {
-            case BotState.PlayersMessageState.Activity:
+            InlineKeyboardButton button;
+            switch (_state.CurrentPlayersMessageState)
             {
-                foreach ((string? id, bool active, byte number) in players)
-                {
+                case BotState.PlayersMessageState.Activity:
                     string format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
-                    InlineKeyboardButton button = CreateButton<TogglePlayer>(string.Format(format, number), id);
-                    playerButtons.Add(button);
-                }
-                keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
-                                               .Select(b => b.ToList()));
+                    button = CreateButton<TogglePlayer>(string.Format(format, number), id);
+                    break;
 
-                break;
-            }
-            case BotState.PlayersMessageState.Selection:
-                foreach ((string? id, bool active, byte number) in players)
-                {
+                case BotState.PlayersMessageState.Selection:
                     if (!active || (id == currentPlayer))
                     {
                         continue;
                     }
+                    button = CreateButton<SelectPlayer>(number.ToString(), id);
+                    break;
 
-                    InlineKeyboardButton button = CreateButton<SelectPlayer>(number.ToString(), id);
-                    playerButtons.Add(button);
-                }
-                keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
-                                               .Select(b => b.ToList()));
-                break;
-            case BotState.PlayersMessageState.FastMovement:
-            case BotState.PlayersMessageState.Movement:
-            {
-                bool fast = _state.CurrentPlayersMessageState == BotState.PlayersMessageState.FastMovement;
-                foreach ((string? id, bool active, byte number) in players)
-                {
+                case BotState.PlayersMessageState.FastMovement:
+                    if (!active || (id == lastActivePlayer))
+                    {
+                        continue;
+                    }
+                    button = CreateButton<MovePlayerToBottom>(number.ToString(), id);
+                    break;
+                case BotState.PlayersMessageState.Movement:
                     if (!active)
                     {
                         continue;
                     }
-
-                    InlineKeyboardButton button = fast
-                        ? CreateButton<MovePlayerToBottom>(number.ToString(), id)
-                        : CreateButton<MovePlayerDown>(number.ToString(), id);
-                    playerButtons.Add(button);
-                }
-                keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
-                                               .Select(b => b.ToList()));
-                break;
+                    button = CreateButton<MovePlayerDown>(number.ToString(), id);
+                    break;
+                default: throw new ArgumentOutOfRangeException();
             }
-            default: throw new ArgumentOutOfRangeException();
+            playerButtons.Add(button);
         }
+        keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
+                                       .Select(b => b.ToList()));
 
         return keyboard.Count == 0 ? InlineKeyboardMarkup.Empty() : new InlineKeyboardMarkup(keyboard);
     }
