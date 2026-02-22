@@ -22,7 +22,7 @@ internal sealed class CompleteCard : Operation<CompleteCardData>
     protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
         out CompleteCardData? data)
     {
-        data = CompleteCardData.From(message.ToMarkdown(), callbackQueryDataCore);
+        data = CompleteCardData.From(message.ToMarkdown(), message.Photo is not null, callbackQueryDataCore);
         return data is not null;
     }
 

@@ -15,7 +15,16 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
 
     public string Current => _ids[_currentIndex];
 
-    public void MoveNext() => _currentIndex = GetNextActive(_currentIndex);
+    public bool MoveNext()
+    {
+        int? next = GetNextActive(_currentIndex);
+        if (next is null)
+        {
+            return false;
+        }
+        _currentIndex = next.Value;
+        return true;
+    }
 
     public IEnumerable<(string Id, bool Active)> GetAllIdsWithStatus()
     {
@@ -109,8 +118,12 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
             {
                 return false;
             }
-            int newIndex = GetNextActive(index);
-            (_ids[index], _ids[newIndex]) = (_ids[newIndex], _ids[index]);
+            int? newIndex = GetNextActive(index);
+            if (newIndex is null)
+            {
+                return false;
+            }
+            (_ids[index], _ids[newIndex.Value]) = (_ids[newIndex.Value], _ids[index]);
         }
 
         if (preserveCurrent)
@@ -181,8 +194,13 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
 
     private int GetNext(int index) => (index + 1) % _ids.Count;
 
-    private int GetNextActive(int index)
+    private int? GetNextActive(int index)
     {
+        if (!GetActiveIds().Any())
+        {
+            return null;
+        }
+
         do
         {
             index = GetNext(index);

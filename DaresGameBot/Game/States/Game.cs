@@ -194,6 +194,7 @@ internal sealed class Game : IStateful<GameData>
         _currentActionId = playableIds.Count == 0 ? null : _actionDeck.FilterMinUses(playableIds).RandomItem();
         if (_currentActionId is null)
         {
+            CurrentArrangement = null;
             return;
         }
 
