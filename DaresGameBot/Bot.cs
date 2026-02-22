@@ -329,7 +329,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
     internal async Task RevealCardAsync(RevealCardData revealData)
     {
-        if (_state.Game?.CurrentArrangement is null)
+        if (_state.Game?.Players.Current is null)
         {
             await StartNewGameAsync();
             return;
@@ -340,16 +340,16 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        string image = GetArrangementImage(_state.Game.CurrentArrangement, revealData);
+        bool hasPartners = _state.Game.CurrentArrangement?.Partners.Count > 0;
+        string? image = hasPartners ? GetArrangementImage(_state.Game.CurrentArrangement, revealData) : null;
 
-        if (string.IsNullOrEmpty(revealData.Tag))
+        if (hasPartners && !string.IsNullOrEmpty(revealData.Tag))
         {
-            _state.Game.DrawQuestion();
-            await RevealQuestionAsync(_state.Game, _state.PlayerState.CardMessageId.Value, _playerChat, image);
-            await RevealQuestionAsync(_state.Game, _state.AdminState.CardMessageId.Value, _adminChat, image);
-        }
-        else
-        {
+            if (_state.Game.CurrentArrangement is null || image is null)
+            {
+                throw new InvalidOperationException();
+            }
+
             _state.Game.ProcessCardRevealed(revealData.Tag);
             ActionData data = _state.Game.GetActionData();
             bool includePartial = _config.ActionOptions[revealData.Tag].PartialPoints.HasValue;
@@ -358,29 +358,44 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             await RevealActionAsync(_state.Game.Players, _state.Game.CurrentArrangement, data, revealData.Tag,
                 includePartial, _state.AdminState.CardMessageId.Value, _adminChat, image);
         }
+        else
+        {
+            _state.Game.DrawQuestion();
+            await RevealQuestionAsync(_state.Game, _state.PlayerState.CardMessageId.Value, _playerChat, image);
+            await RevealQuestionAsync(_state.Game, _state.AdminState.CardMessageId.Value, _adminChat, image);
+        }
 
         _saveManager.Save(_state);
     }
 
     internal async Task UnrevealCardAsync()
     {
-        if (_state.Game?.CurrentArrangement is null)
-        {
-            await StartNewGameAsync();
-            return;
-        }
-
         if (_state.AdminState?.CardMessageId is null || _state.PlayerState?.CardMessageId is null)
         {
             return;
         }
 
-        string image = GetArrangementImage(_state.Game.CurrentArrangement);
+        if (_state.Game?.Players.Current is null)
+        {
+            await StartNewGameAsync();
+            return;
+        }
 
-        await UnrevealCardAsync(_state.Game.Players, _state.Game.CurrentArrangement, _playerChat,
-            _state.PlayerState.CardMessageId.Value, image);
-        await UnrevealCardAsync(_state.Game.Players, _state.Game.CurrentArrangement, _adminChat,
-            _state.AdminState.CardMessageId.Value, image);
+        if (!_state.Game.IsCurrentArrangementValid())
+        {
+            await UnrevealCardAsync(_state.Game.Players, _playerChat, _state.PlayerState.CardMessageId.Value);
+            await UnrevealCardAsync(_state.Game.Players, _adminChat, _state.AdminState.CardMessageId.Value);
+        }
+        else
+        {
+            string image = GetArrangementImage(_state.Game.CurrentArrangement);
+
+            await UnrevealCardAsync(_state.Game.Players, _state.Game.CurrentArrangement!, _playerChat,
+                _state.PlayerState.CardMessageId.Value, image);
+            await UnrevealCardAsync(_state.Game.Players, _state.Game.CurrentArrangement!, _adminChat,
+                _state.AdminState.CardMessageId.Value, image);
+
+        }
 
         _state.Game.ProcessCardUnrevealed();
         _saveManager.Save(_state);
@@ -483,14 +498,19 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             _config.GetArrangementImage(arrangement!.GetArrangementType(), revealData)!);
     }
 
-    private Task RevealQuestionAsync(Game.States.Game game, int cardMessageId, Chat chat, string image)
+    private Task RevealQuestionAsync(Game.States.Game game, int cardMessageId, Chat chat, string? image)
     {
         Turn turn = CreateQuestionTurn(game, chat.Id);
         MessageTemplateText template = turn.GetMessage();
-        InlineKeyboardMarkup? keyboard = CreateQuestionKeyboard(true, chat.Id);
+        InlineKeyboardMarkup? keyboard = CreateQuestionKeyboard(chat.Id);
         if (keyboard is not null)
         {
             template.KeyboardProvider = keyboard;
+        }
+
+        if (image is null)
+        {
+            return template.EditMessageWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
         }
 
         MessageTemplateImage templateImage = new(template, image);
@@ -508,6 +528,15 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         template.KeyboardProvider = CreateActionKeyboard(includePartial, chat.Id);
         MessageTemplateImage templateImage = new(template, image);
         return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
+    }
+
+    private Task UnrevealCardAsync(PlayersRepository players, Chat chat, int cardMessageId)
+    {
+        Texts texts = _textsProvider.GetTextsFor(chat.Id);
+        MessageTemplateText template =
+            texts.TurnFormatShort.Format(players.GetDisplayName(players.Current), string.Empty);
+        template.KeyboardProvider = CreateArrangementKeyboard(chat.Id, true);
+        return template.EditMessageWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
     private Task UnrevealCardAsync(PlayersRepository players, Arrangement arrangement, Chat chat, int cardMessageId,
@@ -654,7 +683,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     {
         Turn turn = CreateQuestionTurn(game, chat.Id);
         MessageTemplate template = turn.GetMessage();
-        InlineKeyboardMarkup? keyboard = CreateQuestionKeyboard(false, chat.Id);
+        InlineKeyboardMarkup? keyboard = CreateQuestionKeyboard(chat.Id);
         if (keyboard is not null)
         {
             template.KeyboardProvider = keyboard;
@@ -819,7 +848,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _saveManager.Save(_state);
     }
 
-    private InlineKeyboardMarkup CreateArrangementKeyboard(long userId)
+    private InlineKeyboardMarkup CreateArrangementKeyboard(long userId, bool questionOnly = false)
     {
         Texts texts = _textsProvider.GetTextsFor(userId);
         List<List<InlineKeyboardButton>> keyboard = new()
@@ -827,10 +856,13 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             CreateOneButtonRow<RevealCard>(texts.QuestionsTag)
         };
 
-        keyboard.AddRange(_state.Core
-                                .ActionOptions
-                                .OrderBy(o => o.Value.Points)
-                                .Select(o => CreateOneButtonRow<RevealCard>(o.Key, o.Key)));
+        if (!questionOnly)
+        {
+            keyboard.AddRange(_state.Core
+                                    .ActionOptions
+                                    .OrderBy(o => o.Value.Points)
+                                    .Select(o => CreateOneButtonRow<RevealCard>(o.Key, o.Key)));
+        }
 
         return new InlineKeyboardMarkup(keyboard);
     }
@@ -862,7 +894,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return new InlineKeyboardMarkup(keyboard);
     }
 
-    private InlineKeyboardMarkup? CreateQuestionKeyboard(bool areOtherOptionsAvailable, long userId)
+    private InlineKeyboardMarkup? CreateQuestionKeyboard(long userId)
     {
         if (userId != _adminChat.Id)
         {
@@ -872,11 +904,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         List<List<InlineKeyboardButton>> keyboard = new();
 
         Texts texts = _textsProvider.GetTextsFor(userId);
-        if (areOtherOptionsAvailable)
-        {
-            List<InlineKeyboardButton> unreveal = CreateOneButtonRow<UnrevealCard>(texts.Unreveal);
-            keyboard.Add(unreveal);
-        }
+
+        List<InlineKeyboardButton> unreveal = CreateOneButtonRow<UnrevealCard>(texts.Unreveal);
+        keyboard.Add(unreveal);
 
         List<InlineKeyboardButton> complete = CreateOneButtonRow<CompleteCard>(texts.Completed);
         keyboard.Add(complete);
