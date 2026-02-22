@@ -1,4 +1,3 @@
-using System;
 using AbstractBot.Modules.Context;
 using DaresGameBot.Game.States.Cores;
 using DaresGameBot.Game.States.Data;
@@ -9,25 +8,12 @@ namespace DaresGameBot.Game.States;
 
 internal sealed class BotState : BotState<BotData, UserState, UserStateData>
 {
-    public enum PlayersMessageState
-    {
-        Activity,
-        Selection,
-        FastMovement,
-        Movement
-    }
-
     public readonly BotStateCore Core;
 
     public Game? Game;
 
     public int? PlayersMessageId;
-    public PlayersMessageState CurrentPlayersMessageState;
-
-    public PlayersMessageState GetNextPlayersMessageState()
-    {
-        return (PlayersMessageState) (((int)CurrentPlayersMessageState + 1) % Enum.GetValues<PlayersMessageState>().Length);
-    }
+    public PlayersMessageState.Type CurrentPlayersMessageState;
 
     public UserState? AdminState => UserStates.GetValueOrDefault(_adminId);
     public UserState? PlayerState => UserStates.GetValueOrDefault(_playerId);
@@ -88,7 +74,7 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>
         }
 
         PlayersMessageId = data.PlayersMessageId;
-        CurrentPlayersMessageState = data.CurentPinState?.ToPlayersMessageState() ?? PlayersMessageState.Movement;
+        CurrentPlayersMessageState = data.CurentPinState?.ToPlayersMessageState() ?? PlayersMessageState.Type.Activity;
     }
 
     private readonly long _adminId;

@@ -1,4 +1,5 @@
 ﻿using System;
+using DaresGameBot.Game.States;
 using DaresGameBot.Operations.Data.GameButtons;
 
 namespace DaresGameBot.Utilities.Extensions;
@@ -23,9 +24,9 @@ internal static class ObjectExtensions
         return Enum.TryParse(o?.ToString(), out s) ? s : null;
     }
 
-    public static Game.States.BotState.PlayersMessageState? ToPlayersMessageState(this object? o)
+    public static PlayersMessageState.Type? ToPlayersMessageState(this object? o)
     {
-        if (o is Game.States.BotState.PlayersMessageState s)
+        if (o is PlayersMessageState.Type s)
         {
             return s;
         }
