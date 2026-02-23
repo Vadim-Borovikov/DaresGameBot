@@ -96,6 +96,9 @@ public class Texts : AbstractBot.Models.Config.Texts
     [Required]
     [MinLength(1)]
     public string Unreveal { get; init; } = null!;
+    [Required]
+    [MinLength(1)]
+    public string Delete { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
