@@ -65,10 +65,10 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         return _propositions.GetValueOrDefault(key);
     }
 
-    public float? GetRatio(string player)
+    public uint? GetRatio(string player)
     {
         uint propositions = GetPropositions(player);
-        return propositions == 0 ? null : 1.0f * GetPoints(player) / propositions;
+        return propositions == 0 ? null : GetPoints(player) / propositions;
     }
 
     public uint GetPoints(string player) => _points.GetValueOrDefault(player);

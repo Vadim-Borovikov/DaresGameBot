@@ -787,10 +787,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     private Task ShowRatesAsync(Game.States.Game game)
     {
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
-        Dictionary<string, float> ratios = new();
+        Dictionary<string, uint> ratios = new();
         foreach (string player in game.Players.AllIds)
         {
-            float? rate = game.Stats.GetRatio(player);
+            uint? rate = game.Stats.GetRatio(player);
             if (rate is not null)
             {
                 ratios[player] = rate.Value;
@@ -802,7 +802,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return texts.NoRates.SendAsync(_core.UpdateSender, _adminChat);
         }
 
-        float bestRate = ratios.Values.Max();
+        uint bestRate = ratios.Values.Max();
 
         List<MessageTemplateText> lines = new();
 
@@ -811,12 +811,12 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         {
             uint points = game.Stats.GetPoints(player);
             uint propositions = game.Stats.GetPropositions(player);
-            string rate = ratios[player].ToString("0.##");
+            uint rate = ratios[player];
             uint turns = game.Stats.GetTurns(player);
 
             MessageTemplateText format = game.Players.IsActive(player) ? texts.RateFormat : texts.RateFormatHidden;
             MessageTemplateText line = format.Format(player, points, propositions, rate, turns);
-            if (Math.Abs(ratios[player] - bestRate) < float.Epsilon)
+            if (rate == bestRate)
             {
                 line = texts.BestRateFormat.Format(line);
             }
