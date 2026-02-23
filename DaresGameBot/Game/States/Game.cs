@@ -106,22 +106,22 @@ internal sealed class Game : IStateful<GameData>
         CurrentState = State.ArrangementPurposed;
     }
 
-    public void CompleteQuestion()
+    public bool CompleteQuestion()
     {
         _questionDeck.Mark(_currentQuestionId!.Value);
 
         OnQuestionCompleted();
 
-        StartNewTurn();
+        return StartNewTurn();
     }
 
-    public void CompleteAction(bool fully)
+    public bool CompleteAction(bool fully)
     {
         _actionDeck.Mark(_currentActionId!.Value);
 
         OnActionCompleted(fully);
 
-        StartNewTurn();
+        return StartNewTurn();
     }
 
     public bool UpdatePlayers(List<AddOrUpdatePlayerData> updateDatas, string handlerSeparator)
@@ -181,11 +181,11 @@ internal sealed class Game : IStateful<GameData>
         _currentQuestionId = data.CurrentQuestionId;
     }
 
-    private void StartNewTurn()
+    private bool StartNewTurn()
     {
         _currentActionId = null;
         _currentQuestionId = null;
-        Players.MoveNext();
+        return Players.MoveNext();
     }
 
     public void DrawAction()

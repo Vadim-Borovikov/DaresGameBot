@@ -18,7 +18,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     public bool MoveNext()
     {
         int? next = GetNextActive(_currentIndex);
-        if (next is null)
+        if (next is null || (next == _currentIndex))
         {
             return false;
         }
