@@ -814,7 +814,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             uint rate = ratios[player];
             uint turns = game.Stats.GetTurns(player);
 
-            MessageTemplateText format = game.Players.IsActive(player) ? texts.RateFormat : texts.RateFormatHidden;
+            bool enoughTurns = game.Stats.MinRound is null || (turns >= game.Stats.MinRound);
+            MessageTemplateText format = enoughTurns ? texts.RateFormat : texts.RateFormatHidden;
             MessageTemplateText line = format.Format(player, points, propositions, rate, turns);
             if (rate == bestRate)
             {

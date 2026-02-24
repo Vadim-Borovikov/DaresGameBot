@@ -11,4 +11,8 @@ public sealed class GameStatsData
     public Dictionary<string, uint> Propositions { get; set; } = null!;
     [UsedImplicitly]
     public Dictionary<string, uint> Turns { get; set; } = null!;
+    [UsedImplicitly]
+    public List<string> CurrentRound { get; set; } = null!;
+    [UsedImplicitly]
+    public uint? MinRound { get; set; }
 }

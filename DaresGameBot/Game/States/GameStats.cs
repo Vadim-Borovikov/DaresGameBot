@@ -12,6 +12,8 @@ namespace DaresGameBot.Game.States;
 
 internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsData>
 {
+    public uint? MinRound { get; private set; }
+
     public GameStats(GameStatsStateCore core) => _core = core;
 
     public void OnQuestionCompleted(string player, Arrangement? arrangement)
@@ -25,6 +27,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
             RegisterPropositions(player, arrangement);
         }
         RegisterTurn();
+        RegisterRound(player);
 
         if (_core.QuestionPoints.HasValue)
         {
@@ -36,6 +39,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
     {
         RegisterPropositions(player, arrangement);
         RegisterTurn();
+        RegisterRound(player);
 
         uint? points = GetPoints(tag, fully);
         if (points is null)
@@ -80,7 +84,9 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         {
             Points = _points,
             Propositions = _propositions,
-            Turns = _turns
+            Turns = _turns,
+            CurrentRound = _currentRound,
+            MinRound = MinRound,
         };
     }
 
@@ -99,6 +105,11 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
 
         _turns.Clear();
         _turns.AddAll(data.Turns);
+
+        _currentRound.Clear();
+        _currentRound.AddRange(data.CurrentRound);
+
+        MinRound = data.MinRound;
     }
 
     private ushort? GetPoints(string? tag, bool completedFully)
@@ -159,15 +170,28 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
 
     private void RegisterTurn()
     {
-        foreach (string player in _core.Players.GetActiveIds())
+        foreach (string activePlayer in _core.Players.GetActiveIds())
         {
-            _turns.CreateOrAdd(player, 1);
+            _turns.CreateOrAdd(activePlayer, 1);
         }
+    }
+
+    private void RegisterRound(string player)
+    {
+        if (_currentRound.Contains(player))
+        {
+            if (MinRound is null || (_currentRound.Count < MinRound.Value))
+            {
+                MinRound = (uint) _currentRound.Count;
+            }
+            _currentRound.Clear();
+        }
+        _currentRound.Add(player);
     }
 
     private readonly Dictionary<string, uint> _points = new();
     private readonly Dictionary<string, uint> _propositions = new();
     private readonly Dictionary<string, uint> _turns = new();
-
+    private readonly List<string> _currentRound = new();
     private readonly GameStatsStateCore _core;
 }
