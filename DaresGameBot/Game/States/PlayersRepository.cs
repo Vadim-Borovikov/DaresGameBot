@@ -65,10 +65,13 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return changed;
     }
 
-    public string GetDisplayName(string id)
+    public string GetDisplayName(string id, bool activeOnly)
     {
-        return GetActiveIds().Count(activeId => _infos[activeId].Name == _infos[id].Name) > 1 ? id : _infos[id].Name;
+        IEnumerable<string> players = activeOnly ? GetActiveIds() : _ids;
+        return players.Count(i => _infos[i].Name == _infos[id].Name) > 1 ? id : _infos[id].Name;
     }
+
+    public string GetDisplayName(string id) => GetDisplayName(id, true);
 
     public bool Toggle(string id)
     {
