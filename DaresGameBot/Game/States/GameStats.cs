@@ -7,6 +7,7 @@ using DaresGameBot.Utilities.Extensions;
 using GryphonUtilities.Save;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DaresGameBot.Game.States;
 
@@ -16,7 +17,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
 
     public GameStats(GameStatsStateCore core) => _core = core;
 
-    public void OnQuestionCompleted(string player, Arrangement? arrangement)
+    public void OnQuestionCompleted(string player, Arrangement? arrangement, List<string> activePlayers)
     {
         if (arrangement is null)
         {
@@ -26,8 +27,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         {
             RegisterPropositions(player, arrangement);
         }
-        RegisterTurn();
-        RegisterRound(player);
+        RegisterTurn(player, activePlayers);
 
         if (_core.QuestionPoints.HasValue)
         {
@@ -35,17 +35,14 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         }
     }
 
-    public void OnActionCompleted(string player, Arrangement arrangement, string tag, bool fully)
+    public void OnActionCompleted(string player, Arrangement arrangement, List<string> activePlayers, string tag,
+        bool fully)
     {
         RegisterPropositions(player, arrangement);
-        RegisterTurn();
-        RegisterRound(player);
+        RegisterTurn(player, activePlayers);
 
-        uint? points = GetPoints(tag, fully);
-        if (points is null)
-        {
-            throw new NullReferenceException($"No points in config for ({tag}, {fully})");
-        }
+        uint? points = GetPoints(tag, fully)
+                       ?? throw new NullReferenceException($"No points in config for ({tag}, {fully})");
         RegisterPoints(player, arrangement, points.Value);
     }
 
@@ -106,9 +103,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         _turns.Clear();
         _turns.AddAll(data.Turns);
 
-        _currentRound.Clear();
-        _currentRound.AddRange(data.CurrentRound);
-
+        _currentRound = data.CurrentRound;
         MinRound = data.MinRound;
     }
 
@@ -168,30 +163,37 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         return string.Compare(p1, p2, StringComparison.Ordinal) < 0 ? p1 + p2 : p2 + p1;
     }
 
-    private void RegisterTurn()
+    private void RegisterTurn(string player, List<string> activePlayers)
     {
-        foreach (string activePlayer in _core.Players.GetActiveIds())
+        foreach (string activePlayer in activePlayers)
         {
             _turns.CreateOrAdd(activePlayer, 1);
         }
+
+        RegisterRound(player == activePlayers.LastOrDefault());
     }
 
-    private void RegisterRound(string player)
+    private void RegisterRound(bool isLastPlayer)
     {
-        if (_currentRound.Contains(player))
+        ++_currentRound;
+
+        if (!isLastPlayer)
         {
-            if (MinRound is null || (_currentRound.Count < MinRound.Value))
-            {
-                MinRound = (uint) _currentRound.Count;
-            }
-            _currentRound.Clear();
+            return;
         }
-        _currentRound.Add(player);
+
+        if (MinRound is null || (_currentRound < MinRound.Value))
+        {
+            MinRound = _currentRound;
+        }
+
+        _currentRound = 0;
     }
 
     private readonly Dictionary<string, uint> _points = new();
     private readonly Dictionary<string, uint> _propositions = new();
     private readonly Dictionary<string, uint> _turns = new();
-    private readonly List<string> _currentRound = new();
     private readonly GameStatsStateCore _core;
+
+    private uint _currentRound;
 }
