@@ -809,6 +809,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         // ReSharper disable once LoopCanBePartlyConvertedToQuery
         foreach (string player in ratios.Keys.OrderByDescending(p => ratios[p]))
         {
+            string name = game.Players.GetDisplayName(player, false);
             uint points = game.Stats.GetPoints(player);
             uint propositions = game.Stats.GetPropositions(player);
             uint rate = ratios[player];
@@ -816,7 +817,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
             bool enoughTurns = game.Stats.MinRound is null || (turns >= game.Stats.MinRound);
             MessageTemplateText format = enoughTurns ? texts.RateFormat : texts.RateFormatHidden;
-            MessageTemplateText line = format.Format(player, points, propositions, rate, turns);
+            MessageTemplateText line = format.Format(name, points, propositions, rate, turns);
             if (rate == bestRate)
             {
                 line = texts.BestRateFormat.Format(line);

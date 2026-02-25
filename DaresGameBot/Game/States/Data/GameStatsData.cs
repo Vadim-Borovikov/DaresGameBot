@@ -12,7 +12,7 @@ public sealed class GameStatsData
     [UsedImplicitly]
     public Dictionary<string, uint> Turns { get; set; } = null!;
     [UsedImplicitly]
-    public List<string> CurrentRound { get; set; } = null!;
+    public uint CurrentRound { get; set; }
     [UsedImplicitly]
     public uint? MinRound { get; set; }
 }

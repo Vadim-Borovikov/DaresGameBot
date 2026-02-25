@@ -205,9 +205,10 @@ internal sealed class Game : IStateful<GameData>
 
     private void OnQuestionCompleted()
     {
+        List<string> activePlayers = Players.GetActiveIds().ToList();
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnQuestionCompleted(Players.Current, CurrentArrangement);
+            subscriber.OnQuestionCompleted(Players.Current, CurrentArrangement, activePlayers);
         }
     }
 
@@ -222,9 +223,10 @@ internal sealed class Game : IStateful<GameData>
         {
             throw new NullReferenceException("Current tag is null");
         }
+        List<string> activePlayers = Players.GetActiveIds().ToList();
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
-            subscriber.OnActionCompleted(Players.Current, CurrentArrangement, _currentCardTag, fully);
+            subscriber.OnActionCompleted(Players.Current, CurrentArrangement, activePlayers, _currentCardTag, fully);
         }
     }
 
