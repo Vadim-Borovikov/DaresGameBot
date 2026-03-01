@@ -10,6 +10,8 @@ public sealed class GameStatsData
     [UsedImplicitly]
     public Dictionary<string, uint> Propositions { get; set; } = null!;
     [UsedImplicitly]
+    public Dictionary<string, uint> PartnerPropositions { get; set; } = null!;
+    [UsedImplicitly]
     public Dictionary<string, uint> Turns { get; set; } = null!;
     [UsedImplicitly]
     public uint CurrentRound { get; set; }

@@ -58,6 +58,24 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         return changed;
     }
 
+    public float GetPartnerPropositionsRate(string player)
+    {
+        uint propositions =  _partnerPropositions.GetValueOrDefault(player);
+        uint turns = GetTurns(player);
+
+        if (propositions == 0)
+        {
+            return -turns;
+        }
+
+        if (turns == 0)
+        {
+            throw new InvalidOperationException($"Player {player} has propositions but no turns");
+        }
+
+        return 1.0f * propositions / turns;
+    }
+
     public uint GetPropositions(string player) => _propositions.GetValueOrDefault(player);
 
     public uint GetPropositions(string p1, string p2)
@@ -81,6 +99,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         {
             Points = _points,
             Propositions = _propositions,
+            PartnerPropositions = _partnerPropositions,
             Turns = _turns,
             CurrentRound = _currentRound,
             MinRound = MinRound,
@@ -99,6 +118,9 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
 
         _propositions.Clear();
         _propositions.AddAll(data.Propositions);
+
+        _partnerPropositions.Clear();
+        _partnerPropositions.AddAll(data.PartnerPropositions);
 
         _turns.Clear();
         _turns.AddAll(data.Turns);
@@ -138,6 +160,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         {
             RegisterProposition(p);
             RegisterProposition(player, p);
+            RegisterPartnerProposition(p);
         }
 
         if (!arrangement.CompatablePartners)
@@ -149,6 +172,8 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
             RegisterProposition(pair.Item1, pair.Item2);
         }
     }
+
+    private void RegisterPartnerProposition(string key) => _partnerPropositions.CreateOrAdd(key, 1);
 
     private void RegisterProposition(string key) => _propositions.CreateOrAdd(key, 1);
 
@@ -192,6 +217,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
 
     private readonly Dictionary<string, uint> _points = new();
     private readonly Dictionary<string, uint> _propositions = new();
+    private readonly Dictionary<string, uint> _partnerPropositions = new();
     private readonly Dictionary<string, uint> _turns = new();
     private readonly GameStatsStateCore _core;
 
