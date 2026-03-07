@@ -19,8 +19,7 @@ public class Config : ConfigWithSheets, ILocalizationConfig<Texts>
 
     [UsedImplicitly]
     [Required]
-    [Range(0.0, 1.0)]
-    public decimal InitialChoiceChance { get; init; }
+    public byte MaxImagesInAlbum { get; init; }
 
     [UsedImplicitly]
     [Required]

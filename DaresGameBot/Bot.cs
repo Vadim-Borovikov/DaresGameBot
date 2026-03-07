@@ -130,6 +130,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new RatesCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new UpdateCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new LangCommand(this, _textsProvider));
+        _core.UpdateReceiver.Operations.Add(new ShowImagesCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new UpdatePlayers(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new TogglePlayersMessageState(this));
         _core.UpdateReceiver.Operations.Add(new TogglePlayer(this));
@@ -522,6 +523,18 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         await DeleteCardMessagesAsync();
 
         await DrawArrangementAsync(_state.Game);
+    }
+
+    internal async Task ShowImagesAsync()
+    {
+        foreach (string[] paths in _config.Images
+                                          .Values
+                                          .Select(n => Path.Combine(_config.ImagesFolder, n))
+                                          .Batch(_config.MaxImagesInAlbum))
+        {
+            await _core.UpdateSender.SendMediaGroupAsync(_adminChat, paths);
+            await _core.UpdateSender.SendMediaGroupAsync(_playerChat, paths);
+        }
     }
 
     private PlayersMessageState.Type GetNextPlayersMessageState(int activePlayers)

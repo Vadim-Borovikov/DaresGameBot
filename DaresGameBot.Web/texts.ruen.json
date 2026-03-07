@@ -5,7 +5,8 @@
     "update": "обновить колоды | update decks",
     "lang": "переключить язык | toggle language",
     "new": "новая игра | new game",
-    "rates": "показать рейтинги | show rates"
+    "rates": "показать рейтинги | show rates",
+    "images": "показать картинки | show images"
   },
 
   "StartFormat": {
