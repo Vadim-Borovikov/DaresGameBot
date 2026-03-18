@@ -72,8 +72,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
 
         Texts defaultTexts = localization.GetDefaultTexts();
-        BotStateCore stateCore = new(config.ActionOptions, config.QuestionPoints, defaultTexts.ActionsTitle,
-            defaultTexts.QuestionsTitle, defaultTexts.PlayerFillNamePrefix);
+        BotStateCore stateCore = new(config.ActionOptions, config.QuestionPoints, config.ActionsTitle,
+            config.QuestionsTitle, defaultTexts.PlayerFillNamePrefix);
         BotState state = new(stateCore, userStates, config.AdminChatId, config.PlayerChatId);
         Greeter greeter = new(core.UpdateSender, localization);
         LocalizationUserRegistrator registrator = new(state, saveManager);
@@ -98,10 +98,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         GoogleSheetsManager.Documents.Document document = _sheetsManager.GetOrAdd(_config.GoogleSheetId);
 
-        Texts texts = textsProvider.GetDefaultTexts();
-
-        _actionsSheet = document.GetOrAddSheet(texts.ActionsTitle);
-        _questionsSheet = document.GetOrAddSheet(texts.QuestionsTitle);
+        _actionsSheet = document.GetOrAddSheet(config.ActionsTitle);
+        _questionsSheet = document.GetOrAddSheet(config.QuestionsTitle);
 
         _adminChat = new Chat
         {
@@ -705,7 +703,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(repository, gameStats, compatibility);
-        return new Game.States.Game(actionDeck, questionDeck, texts.ActionsTitle, texts.QuestionsTitle, repository,
+        return new Game.States.Game(actionDeck, questionDeck, _config.ActionsTitle, _config.QuestionsTitle, repository,
             gameStats, matchmaker);
     }
 

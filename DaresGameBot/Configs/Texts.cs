@@ -9,16 +9,6 @@ public class Texts : AbstractBot.Models.Config.Texts
 {
     [UsedImplicitly]
     [Required]
-    [MinLength(1)]
-    public string ActionsTitle { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
-    public string QuestionsTitle { get; init; } = null!;
-
-    [UsedImplicitly]
-    [Required]
     public MessageTemplateText PlayersFormat { get; init; } = null!;
     [UsedImplicitly]
     [Required]
