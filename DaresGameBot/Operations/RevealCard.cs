@@ -12,13 +12,13 @@ internal sealed class RevealCard : Operation<RevealCardData>
 
     public RevealCard(Bot bot) : base(bot.Core.Accesses, bot.Core.UpdateSender) => _bot = bot;
 
-    protected override bool IsInvokingBy(Message message, User sender, out RevealCardData? data)
+    protected override bool IsInvokingBy(Message message, User? sender, out RevealCardData? data)
     {
         data = null;
         return false;
     }
 
-    protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
+    protected override bool IsInvokingBy(Message message, User? sender, string callbackQueryDataCore,
         out RevealCardData? data)
     {
         data = new RevealCardData(callbackQueryDataCore);

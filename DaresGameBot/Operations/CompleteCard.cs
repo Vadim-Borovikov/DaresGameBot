@@ -13,13 +13,13 @@ internal sealed class CompleteCard : Operation<CompleteCardData>
 
     public CompleteCard(Bot bot) : base(bot.Core.Accesses, bot.Core.UpdateSender) => _bot = bot;
 
-    protected override bool IsInvokingBy(Message message, User sender, out CompleteCardData? data)
+    protected override bool IsInvokingBy(Message message, User? sender, out CompleteCardData? data)
     {
         data = null;
         return false;
     }
 
-    protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
+    protected override bool IsInvokingBy(Message message, User? sender, string callbackQueryDataCore,
         out CompleteCardData? data)
     {
         data = CompleteCardData.From(message.ToMarkdown(), message.Photo is not null, callbackQueryDataCore);
