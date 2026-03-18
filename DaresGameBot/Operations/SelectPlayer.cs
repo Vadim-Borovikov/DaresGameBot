@@ -11,13 +11,13 @@ internal sealed class SelectPlayer : Operation<string>
 
     public SelectPlayer(Bot bot) : base(bot.Core.Accesses, bot.Core.UpdateSender) => _bot = bot;
 
-    protected override bool IsInvokingBy(Message message, User sender, out string? name)
+    protected override bool IsInvokingBy(Message message, User? sender, out string? name)
     {
         name = null;
         return false;
     }
 
-    protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
+    protected override bool IsInvokingBy(Message message, User? sender, string callbackQueryDataCore,
         out string? name)
     {
         name = callbackQueryDataCore;

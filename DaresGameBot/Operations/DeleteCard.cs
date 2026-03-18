@@ -11,7 +11,7 @@ internal sealed class DeleteCard : Operation
 
     public DeleteCard(Bot bot) : base(bot.Core.Accesses, bot.Core.UpdateSender) => _bot = bot;
 
-    protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore) => true;
+    protected override bool IsInvokingBy(Message message, User? sender, string callbackQueryDataCore) => true;
 
     protected override Task ExecuteAsync(Message message, User sender, string callbackQueryDataCore)
     {
