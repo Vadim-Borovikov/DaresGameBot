@@ -9,15 +9,17 @@ internal sealed class BotStateCore
     public readonly ushort? QuestionPoints;
     public readonly string ActionsVersion;
     public readonly string QuestionsVersion;
+    public readonly string PlayerFillNamePrefix;
 
     public SheetInfo? SheetInfo;
 
     public BotStateCore(Dictionary<string, Option> actionOptions, ushort? questionPoints, string actionsVersion,
-        string questionsVersion)
+        string questionsVersion, string playerFillNamePrefix)
     {
         ActionOptions = actionOptions;
         ActionsVersion = actionsVersion;
         QuestionsVersion = questionsVersion;
+        PlayerFillNamePrefix = playerFillNamePrefix;
         QuestionPoints = questionPoints;
     }
 }

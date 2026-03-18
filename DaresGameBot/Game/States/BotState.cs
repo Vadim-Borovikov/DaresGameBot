@@ -69,7 +69,7 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>
         if (Core.SheetInfo is not null && data.GameData is not null)
         {
             Game = new Game(Core.ActionOptions, Core.QuestionPoints, Core.ActionsVersion, Core.QuestionsVersion,
-                Core.SheetInfo);
+                Core.PlayerFillNamePrefix, Core.SheetInfo);
             Game.LoadFrom(data.GameData);
         }
 

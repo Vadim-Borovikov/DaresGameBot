@@ -72,8 +72,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
 
         Texts defaultTexts = localization.GetDefaultTexts();
-        BotStateCore stateCore =
-            new(config.ActionOptions, config.QuestionPoints, defaultTexts.ActionsTitle, defaultTexts.QuestionsTitle);
+        BotStateCore stateCore = new(config.ActionOptions, config.QuestionPoints, defaultTexts.ActionsTitle,
+            defaultTexts.QuestionsTitle, defaultTexts.PlayerFillNamePrefix);
         BotState state = new(stateCore, userStates, config.AdminChatId, config.PlayerChatId);
         Greeter greeter = new(core.UpdateSender, localization);
         LocalizationUserRegistrator registrator = new(state, saveManager);
@@ -696,11 +696,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         Deck<ActionData> actionDeck = new(_state.Core.SheetInfo.Actions);
         Deck<QuestionData> questionDeck = new(_state.Core.SheetInfo.Questions);
 
-        PlayersRepository repository = new();
+        Texts texts = _textsProvider.GetDefaultTexts();
+        PlayersRepository repository = new(texts.PlayerFillNamePrefix);
         GameStatsStateCore gameStatsStateCore = new(_state.Core.ActionOptions, _state.Core.QuestionPoints, repository);
         GameStats gameStats = new(gameStatsStateCore);
 
-        Texts texts = _textsProvider.GetDefaultTexts();
         gameStats.UpdateList(updates, texts.UpdatePlayerSeparator);
 
         GroupCompatibility compatibility = new();
