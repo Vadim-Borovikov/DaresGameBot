@@ -10,31 +10,23 @@ namespace DaresGameBot.Game;
 
 internal sealed class Turn
 {
-    public Turn(Texts texts, Func<string, string> getDisplayName, string tag, string description,
-        string? descriptionEn, string player, Arrangement arrangement)
-        : this(texts, getDisplayName, tag, description, descriptionEn, player.Yield(), arrangement)
+    public Turn(Texts texts, Func<string, string> getDisplayName, string tag, string description, string player,
+        Arrangement arrangement) : this(texts, getDisplayName, tag, description, player.Yield(), arrangement)
     {}
 
     public Turn(Texts texts, Func<string, string> getDisplayName, string tag, string description,
-        string? descriptionEn, IEnumerable<string> players, Arrangement? arrangement = null)
+        IEnumerable<string> players, Arrangement? arrangement = null)
     {
         _texts = texts;
         _getDisplayName = getDisplayName;
         _players = players;
         _arrangement = arrangement;
         _tagPart = new MessageTemplateText(tag);
-        _descriprionRuPart = new MessageTemplateText(description);
-        _descriprionEnPart = descriptionEn is null ? null : new MessageTemplateText(descriptionEn);
+        _descriprion = new MessageTemplateText(description);
     }
 
     public MessageTemplateText GetMessage()
     {
-        MessageTemplateText descriprionPart = _descriprionRuPart;
-        if (IncludeEn)
-        {
-            descriprionPart = _texts.TurnDescriptionRuEnFormat.Format(_descriprionRuPart, _descriprionEnPart);
-        }
-
         MessageTemplateText message = _texts.TurnFormatFull;
 
         string playersPart = string.Join(_texts.DefaultSeparator, _players.Select(_getDisplayName));
@@ -45,7 +37,7 @@ internal sealed class Turn
             partnersPart = GetPartnersPart(_texts, _arrangement);
         }
 
-        return message.Format(_tagPart, playersPart, descriprionPart, partnersPart);
+        return message.Format(_tagPart, playersPart, _descriprion, partnersPart);
     }
 
     public static MessageTemplateText GetPartnersPart(Texts texts, Arrangement arrangement,
@@ -63,12 +55,9 @@ internal sealed class Turn
     }
 
     private readonly MessageTemplateText _tagPart;
-    private readonly MessageTemplateText _descriprionRuPart;
-    private readonly MessageTemplateText? _descriprionEnPart;
+    private readonly MessageTemplateText _descriprion;
     private readonly IEnumerable<string> _players;
     private readonly Arrangement? _arrangement;
     private readonly Texts _texts;
     private readonly Func<string, string> _getDisplayName;
-
-    private bool IncludeEn => _descriprionEnPart is not null;
 }

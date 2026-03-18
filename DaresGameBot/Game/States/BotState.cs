@@ -26,7 +26,7 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>
         _playerId = playerId;
     }
 
-    public bool ShouldIncludeEnFor(long userId) => UserStates.ContainsKey(userId) && UserStates[userId].IncludeEn;
+    public bool ShouldShowEnFor(long userId) => UserStates.ContainsKey(userId) && UserStates[userId].IsLanguageEn;
 
     public void SetUserMessageId(long userId, int messageId)
     {

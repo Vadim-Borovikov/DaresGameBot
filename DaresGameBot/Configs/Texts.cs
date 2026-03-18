@@ -41,9 +41,6 @@ public class Texts : AbstractBot.Models.Config.Texts
     [UsedImplicitly]
     [Required]
     public MessageTemplateText TurnFormatShort { get; init; } = null!;
-    [UsedImplicitly]
-    [Required]
-    public MessageTemplateText TurnDescriptionRuEnFormat { get; init; } = null!;
     [Required]
     public MessageTemplateText TurnPartnersFormat { get; init; } = null!;
 

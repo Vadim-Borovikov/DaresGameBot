@@ -5,7 +5,7 @@ namespace DaresGameBot.Game.States;
 internal sealed class UserState : LocalizationUserState<UserStateData>
 {
     public int? CardMessageId;
-    public bool IncludeEn => LanguageCode == LocalizationRuEn;
+    public bool IsLanguageEn => LanguageCode == LocalizationEn;
 
     public override UserStateData Save()
     {
@@ -25,6 +25,8 @@ internal sealed class UserState : LocalizationUserState<UserStateData>
         CardMessageId = data.CardMessageId;
     }
 
-    public const string LocalizationRu = "ru";
-    public const string LocalizationRuEn = "ruen";
+    public void ToggleLanguage() => LanguageCode = IsLanguageEn ? LocalizationRu : LocalizationEn;
+
+    private const string LocalizationRu = "ru";
+    private const string LocalizationEn = "en";
 }

@@ -352,8 +352,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             _state.UserStates[sender.Id] = new UserState();
         }
 
-        _state.UserStates[sender.Id].LanguageCode =
-            _state.UserStates[sender.Id].IncludeEn ? UserState.LocalizationRu : UserState.LocalizationRuEn;
+        _state.UserStates[sender.Id].ToggleLanguage();
         _saveManager.Save(_state);
 
         Texts texts = _textsProvider.GetTextsFor(sender.Id);
@@ -585,9 +584,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         bool showPartial, int cardMessageId, Chat chat, string image)
     {
         Texts texts = _textsProvider.GetTextsFor(chat.Id);
-        string? descriptionEn = _state.ShouldIncludeEnFor(chat.Id) ? data.Descriprions[tag].en : null;
-        Turn turn = new(texts, players.GetDisplayName, tag, data.Descriprions[tag].ru, descriptionEn, players.Current,
-            arrangement);
+        string description = _state.ShouldShowEnFor(chat.Id) ? data.Descriprions[tag].en : data.Descriprions[tag].ru;
+        Turn turn = new(texts, players.GetDisplayName, tag, description, players.Current, arrangement);
         MessageTemplateText template = turn.GetMessage();
         template.KeyboardProvider = CreateActionKeyboard(chat.Id, showPartial);
         MessageTemplateImagePath templateImage = new(template, image);
@@ -792,9 +790,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             playerIds.AddRange(game.CurrentArrangement.Partners);
         }
 
-        string? descriptionEn = _state.ShouldIncludeEnFor(userId) ? data.DescriptionEn : null;
-        return
-            new Turn(texts, game.Players.GetDisplayName, texts.QuestionsTag, data.Description, descriptionEn, playerIds);
+        string description = _state.ShouldShowEnFor(userId) ? data.DescriptionEn : data.Description;
+        return new Turn(texts, game.Players.GetDisplayName, texts.QuestionsTag, description, playerIds);
     }
 
     private async Task ShowArrangementAsync(PlayersRepository players, Arrangement arrangement, Chat chat,
