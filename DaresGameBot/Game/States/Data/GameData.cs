@@ -1,5 +1,6 @@
 ﻿// ReSharper disable NullableWarningSuppressionIsUsed
 
+using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 
@@ -7,6 +8,8 @@ namespace DaresGameBot.Game.States.Data;
 
 public sealed class GameData
 {
+    [UsedImplicitly]
+    public Guid Guid { get; set; }
     [UsedImplicitly]
     public Dictionary<ushort, uint> ActionUses { get; set; } = null!;
     [UsedImplicitly]

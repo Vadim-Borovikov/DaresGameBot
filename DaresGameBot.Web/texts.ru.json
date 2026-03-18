@@ -51,13 +51,16 @@
     ]
   },
 
-  "NewGame": {
+  "JoinGameQrCaption": {
     "Text": [
-      "Чтобы начать, введи имена игроков, их группу и те группы, с кем они совместимы\\. Каждое — с новой строки\\. Примеры:",
-      "*Миша,м,ж",
-      "Катя П\\.,ж,м\\+ж*"
-    ],
-    "MarkdownV2": true
+      "QR для входа в игру:"
+    ]
+  },
+
+  "NoPlayersYet": {
+    "Text": [
+      "Игроков пока нет."
+    ]
   },
 
   "PlayersFormat": {
@@ -131,7 +134,6 @@
 
   "ActivePlayerFormat": "✔️ {0}",
   "InactivePlayerFormat": "❌ {0}",
-  "UndefinedPlayerFormat": "🔢 {0}",
 
   "Completed": "✅",
 

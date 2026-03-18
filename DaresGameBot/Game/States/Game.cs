@@ -27,6 +27,8 @@ internal sealed class Game : IStateful<GameData>
     public readonly PlayersRepository Players;
     public readonly GameStats Stats;
 
+    public readonly Guid Guid = Guid.NewGuid();
+
     public State CurrentState { get; private set; }
 
     public Arrangement? CurrentArrangement { get; private set; }
@@ -133,6 +135,7 @@ internal sealed class Game : IStateful<GameData>
     {
         return new GameData
         {
+            Guid = Guid,
             ActionUses = _actionDeck.Save(),
             QuestionUses = _questionDeck.Save(),
             ActionsVersion = _actionsVersion,
@@ -154,7 +157,8 @@ internal sealed class Game : IStateful<GameData>
             return;
         }
 
-        if ((_actionsVersion != data.ActionsVersion) || (_questionsVersion != data.QuestionsVersion))
+        if ((Guid != data.Guid) || (_actionsVersion != data.ActionsVersion)
+                                || (_questionsVersion != data.QuestionsVersion))
         {
             return;
         }

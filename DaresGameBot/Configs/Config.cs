@@ -29,6 +29,11 @@ public class Config : ConfigWithSheets, ILocalizationConfig<Texts>
 
     [UsedImplicitly]
     [Required]
+    [MinLength(1)]
+    public string DeepLinkFormat { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
     public byte MaxImagesInAlbum { get; init; }
 
     [UsedImplicitly]

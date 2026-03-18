@@ -6,8 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AbstractBot" Version="85.0.1" />
+    <PackageReference Include="AbstractBot" Version="86.0.0-a01" />
     <PackageReference Include="morelinq" Version="4.4.0" />
+    <PackageReference Include="QRCoder" Version="1.7.0" />
   </ItemGroup>
 
 </Project>

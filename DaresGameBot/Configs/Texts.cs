@@ -9,13 +9,18 @@ public class Texts : AbstractBot.Models.Config.Texts
 {
     [UsedImplicitly]
     [Required]
+    public MessageTemplateText JoinGameQrCaption { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText NoPlayersYet { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
     public MessageTemplateText PlayersFormat { get; init; } = null!;
     [UsedImplicitly]
     [Required]
     public string PlayersSeparator { get; init; } = null!;
-    [UsedImplicitly]
-    [Required]
-    public MessageTemplateText NewGame { get; init; } = null!;
     [UsedImplicitly]
     [Required]
     public MessageTemplateText NewGameStart { get; init; } = null!;
@@ -120,9 +125,6 @@ public class Texts : AbstractBot.Models.Config.Texts
     [Required]
     [MinLength(1)]
     public string InactivePlayerFormat { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string UndefinedPlayerFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

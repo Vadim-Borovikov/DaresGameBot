@@ -30,6 +30,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using QRCoder;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -576,7 +577,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return template.EditMessageWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
         }
 
-        MessageTemplateImage templateImage = new(template, image);
+        MessageTemplateImagePath templateImage = new(template, image);
         return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
@@ -589,7 +590,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             arrangement);
         MessageTemplateText template = turn.GetMessage();
         template.KeyboardProvider = CreateActionKeyboard(chat.Id, showPartial);
-        MessageTemplateImage templateImage = new(template, image);
+        MessageTemplateImagePath templateImage = new(template, image);
         return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
@@ -605,7 +606,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         MessageTemplateText template =
             texts.TurnFormatShort.Format(players.GetDisplayName(players.Current), partnersText);
         template.KeyboardProvider = CreateArrangementKeyboard(chat.Id, true);
-        MessageTemplateImage templateImage = new(template, image);
+        MessageTemplateImagePath templateImage = new(template, image);
         return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
@@ -619,10 +620,42 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         };
     }
 
-    private Task StartNewGameAsync()
+    private async Task StartNewGameAsync()
     {
-        Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
-        return texts.NewGame.SendAsync(Core.UpdateSender, _adminChat);
+        _state.Game = StartNewGame();
+
+        Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
+        await adminTexts.NewGameStart.SendAsync(_core.UpdateSender, _adminChat);
+        string payload = string.Format(_config.DeepLinkFormat, _core.SelfUsername, _state.Game.Guid);
+        byte[] bytes = GetQr(payload);
+        using (MemoryStream stream = new(bytes))
+        {
+            InputFileStream file = new(stream);
+            MessageTemplateImageInputFile templateImage = new(adminTexts.JoinGameQrCaption, file)
+            {
+                ShowCaptionAboveMedia = true
+            };
+            await templateImage.SendAsync(_core.UpdateSender, _adminChat);
+        }
+
+        _state.PlayersMessageId = null;
+        _state.CurrentPlayersMessageState = PlayersMessageState.Type.NewRearrangement;
+
+        await ReportAndPinPlayersAsync(_state.Game);
+    }
+
+    private static byte[] GetQr(string payload)
+    {
+        using (QRCodeGenerator qrGenerator = new())
+        {
+            using (QRCodeData data = qrGenerator.CreateQrCode(payload, QRCodeGenerator.ECCLevel.Q))
+            {
+                using (PngByteQRCode qr = new(data))
+                {
+                    return qr.GetGraphic(20);
+                }
+            }
+        }
     }
 
     private async Task UpdateDecksAsync()
@@ -685,7 +718,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return texts.StatusMessageEndSuccessFormat.Format(equipmentPart);
     }
 
-    private Game.States.Game StartNewGame(List<AddOrUpdatePlayerData> updates)
+    private Game.States.Game StartNewGame(List<AddOrUpdatePlayerData>? updates = null)
     {
         if (_state.Core.SheetInfo is null)
         {
@@ -699,7 +732,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         GameStatsStateCore gameStatsStateCore = new(_state.Core.ActionOptions, _state.Core.QuestionPoints, repository);
         GameStats gameStats = new(gameStatsStateCore);
 
-        gameStats.UpdateList(updates, texts.UpdatePlayerSeparator);
+        if (updates is not null && updates.Any())
+        {
+            gameStats.UpdateList(updates, texts.UpdatePlayerSeparator);
+        }
 
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(repository, gameStats, compatibility);
@@ -772,7 +808,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
         MessageTemplate messageTemplate =
             texts.TurnFormatShort.Format(players.GetDisplayName(players.Current), partnersText);
-        messageTemplate = new MessageTemplateImage(messageTemplate, image)
+        messageTemplate = new MessageTemplateImagePath(messageTemplate, image)
         {
             KeyboardProvider = CreateArrangementKeyboard(chat.Id, true)
         };
@@ -884,12 +920,22 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             MessageTemplateText line = format.Format(number, id);
             playerLines.Add(line);
         }
-        MessageTemplateText allLines = MessageTemplateText.JoinTexts(playerLines);
 
-        MessageTemplateText messageText = texts.PlayersFormat.Format(allLines);
+        MessageTemplateText messageText;
+        if (playerLines.Any())
+        {
+            MessageTemplateText allLines = MessageTemplateText.JoinTexts(playerLines);
 
-        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, game.Players.Current,
-            game.Players.GetActiveIds().ToList(), players);
+            messageText = texts.PlayersFormat.Format(allLines);
+
+            messageText.KeyboardProvider = CreatePlayersKeyboard(texts, game.Players.Current,
+                game.Players.GetActiveIds().ToList(), players);
+        }
+        else
+        {
+            messageText = texts.NoPlayersYet;
+        }
+
 
         if (_state.PlayersMessageId is null)
         {
