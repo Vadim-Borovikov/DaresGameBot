@@ -15,6 +15,16 @@ public class Config : ConfigWithSheets, ILocalizationConfig<Texts>
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
+    public string ActionsTitle { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
+    public string QuestionsTitle { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
     public string GoogleSheetId { get; init; } = null!;
 
     [UsedImplicitly]
