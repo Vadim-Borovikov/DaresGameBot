@@ -1,14 +1,17 @@
 ﻿using System.Text.Json;
 using DaresGameBot.Web.Models;
+using JetBrains.Annotations;
 using TL;
 using WTelegram;
 
 namespace DaresGameBot.WebTests;
 
 [TestClass]
+[UsedImplicitly]
 public sealed class IntegrationTests
 {
     [ClassInitialize]
+    [UsedImplicitly]
     public static async Task ClassInitialize(TestContext _)
     {
         _config = Config.Load();
@@ -30,18 +33,23 @@ public sealed class IntegrationTests
     }
 
     [ClassCleanup]
+    [UsedImplicitly]
     public static async Task Cleanup() => await _client.DisposeAsync();
 
     [TestMethod]
+    [UsedImplicitly]
     public async Task TestTurns01() => await MeasureTestScenario(1);
 
     [TestMethod]
+    [UsedImplicitly]
     public async Task TestTurns05() => await MeasureTestScenario(5);
 
     [TestMethod]
+    [UsedImplicitly]
     public async Task TestTurns10() => await MeasureTestScenario(10);
 
     [TestMethod]
+    [UsedImplicitly]
     public async Task TestTurns50() => await MeasureTestScenario(50);
 
     private static async Task MeasureTestScenario(byte turns)
