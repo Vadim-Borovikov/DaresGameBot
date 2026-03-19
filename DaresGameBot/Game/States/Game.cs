@@ -32,13 +32,13 @@ internal sealed class Game : IStateful<GameData>
     public Arrangement? CurrentArrangement { get; private set; }
 
     public Game(Dictionary<string, Option> actionOptions, ushort? questionPoints, string actionsVersion,
-        string questionsVersion, string playerFillNamePrefix, SheetInfo sheetInfo)
+        string questionsVersion, SheetInfo sheetInfo)
     {
         _actionDeck = new Deck<ActionData>(sheetInfo.Actions);
         _questionDeck = new Deck<QuestionData>(sheetInfo.Questions);
         _actionsVersion = actionsVersion;
         _questionsVersion = questionsVersion;
-        Players = new PlayersRepository(playerFillNamePrefix);
+        Players = new PlayersRepository();
 
         GameStatsStateCore gameStatsStateCore = new(actionOptions, questionPoints, Players);
         Stats = new GameStats(gameStatsStateCore);

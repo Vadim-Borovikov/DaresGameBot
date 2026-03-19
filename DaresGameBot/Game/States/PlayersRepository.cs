@@ -1,4 +1,3 @@
-using System;
 using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Game.States.Data;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
@@ -26,8 +25,6 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         _currentIndex = next.Value;
         return true;
     }
-
-    public PlayersRepository(string playerFillNamePrefix) => _playerFillNamePrefix = playerFillNamePrefix;
 
     public IEnumerable<(string Id, bool Active)> GetAllIdsWithStatus()
     {
@@ -70,11 +67,6 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
 
     public string GetDisplayName(string id, bool activeOnly)
     {
-        if (id.StartsWith(_playerFillNamePrefix, StringComparison.InvariantCulture))
-        {
-            return id.Substring(_playerFillNamePrefix.Length);
-        }
-
         IEnumerable<string> players = activeOnly ? GetActiveIds() : _ids;
         return players.Count(i => _infos[i].Name == _infos[id].Name) > 1 ? id : _infos[id].Name;
     }
@@ -230,5 +222,4 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     private readonly List<string> _ids = new();
     private readonly Dictionary<string, PlayerInfo> _infos = new();
     private int _currentIndex;
-    private readonly string _playerFillNamePrefix;
 }
