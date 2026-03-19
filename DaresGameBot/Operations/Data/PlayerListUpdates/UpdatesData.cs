@@ -30,16 +30,16 @@ internal sealed class UpdatesData
             GroupsInfo info = new(group, compatableGroups);
 
             string[] playerParts = player.Split(texts.UpdatePlayerSeparator);
-            string? handler = null;
+            string? username = null;
             switch (playerParts.Length)
             {
                 case 0 or > 2: return null;
                 case 2 :
-                    handler = playerParts[1];
+                    username = playerParts[1];
                     break;
             }
             string name = playerParts[0];
-            AddOrUpdatePlayerData data = new(name, handler, info);
+            AddOrUpdatePlayerData data = new(name, username, info);
 
             datas.Add(data);
         }

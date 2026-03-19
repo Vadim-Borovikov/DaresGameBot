@@ -124,9 +124,9 @@ internal sealed class Game : IStateful<GameData>
         return StartNewTurn();
     }
 
-    public bool UpdatePlayers(List<AddOrUpdatePlayerData> updateDatas, string handlerSeparator)
+    public bool UpdatePlayers(List<AddOrUpdatePlayerData> updateDatas, string usernameSeparator)
     {
-        return Stats.UpdateList(updateDatas, handlerSeparator);
+        return Stats.UpdateList(updateDatas, usernameSeparator);
     }
 
     public GameData Save()

@@ -34,10 +34,10 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         }
     }
 
-    public bool AddOrUpdatePlayerData(AddOrUpdatePlayerData a, string handlerSeparator)
+    public bool AddOrUpdatePlayerData(AddOrUpdatePlayerData a, string usernameSeparator)
     {
         bool changed = false;
-        string id = GetId(a.Name, a.Handler, handlerSeparator);
+        string id = GetId(a.Name, a.Username, usernameSeparator);
         if (_infos.ContainsKey(id))
         {
             if (_infos[id].GroupInfo != a.Info)
@@ -132,9 +132,9 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return group.All(p => AreCompatable(player, p, compatibility));
     }
 
-    private static string GetId(string name, string? handler, string separator)
+    private static string GetId(string name, string? username, string separator)
     {
-        return string.IsNullOrEmpty(handler) ? name : $"{name}{separator}{handler}";
+        return string.IsNullOrEmpty(username) ? name : $"{name}{separator}{username}";
     }
 
     private bool AreCompatable((string, string) pair, ICompatibility compatibility)

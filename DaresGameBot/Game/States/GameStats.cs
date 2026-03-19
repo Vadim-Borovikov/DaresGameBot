@@ -46,13 +46,13 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         RegisterPoints(player, arrangement, points.Value);
     }
 
-    public bool UpdateList(List<AddOrUpdatePlayerData> updateDatas, string handlerSeparator)
+    public bool UpdateList(List<AddOrUpdatePlayerData> updateDatas, string usernameSeparator)
     {
         bool changed = false;
 
         foreach (AddOrUpdatePlayerData data in updateDatas)
         {
-            changed |= _core.Players.AddOrUpdatePlayerData(data, handlerSeparator);
+            changed |= _core.Players.AddOrUpdatePlayerData(data, usernameSeparator);
         }
 
         return changed;
