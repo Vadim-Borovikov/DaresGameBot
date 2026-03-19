@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using System.ComponentModel.DataAnnotations;
 using AbstractBot.Models.MessageTemplates;
@@ -9,11 +10,63 @@ public class Texts : AbstractBot.Models.Config.Texts
 {
     [UsedImplicitly]
     [Required]
-    public MessageTemplateText JoinGameQrCaption { get; init; } = null!;
+    public Dictionary<string, string> Genders { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public Dictionary<string, string> PartnersGenders { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText JoinGameQrCaptionFormat { get; init; } = null!;
 
     [UsedImplicitly]
     [Required]
     public MessageTemplateText NoPlayersYet { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText WrongGuid { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText NewPlayerGreeting { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText PlayerInfoFormat { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public string Unknown { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public string EnterPlayerName { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public string EditPlayerName { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText UpdatePlayerName { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText NameIsPresent { get; init; } = null!;
+
+    /*[UsedImplicitly]
+    [Required]
+    public MessageTemplateText SelectGender { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public MessageTemplateText SelectPartnersGenders { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    public string Continue { get; init; } = null!;*/
 
     [UsedImplicitly]
     [Required]

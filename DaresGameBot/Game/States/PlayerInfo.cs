@@ -9,6 +9,13 @@ internal sealed class PlayerInfo : IStateful<PlayerData>
     public GroupsInfo GroupInfo;
     public bool Active;
 
+    public PlayerInfo()
+    {
+        Name = string.Empty;
+        GroupInfo = new GroupsInfo();
+        Active = false;
+    }
+
     public PlayerInfo(string name, GroupsInfo groupInfo, bool active = true)
     {
         Name = name;

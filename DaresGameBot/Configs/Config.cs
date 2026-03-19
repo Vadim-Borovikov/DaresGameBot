@@ -15,6 +15,11 @@ public class Config : ConfigWithSheets, ILocalizationConfig<Texts>
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
+    public List<string> Genders { get; init; } = null!;
+
+    [UsedImplicitly]
+    [Required]
+    [MinLength(1)]
     public string ActionsTitle { get; init; } = null!;
 
     [UsedImplicitly]

@@ -30,6 +30,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DaresGameBot.Operations.Data;
 using QRCoder;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -76,18 +77,19 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         BotStateCore stateCore = new(config.ActionOptions, config.QuestionPoints, config.ActionsTitle,
             config.QuestionsTitle, defaultTexts.PlayerFillNamePrefix);
         BotState state = new(stateCore, userStates, config.AdminChatId, config.PlayerChatId);
-        Greeter greeter = new(core.UpdateSender, localization);
+        Greeter greeter = new(core.UpdateSender, localization, state, config, state, saveManager);
         LocalizationUserRegistrator registrator = new(state, saveManager);
-        Start start = new(core.Accesses, core.UpdateSender, commands, localization, core.SelfUsername, greeter,
-            registrator);
+        Start<StartData> start = new(core.Accesses, core.UpdateSender, commands, localization, core.SelfUsername,
+            greeter, registrator);
 
         Help help = new(core.Accesses, core.UpdateSender, core.UpdateReceiver, localization, core.SelfUsername);
 
-        return new Bot(core, commands, start, help, config, saveManager, state, localization);
+        return new Bot(core, commands, start, help, config, saveManager, state, localization, greeter);
     }
 
     private Bot(BotCore core, ICommands commands, IStartCommand start, Help help, Config config,
-        SaveManager<BotState, BotData> saveManager, BotState state, ITextsProvider<Texts> textsProvider)
+        SaveManager<BotState, BotData> saveManager, BotState state, ITextsProvider<Texts> textsProvider,
+        Greeter greeter)
         : base(core, commands, start, help)
     {
         _core = core;
@@ -114,6 +116,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         };
 
         _state = state;
+
+        _greeter = greeter;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -134,6 +138,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new TogglePlayersMessageState(this));
         _core.UpdateReceiver.Operations.Add(new TogglePlayer(this));
         _core.UpdateReceiver.Operations.Add(new SelectPlayer(this));
+        _core.UpdateReceiver.Operations.Add(new EditPlayerName(this, _state));
+        _core.UpdateReceiver.Operations.Add(new AcceptPlayerName(this, _state));
+        // _core.UpdateReceiver.Operations.Add(new SelectGender(this, _config.Genders));
+        // _core.UpdateReceiver.Operations.Add(new TogglePartnersGender(this, _config.Genders));
+        _core.UpdateReceiver.Operations.Add(new AcceptPartnersGenders(this));
         _core.UpdateReceiver.Operations.Add(new MovePlayerDown(this));
         _core.UpdateReceiver.Operations.Add(new MovePlayerToBottom(this));
         _core.UpdateReceiver.Operations.Add(new RearrangePlayer(this));
@@ -535,6 +544,30 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
     }
 
+    internal static List<InlineKeyboardButton> CreateOneButtonRow<TData>(string caption, params object[] args)
+    {
+        return new List<InlineKeyboardButton>
+        {
+            CreateButton<TData>(caption, args)
+        };
+    }
+
+    internal Task EditPlayerNameAsync(Chat chat, User user) => _greeter.EditPlayerNameAsync(chat, user.Id);
+
+    internal Task AcceptPlayerNameAsync(Chat chat, User user, string name)
+    {
+        return _greeter.AcceptPlayerNameAsync(chat, user.Id, name);
+    }
+
+    /*internal Task SelectGenderForAsync(Chat chat, string gender, User user)
+    {
+        return _greeter.SelectGenderForAsync(chat, user.Id, gender);
+    }
+
+    public Task TogglePartnersGender(Chat chat, string gender, User sender) { throw new NotImplementedException(); }
+
+    public Task AcceptPartnersGendersAsync(Chat chat, User sender) { throw new NotImplementedException(); }*/
+
     private PlayersMessageState.Type GetNextPlayersMessageState(int activePlayers)
     {
         return PlayersMessageState.States[_state.CurrentPlayersMessageState].GetNext(activePlayers);
@@ -624,16 +657,15 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
         await adminTexts.NewGameStart.SendAsync(_core.UpdateSender, _adminChat);
+
         string payload = string.Format(_config.DeepLinkFormat, _core.SelfUsername, _state.Game.Guid);
         byte[] bytes = GetQr(payload);
         using (MemoryStream stream = new(bytes))
         {
             InputFileStream file = new(stream);
-            MessageTemplateImageInputFile templateImage = new(adminTexts.JoinGameQrCaption, file)
-            {
-                ShowCaptionAboveMedia = true
-            };
-            await templateImage.SendAsync(_core.UpdateSender, _adminChat);
+            MessageTemplateText caption = adminTexts.JoinGameQrCaptionFormat.Format(payload);
+            MessageTemplateImageInputFile qr = new(caption, file);
+            await qr.SendAsync(_core.UpdateSender, _adminChat);
         }
 
         _state.PlayersMessageId = null;
@@ -1131,14 +1163,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return CreateOneButtonRow<TogglePlayersMessageState>(caption);
     }
 
-    private static List<InlineKeyboardButton> CreateOneButtonRow<TData>(string caption, params object[] args)
-    {
-        return new List<InlineKeyboardButton>
-        {
-            CreateButton<TData>(caption, args)
-        };
-    }
-
     private static InlineKeyboardButton CreateButton<TData>(string caption, params object[] fields)
     {
         return new InlineKeyboardButton(caption)
@@ -1157,6 +1181,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     private readonly Manager _sheetsManager;
     private readonly SaveManager<BotState, BotData> _saveManager;
     private readonly ITextsProvider<Texts> _textsProvider;
+    private readonly Greeter _greeter;
 
     private readonly BotCore _core;
     private readonly Config _config;

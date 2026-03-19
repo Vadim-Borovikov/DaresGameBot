@@ -27,7 +27,7 @@ internal sealed class Game : IStateful<GameData>
     public readonly PlayersRepository Players;
     public readonly GameStats Stats;
 
-    public readonly Guid Guid = Guid.NewGuid();
+    public Guid Guid { get; private set; } = Guid.NewGuid();
 
     public State CurrentState { get; private set; }
 
@@ -157,11 +157,12 @@ internal sealed class Game : IStateful<GameData>
             return;
         }
 
-        if ((Guid != data.Guid) || (_actionsVersion != data.ActionsVersion)
-                                || (_questionsVersion != data.QuestionsVersion))
+        if ((_actionsVersion != data.ActionsVersion) || (_questionsVersion != data.QuestionsVersion))
         {
             return;
         }
+
+        Guid = data.Guid;
 
         _actionDeck.LoadFrom(data.ActionUses);
         _questionDeck.LoadFrom(data.QuestionUses);
@@ -170,7 +171,7 @@ internal sealed class Game : IStateful<GameData>
 
         Stats.LoadFrom(data.GameStatsData);
 
-        CurrentState = data.CurrentState?.ToState() ?? State.Fresh;
+        CurrentState = data.CurrentState?.ToEnum<State>() ?? State.Fresh;
 
         if (data.CurrentArrangementData is null)
         {

@@ -10,6 +10,12 @@ internal sealed class GroupsInfo : IEquatable<GroupsInfo>
     public readonly string Group;
     public readonly HashSet<string> CompatableGroups;
 
+    public GroupsInfo()
+    {
+        Group = string.Empty;
+        CompatableGroups = new HashSet<string>();
+    }
+
     public GroupsInfo(string group, IEnumerable<string> compatableGroups)
         : this(group, new HashSet<string>(compatableGroups))
     {

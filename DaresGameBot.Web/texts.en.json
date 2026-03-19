@@ -59,12 +59,21 @@
     ]
   },
 
-  "ErrorFormat": "• {0}",
-  "ErrorsSeparator": "\n",
+  "Genders": {
+    "Male": "Male",
+    "Female": "Female",
+    "Other": "Other"
+  },
 
-  "JoinGameQrCaption": {
+  "PartnersGenders": {
+    "Male": "Males",
+    "Female": "Females",
+    "Other": "Others"
+  },
+
+  "JoinGameQrCaptionFormat": {
     "Text": [
-      "QR to join the game:"
+      "{0}"
     ]
   },
 
@@ -73,6 +82,77 @@
       "There are no players yet."
     ]
   },
+
+  "WrongGuid": {
+    "Text": [
+      "No game found for this code"
+    ]
+  },
+
+  "NewPlayerGreeting": {
+    "Text": [
+      "Greetings!",
+      "",
+      "Kindly fill up your data:",
+      "",
+      "ℹ Below you can choose options already entered by others, or add your own."
+    ]
+  },
+
+  "PlayerInfoFormat": {
+    "Text": [
+      "Name: {0}",
+      "Gender: {1}",
+      "People you want to interact with: {2}"
+    ]
+  },
+
+  "Unknown": "❓",
+
+  "EnterPlayerName": "Enter name",
+  "EditPlayerName": "Edit name",
+
+  "UpdatePlayerName": {
+    "Text": [
+      "Kindly enter your name:"
+    ]
+  },
+
+  "NameIsPresent": {
+    "Text": [
+      "This name is already taken.",
+      "Please enter a different one (for example, you can add a nickname or the letter of your last name):"
+    ]
+  },
+
+  "ErrorFormat": "• {0}",
+  "ErrorsSeparator": "\n",
+
+  /*"NameAccepted": "🤝 Hello!",
+  "NameChanageNeeded": "✍️ Запиши меня по-другому",*/
+
+  /*"SelectGender": {
+    "Text": [
+      "Hello!",
+      "Kindly choose your gender"
+    ]
+  },
+
+  "SelectPartnersGenders": {
+    "Text": [
+      "Noted!",
+      "Kindly choose gender(s) you want to interact with"
+    ]
+  },
+
+  "Continue": "Continue",
+
+  /*"NewPlayerGreetingFormat": {
+    "Text": [
+      "Hello, {0}!",
+      "Kindly choose youe gender."
+    ]
+  },*/
 
   "PlayersFormat": {
     "Text": [

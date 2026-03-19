@@ -1,3 +1,4 @@
+using System;
 using AbstractBot.Modules.Context;
 using DaresGameBot.Game.States.Cores;
 using DaresGameBot.Game.States.Data;
@@ -6,7 +7,7 @@ using DaresGameBot.Utilities.Extensions;
 
 namespace DaresGameBot.Game.States;
 
-internal sealed class BotState : BotState<BotData, UserState, UserStateData>
+internal sealed class BotState : BotState<BotData, UserState, UserStateData>, IGuidProvider
 {
     public readonly BotStateCore Core;
 
@@ -17,6 +18,7 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>
 
     public UserState? AdminState => UserStates.GetValueOrDefault(_adminId);
     public UserState? PlayerState => UserStates.GetValueOrDefault(_playerId);
+    public Guid? Guid => Game?.Guid;
 
     internal BotState(BotStateCore core, Dictionary<long, UserState> userStates, long adminId, long playerId)
         : base(userStates)
@@ -74,7 +76,8 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>
         }
 
         PlayersMessageId = data.PlayersMessageId;
-        CurrentPlayersMessageState = data.CurentPinState?.ToPlayersMessageState() ?? PlayersMessageState.Type.Activity;
+        CurrentPlayersMessageState =
+            data.CurentPinState?.ToEnum<PlayersMessageState.Type>() ?? PlayersMessageState.Type.Activity;
     }
 
     private readonly long _adminId;
