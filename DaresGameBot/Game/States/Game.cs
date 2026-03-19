@@ -7,11 +7,11 @@ using DaresGameBot.Game.States.Cores;
 using DaresGameBot.Game.States.Data;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
 using DaresGameBot.Utilities;
-using DaresGameBot.Utilities.Extensions;
 using GryphonUtilities.Save;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using GoogleSheetsManager.Extensions;
 
 namespace DaresGameBot.Game.States;
 
@@ -166,7 +166,7 @@ internal sealed class Game : IStateful<GameData>
 
         Stats.LoadFrom(data.GameStatsData);
 
-        CurrentState = data.CurrentState?.ToState() ?? State.Fresh;
+        CurrentState = data.CurrentState?.ToEnum<State>() ?? State.Fresh;
 
         if (data.CurrentArrangementData is null)
         {

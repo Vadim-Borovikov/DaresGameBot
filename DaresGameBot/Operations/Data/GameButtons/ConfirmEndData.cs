@@ -1,4 +1,4 @@
-﻿using DaresGameBot.Utilities.Extensions;
+﻿using GoogleSheetsManager.Extensions;
 
 namespace DaresGameBot.Operations.Data.GameButtons;
 
@@ -14,7 +14,7 @@ internal sealed class ConfirmEndData
 
     public static ConfirmEndData? From(string callbackQueryDataCore)
     {
-        ActionAfterGameEnds? after = callbackQueryDataCore.ToActionAfterGameEnds();
+        ActionAfterGameEnds? after = callbackQueryDataCore.ToEnum<ActionAfterGameEnds>();
         return after is null ? null : new ConfirmEndData(after.Value);
     }
 
