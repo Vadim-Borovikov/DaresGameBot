@@ -176,8 +176,6 @@
     ]
   },
 
-  "PlayerFillNamePrefix": "~",
-
   "EquipmentFormat": "• {0}",
   "EquipmentSeparatorMessage": "\n",
   "EquipmentSeparatorSheet": ", ",
@@ -203,14 +201,6 @@
   "Delete": "❌",
 
   "CurrentPlayerFormat": "{0} 👈",
-
-  "PlayersMessageStatesFormat": "{0} → {1}",
-
-  "PlayersMessageStateActivity": "✔️",
-  "PlayersMessageStateSelection": "👈",
-  "PlayersMessageStateMovement": "🔽",
-  "PlayersMessageStateFastMovement": "⏬",
-  "PlayersMessageStateRearrangement": "🔢",
 
   "ActivePlayerFormat": "✔️ {0}",
   "InactivePlayerFormat": "❌ {0}",

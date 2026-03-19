@@ -147,26 +147,6 @@ public class Texts : AbstractBot.Models.Config.Texts
 
     [Required]
     [MinLength(1)]
-    public string PlayersMessageStatesFormat { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateActivity { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateSelection { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateMovement { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateFastMovement { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateRearrangement { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
     public string CurrentPlayerFormat { get; init; } = null!;
 
     [Required]
@@ -194,10 +174,6 @@ public class Texts : AbstractBot.Models.Config.Texts
     public MessageTemplateText StatusMessageEndSuccessFormat { get; init; } = null!;
     [Required]
     public MessageTemplateText EquipmentPrefixFormat { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
-    public string PlayerFillNamePrefix { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

@@ -3,7 +3,6 @@ using AbstractBot.Modules.Context;
 using DaresGameBot.Game.States.Cores;
 using DaresGameBot.Game.States.Data;
 using System.Collections.Generic;
-using DaresGameBot.Utilities.Extensions;
 
 namespace DaresGameBot.Game.States;
 
@@ -14,7 +13,6 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>, IG
     public Game? Game;
 
     public int? PlayersMessageId;
-    public PlayersMessageState.Type CurrentPlayersMessageState;
 
     public UserState? AdminState => UserStates.GetValueOrDefault(_adminId);
     public UserState? PlayerState => UserStates.GetValueOrDefault(_playerId);
@@ -54,8 +52,6 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>, IG
 
         data.PlayersMessageId = PlayersMessageId;
 
-        data.CurentPinState = CurrentPlayersMessageState.ToString();
-
         return data;
     }
 
@@ -71,13 +67,11 @@ internal sealed class BotState : BotState<BotData, UserState, UserStateData>, IG
         if (Core.SheetInfo is not null && data.GameData is not null)
         {
             Game = new Game(Core.ActionOptions, Core.QuestionPoints, Core.ActionsVersion, Core.QuestionsVersion,
-                Core.PlayerFillNamePrefix, Core.SheetInfo);
+                Core.SheetInfo);
             Game.LoadFrom(data.GameData);
         }
 
         PlayersMessageId = data.PlayersMessageId;
-        CurrentPlayersMessageState =
-            data.CurentPinState?.ToEnum<PlayersMessageState.Type>() ?? PlayersMessageState.Type.Activity;
     }
 
     private readonly long _adminId;

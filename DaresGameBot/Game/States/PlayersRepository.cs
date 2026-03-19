@@ -26,8 +26,6 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return true;
     }
 
-    public PlayersRepository(string playerFillNamePrefix) => _playerFillNamePrefix = playerFillNamePrefix;
-
     public IEnumerable<(string Id, bool Active)> GetAllIdsWithStatus()
     {
         foreach (string id in _idsOld)
@@ -102,55 +100,6 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         }
 
         _currentIndex = _idsOld.IndexOf(id);
-        return true;
-    }
-
-    public void DeactivateAll()
-    {
-        foreach (string id in _idsOld)
-        {
-            _infosOld[id].Active = false;
-        }
-    }
-
-    public bool MoveDown(string id, bool toBottom, bool preserveCurrent)
-    {
-        int index = _idsOld.IndexOf(id);
-        if (index == -1)
-        {
-            return false;
-        }
-
-        string currentPlayer = Current;
-
-        if (toBottom)
-        {
-            if (_idsOld.Count < 2)
-            {
-                return false;
-            }
-            _idsOld.RemoveAt(index);
-            _idsOld.Add(id);
-        }
-        else
-        {
-            List<string> activeIds = GetActiveIds().ToList();
-            if (!activeIds.Contains(id) || (activeIds.Count < 2))
-            {
-                return false;
-            }
-            int? newIndex = GetNextActive(index);
-            if (newIndex is null)
-            {
-                return false;
-            }
-            (_idsOld[index], _idsOld[newIndex.Value]) = (_idsOld[newIndex.Value], _idsOld[index]);
-        }
-
-        if (preserveCurrent)
-        {
-            _currentIndex = _idsOld.IndexOf(currentPlayer);
-        }
         return true;
     }
 
@@ -259,5 +208,4 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     private readonly List<string> _idsOld = new();
     private readonly Dictionary<string, PlayerInfo> _infosOld = new();
     private int _currentIndex;
-    private readonly string _playerFillNamePrefix;
 }
