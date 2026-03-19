@@ -56,6 +56,10 @@ public class Texts : AbstractBot.Models.Config.Texts
     [Required]
     public MessageTemplateText NameIsPresent { get; init; } = null!;
 
+    [UsedImplicitly]
+    [Required]
+    public string DisplayNameFormat { get; init; } = null!;
+
     /*[UsedImplicitly]
     [Required]
     public MessageTemplateText SelectGender { get; init; } = null!;

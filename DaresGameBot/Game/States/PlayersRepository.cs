@@ -13,16 +13,16 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     public IEnumerable<string> GetActiveIds() => _idsOld.Where(n => _infosOld[n].Active);
     public IEnumerable<string> AllIds => _idsOld;
 
-    public string Current => _idsOld[_currentIndex];
+    public string Current => _idsOld[_currentIndexOld];
 
     public bool MoveNext()
     {
-        int? next = GetNextActive(_currentIndex);
-        if (next is null || (next == _currentIndex))
+        int? next = GetNextActive(_currentIndexOld);
+        if (next is null || (next == _currentIndexOld))
         {
             return false;
         }
-        _currentIndex = next.Value;
+        _currentIndexOld = next.Value;
         return true;
     }
 
@@ -51,7 +51,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     public bool AddOrUpdatePlayerData(AddOrUpdatePlayerData a, string handlerSeparator)
     {
         bool changed = false;
-        string id = GetId(a.Name, a.Handler, handlerSeparator);
+        string id = GetId(a.Name, a.Username, handlerSeparator);
         if (_infosOld.ContainsKey(id))
         {
             if (_infosOld[id].GroupInfo != a.Info)
@@ -67,7 +67,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         }
         else
         {
-            _infosOld[id] = new PlayerInfo(a.Name, a.Info);
+            _infosOld[id] = new PlayerInfo(a.Name, a.Username, a.Info);
             changed = true;
         }
 
@@ -80,6 +80,10 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     }
 
     public string GetName(string id) => _infosOld[id].Name;
+    public string GetNameWithUsername(string id, string format)
+    {
+        return string.Format(format, _infosOld[id].Name, _infosOld[id].Username);
+    }
 
     public bool Toggle(string id)
     {
@@ -99,7 +103,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
             return false;
         }
 
-        _currentIndex = _idsOld.IndexOf(id);
+        _currentIndexOld = _idsOld.IndexOf(id);
         return true;
     }
 
@@ -107,9 +111,9 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     {
         return new PlayersRepositoryData
         {
-            Ids = _idsOld,
-            Infos = _infosOld.ToDictionary(i => i.Key, i => i.Value.Save()),
-            CurrentIndex = _currentIndex
+            IdsOld = _idsOld,
+            InfosOld = _infosOld.ToDictionary(i => i.Key, i => i.Value.Save()),
+            CurrentIndexOld = _currentIndexOld
         };
     }
 
@@ -121,17 +125,17 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         }
 
         _idsOld.Clear();
-        _idsOld.AddRange(data.Ids);
+        _idsOld.AddRange(data.IdsOld);
 
         _infosOld.Clear();
-        foreach (string id in data.Infos.Keys)
+        foreach (string id in data.InfosOld.Keys)
         {
-            PlayerData d = data.Infos[id];
+            PlayerData d = data.InfosOld[id];
             GroupsInfo i = new(d.GroupsData.Group, d.GroupsData.CompatableGroups);
-            _infosOld[id] = new PlayerInfo(d.Name, i, d.Active);
+            _infosOld[id] = new PlayerInfo(d.Name, d.Username, i, d.Active);
         }
 
-        _currentIndex = data.CurrentIndex;
+        _currentIndexOld = data.CurrentIndexOld;
     }
 
     public bool IsActive(string id) => _infosOld.ContainsKey(id) && _infosOld[id].Active;
@@ -154,7 +158,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     public bool AddOrUpdateGenderPlayerGender(long id, string gender)
     {
         HashSet<string> compatableGroups;
-        if (_ids.Contains(id))
+        if (_infos.ContainsKey(id))
         {
             if (_infos[id].GroupInfo.Group == gender)
             {
@@ -164,12 +168,10 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         }
         else
         {
-            _ids.Add(id);
-
             compatableGroups = new HashSet<string>();
         }
         GroupsInfo info = new(gender, compatableGroups);
-        _infos[id] = new PlayerInfo(id.ToString(), info);
+        // _infos[id] = new PlayerInfo(id.ToString(), info);
         return true;
     }
 
@@ -202,10 +204,9 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return index;
     }
 
-    private readonly List<long> _ids = new();
     private readonly Dictionary<long, PlayerInfo> _infos = new();
 
     private readonly List<string> _idsOld = new();
     private readonly Dictionary<string, PlayerInfo> _infosOld = new();
-    private int _currentIndex;
+    private int _currentIndexOld;
 }

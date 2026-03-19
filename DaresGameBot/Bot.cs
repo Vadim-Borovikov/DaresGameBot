@@ -797,7 +797,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         // ReSharper disable once LoopCanBePartlyConvertedToQuery
         foreach (string player in ratios.Keys.OrderByDescending(p => ratios[p]))
         {
-            string name = game.Players.GetName(player);
+            string name = game.Players.GetNameWithUsername(player, texts.DisplayNameFormat);
             uint points = game.Stats.GetPoints(player);
             uint propositions = game.Stats.GetPropositions(player);
             uint rate = ratios[player];

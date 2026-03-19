@@ -125,6 +125,8 @@
     ]
   },
 
+  "DisplayNameFormat": "{0} @{1}",
+
   "ErrorFormat": "• {0}",
   "ErrorsSeparator": "\n",
 

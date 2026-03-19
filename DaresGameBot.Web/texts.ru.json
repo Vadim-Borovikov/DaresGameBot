@@ -117,6 +117,8 @@
     ]
   },
 
+  "DisplayNameFormat": "{0} @{1}",
+
   /*"NameAccepted": "🤝 Привет!",
   "NameChanageNeeded": "✍️ Запиши меня по-другому",*/
 

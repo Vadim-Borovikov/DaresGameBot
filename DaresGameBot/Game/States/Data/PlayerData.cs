@@ -8,6 +8,9 @@ public sealed class PlayerData
     public string Name { get; set; } = null!;
 
     [UsedImplicitly]
+    public string? Username { get; set; }
+
+    [UsedImplicitly]
     public GroupsData GroupsData { get; set; } = null!;
     [UsedImplicitly]
     public bool Active { get; set; }
