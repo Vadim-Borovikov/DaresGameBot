@@ -84,17 +84,6 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return true;
     }
 
-    public bool Select(string id)
-    {
-        if (!GetActiveIds().Contains(id) || (Current == id))
-        {
-            return false;
-        }
-
-        _currentIndex = _ids.IndexOf(id);
-        return true;
-    }
-
     public PlayersRepositoryData Save()
     {
         return new PlayersRepositoryData

@@ -130,7 +130,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new ShowImagesCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new UpdatePlayers(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new TogglePlayer(this));
-        _core.UpdateReceiver.Operations.Add(new SelectPlayer(this));
         _core.UpdateReceiver.Operations.Add(new RevealCard(this));
         _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
         _core.UpdateReceiver.Operations.Add(new DeleteCard(this));
@@ -218,32 +217,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             await DeleteCardMessagesAsync();
         }
 
-        await ReportAndPinPlayersAsync(_state.Game);
-    }
-
-    internal async Task SelectPlayerAsync(string id)
-    {
-        if (_state.Game is null)
-        {
-            await StartNewGameAsync();
-            return;
-        }
-
-        if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
-        {
-            Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
-            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
-            return;
-        }
-
-        bool selected = _state.Game.Players.Select(id);
-        if (!selected)
-        {
-            return;
-        }
-
-        await DeleteCardMessagesAsync();
-        await DrawArrangementAsync(_state.Game);
         await ReportAndPinPlayersAsync(_state.Game);
     }
 
