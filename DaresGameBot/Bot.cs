@@ -129,7 +129,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new LangCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new ShowImagesCommand(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new UpdatePlayers(this, _textsProvider));
-        _core.UpdateReceiver.Operations.Add(new TogglePlayersMessageState(this));
         _core.UpdateReceiver.Operations.Add(new TogglePlayer(this));
         _core.UpdateReceiver.Operations.Add(new SelectPlayer(this));
         _core.UpdateReceiver.Operations.Add(new MovePlayerDown(this));
@@ -170,7 +169,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             await playerTexts.NewGameStart.SendAsync(_core.UpdateSender, _playerChat);
 
             _state.PlayersMessageId = null;
-            _state.CurrentPlayersMessageState = PlayersMessageState.Type.NewRearrangement;
         }
         else if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
         {
@@ -234,22 +232,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        bool newRearrangement = _state.CurrentPlayersMessageState == PlayersMessageState.Type.NewRearrangement;
-        if (newRearrangement)
-        {
-            _state.Game.Players.DeactivateAll();
-            _state.CurrentPlayersMessageState = PlayersMessageState.Type.Rearrangement;
-        }
-
         bool toggled = _state.Game.Players.Toggle(id);
         if (!toggled)
         {
             return;
-        }
-
-        if (newRearrangement)
-        {
-            _state.Game.Players.Select(id);
         }
 
         if (_state.Game.Players.IsActive(id))
@@ -487,18 +473,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
     internal Task ShowRatesAsync() => _state.Game is null ? StartNewGameAsync() : ShowRatesAsync(_state.Game);
 
-    internal Task TogglePlayersMessageStateAsync()
-    {
-        if (_state.Game is null)
-        {
-            return StartNewGameAsync();
-        }
-
-        _state.CurrentPlayersMessageState = GetNextPlayersMessageState(_state.Game.Players.GetActiveIds().Count());
-
-        return ReportAndPinPlayersAsync(_state.Game);
-    }
-
     internal async Task DrawCardAsync()
     {
         if (_state.Game is null)
@@ -532,11 +506,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             await _core.UpdateSender.SendMediaGroupAsync(_adminChat, paths);
             await _core.UpdateSender.SendMediaGroupAsync(_playerChat, paths);
         }
-    }
-
-    private PlayersMessageState.Type GetNextPlayersMessageState(int activePlayers)
-    {
-        return PlayersMessageState.States[_state.CurrentPlayersMessageState].GetNext(activePlayers);
     }
 
     private async Task DeleteCardMessagesAsync()
@@ -861,16 +830,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         List<(string Id, bool Active, byte Number)> players = new();
         foreach ((string id, bool active) in game.Players.GetAllIdsWithStatus())
         {
-            if (!active)
-            {
-                if (_state.CurrentPlayersMessageState is not PlayersMessageState.Type.NewRearrangement
-                    and not PlayersMessageState.Type.Rearrangement
-                    and not PlayersMessageState.Type.Activity)
-                {
-                    continue;
-                }
-            }
-
             MessageTemplateText format = active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
             if (id == game.Players.Current)
             {
@@ -887,8 +846,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         MessageTemplateText messageText = texts.PlayersFormat.Format(allLines);
 
-        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, game.Players.Current,
-            game.Players.GetActiveIds().ToList(), players);
+        messageText.KeyboardProvider = CreatePlayersKeyboard(texts, game.Players.GetActiveIds().ToList(), players);
 
         if (_state.PlayersMessageId is null)
         {
@@ -1004,8 +962,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return CreateOneButtonRow<CompleteCard>(caption, fully);
     }
 
-    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, string currentPlayer,
-        IReadOnlyCollection<string> activePlayers, List<(string Id, bool Active, byte Number)> players)
+    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, IReadOnlyCollection<string> activePlayers,
+        List<(string Id, bool Active, byte Number)> players)
     {
         List<List<InlineKeyboardButton>> keyboard = new();
 
@@ -1014,77 +972,17 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             keyboard.Add(CreateOneButtonRow<DrawCard>(texts.DrawCard));
         }
 
-        List<InlineKeyboardButton>? modeToggle = CreateTogglePlayersMessageStateRow(activePlayers.Count, texts);
-        if (modeToggle is not null)
-        {
-            keyboard.Add(modeToggle);
-        }
-
         List<InlineKeyboardButton> playerButtons = new();
         foreach ((string? id, bool active, byte number) in players)
         {
-            InlineKeyboardButton button;
-            switch (_state.CurrentPlayersMessageState)
-            {
-                case PlayersMessageState.Type.NewRearrangement:
-                    button = CreateButton<RearrangePlayer>(number.ToString(), id);
-                    break;
-
-                case PlayersMessageState.Type.Rearrangement:
-                    string format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
-                    button = CreateButton<RearrangePlayer>(string.Format(format, number), id);
-                    break;
-
-                case PlayersMessageState.Type.Activity:
-                    format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
-                    button = CreateButton<TogglePlayer>(string.Format(format, number), id);
-                    break;
-
-                case PlayersMessageState.Type.Selection:
-                    if (!active || (id == currentPlayer))
-                    {
-                        continue;
-                    }
-                    button = CreateButton<SelectPlayer>(number.ToString(), id);
-                    break;
-
-                case PlayersMessageState.Type.FastMovement:
-                    if (!active || (id == activePlayers.LastOrDefault()))
-                    {
-                        continue;
-                    }
-                    button = CreateButton<MovePlayerToBottom>(number.ToString(), id);
-                    break;
-
-                case PlayersMessageState.Type.Movement:
-                    if (!active)
-                    {
-                        continue;
-                    }
-                    button = CreateButton<MovePlayerDown>(number.ToString(), id);
-                    break;
-                default: throw new ArgumentOutOfRangeException();
-            }
+            string format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
+            InlineKeyboardButton button = CreateButton<TogglePlayer>(string.Format(format, number), id);
             playerButtons.Add(button);
         }
         keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
                                        .Select(b => b.ToList()));
 
         return keyboard.Count == 0 ? InlineKeyboardMarkup.Empty() : new InlineKeyboardMarkup(keyboard);
-    }
-
-    private List<InlineKeyboardButton>? CreateTogglePlayersMessageStateRow(int activePlayers, Texts texts)
-    {
-        string current = PlayersMessageState.GetLabel(_state.CurrentPlayersMessageState, texts);
-        string next = PlayersMessageState.GetLabel(GetNextPlayersMessageState(activePlayers), texts);
-
-        if (current == next)
-        {
-            return null;
-        }
-
-        string caption = string.Format(texts.PlayersMessageStatesFormat, current, next);
-        return CreateOneButtonRow<TogglePlayersMessageState>(caption);
     }
 
     private static List<InlineKeyboardButton> CreateOneButtonRow<TData>(string caption, params object[] args)
