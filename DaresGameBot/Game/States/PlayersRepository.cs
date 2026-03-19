@@ -95,47 +95,6 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return true;
     }
 
-    public bool MoveDown(string id, bool toBottom, bool preserveCurrent)
-    {
-        int index = _ids.IndexOf(id);
-        if (index == -1)
-        {
-            return false;
-        }
-
-        string currentPlayer = Current;
-
-        if (toBottom)
-        {
-            if (_ids.Count < 2)
-            {
-                return false;
-            }
-            _ids.RemoveAt(index);
-            _ids.Add(id);
-        }
-        else
-        {
-            List<string> activeIds = GetActiveIds().ToList();
-            if (!activeIds.Contains(id) || (activeIds.Count < 2))
-            {
-                return false;
-            }
-            int? newIndex = GetNextActive(index);
-            if (newIndex is null)
-            {
-                return false;
-            }
-            (_ids[index], _ids[newIndex.Value]) = (_ids[newIndex.Value], _ids[index]);
-        }
-
-        if (preserveCurrent)
-        {
-            _currentIndex = _ids.IndexOf(currentPlayer);
-        }
-        return true;
-    }
-
     public PlayersRepositoryData Save()
     {
         return new PlayersRepositoryData

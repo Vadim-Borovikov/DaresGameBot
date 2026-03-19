@@ -131,9 +131,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new UpdatePlayers(this, _textsProvider));
         _core.UpdateReceiver.Operations.Add(new TogglePlayer(this));
         _core.UpdateReceiver.Operations.Add(new SelectPlayer(this));
-        _core.UpdateReceiver.Operations.Add(new MovePlayerDown(this));
-        _core.UpdateReceiver.Operations.Add(new MovePlayerToBottom(this));
-        _core.UpdateReceiver.Operations.Add(new RearrangePlayer(this));
         _core.UpdateReceiver.Operations.Add(new RevealCard(this));
         _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
         _core.UpdateReceiver.Operations.Add(new DeleteCard(this));
@@ -224,28 +221,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         await ReportAndPinPlayersAsync(_state.Game);
     }
 
-    internal async Task RearrangePlayerAsync(string id)
-    {
-        if (_state.Game is null)
-        {
-            await StartNewGameAsync();
-            return;
-        }
-
-        bool toggled = _state.Game.Players.Toggle(id);
-        if (!toggled)
-        {
-            return;
-        }
-
-        if (_state.Game.Players.IsActive(id))
-        {
-            _state.Game.Players.MoveDown(id, true, true);
-        }
-
-        await ReportAndPinPlayersAsync(_state.Game);
-    }
-
     internal async Task SelectPlayerAsync(string id)
     {
         if (_state.Game is null)
@@ -269,36 +244,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         await DeleteCardMessagesAsync();
         await DrawArrangementAsync(_state.Game);
-        await ReportAndPinPlayersAsync(_state.Game);
-    }
-
-    internal async Task MovePlayerDownAsync(string name, bool toBottom = false)
-    {
-        if (_state.Game is null)
-        {
-            await StartNewGameAsync();
-            return;
-        }
-
-        if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
-        {
-            Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
-            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
-            return;
-        }
-
-        bool moved =
-            _state.Game.Players.MoveDown(name, toBottom, _state.Game.CurrentState != Game.States.Game.State.Fresh);
-        if (!moved)
-        {
-            return;
-        }
-
-        if (!_state.Game.IsCurrentArrangementValid())
-        {
-            await DeleteCardMessagesAsync();
-        }
-
         await ReportAndPinPlayersAsync(_state.Game);
     }
 
