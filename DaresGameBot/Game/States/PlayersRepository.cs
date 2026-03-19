@@ -1,4 +1,3 @@
-using System;
 using DaresGameBot.Game.Matchmaking.Compatibility;
 using DaresGameBot.Game.States.Data;
 using DaresGameBot.Operations.Data.PlayerListUpdates;
@@ -82,18 +81,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return changed;
     }
 
-    public string GetDisplayName(string id, bool activeOnly)
-    {
-        if (id.StartsWith(_playerFillNamePrefix, StringComparison.InvariantCulture))
-        {
-            return id.Substring(_playerFillNamePrefix.Length);
-        }
-
-        IEnumerable<string> players = activeOnly ? GetActiveIds() : _idsOld;
-        return players.Count(i => _infosOld[i].Name == _infosOld[id].Name) > 1 ? id : _infosOld[id].Name;
-    }
-
-    public string GetDisplayName(string id) => GetDisplayName(id, true);
+    public string GetName(string id) => _infosOld[id].Name;
 
     public bool Toggle(string id)
     {

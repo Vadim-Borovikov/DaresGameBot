@@ -10,15 +10,15 @@ namespace DaresGameBot.Game;
 
 internal sealed class Turn
 {
-    public Turn(Texts texts, Func<string, string> getDisplayName, string tag, string description, string player,
-        Arrangement arrangement) : this(texts, getDisplayName, tag, description, player.Yield(), arrangement)
+    public Turn(Texts texts, Func<string, string> getName, string tag, string description, string player,
+        Arrangement arrangement) : this(texts, getName, tag, description, player.Yield(), arrangement)
     {}
 
-    public Turn(Texts texts, Func<string, string> getDisplayName, string tag, string description,
-        IEnumerable<string> players, Arrangement? arrangement = null)
+    public Turn(Texts texts, Func<string, string> getName, string tag, string description, IEnumerable<string> players,
+        Arrangement? arrangement = null)
     {
         _texts = texts;
-        _getDisplayName = getDisplayName;
+        _getName = getName;
         _players = players;
         _arrangement = arrangement;
         _tagPart = new MessageTemplateText(tag);
@@ -29,7 +29,7 @@ internal sealed class Turn
     {
         MessageTemplateText message = _texts.TurnFormatFull;
 
-        string playersPart = string.Join(_texts.DefaultSeparator, _players.Select(_getDisplayName));
+        string playersPart = string.Join(_texts.DefaultSeparator, _players.Select(_getName));
 
         MessageTemplateText? partnersPart = null;
         if (_arrangement is not null)
@@ -41,17 +41,17 @@ internal sealed class Turn
     }
 
     public static MessageTemplateText GetPartnersPart(Texts texts, Arrangement arrangement,
-        Func<string, string> getDisplayName)
+        Func<string, string> getName)
     {
         string partnersPrefix = arrangement.Partners.Count > 1 ? texts.Partners : texts.Partner;
         string separator = arrangement.CompatablePartners ? texts.CompatablePartnersSeparator : texts.DefaultSeparator;
-        string partnersText = string.Join(separator, arrangement.Partners.Select(getDisplayName));
+        string partnersText = string.Join(separator, arrangement.Partners.Select(getName));
         return texts.TurnPartnersFormat.Format(partnersPrefix, partnersText);
     }
 
     private MessageTemplateText GetPartnersPart(Texts texts, Arrangement arrangement)
     {
-        return GetPartnersPart(texts, arrangement, _getDisplayName);
+        return GetPartnersPart(texts, arrangement, _getName);
     }
 
     private readonly MessageTemplateText _tagPart;
@@ -59,5 +59,5 @@ internal sealed class Turn
     private readonly IEnumerable<string> _players;
     private readonly Arrangement? _arrangement;
     private readonly Texts _texts;
-    private readonly Func<string, string> _getDisplayName;
+    private readonly Func<string, string> _getName;
 }

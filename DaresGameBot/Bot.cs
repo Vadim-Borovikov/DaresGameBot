@@ -618,7 +618,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     {
         Texts texts = _textsProvider.GetTextsFor(chat.Id);
         string description = _state.ShouldShowEnFor(chat.Id) ? data.Descriprions[tag].en : data.Descriprions[tag].ru;
-        Turn turn = new(texts, players.GetDisplayName, tag, description, players.Current, arrangement);
+        Turn turn = new(texts, players.GetName, tag, description, players.Current, arrangement);
         MessageTemplateText template = turn.GetMessage();
         template.KeyboardProvider = CreateActionKeyboard(chat.Id, showPartial);
         MessageTemplateImagePath templateImage = new(template, image);
@@ -632,10 +632,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         MessageTemplateText? partnersText = null;
         if (arrangement.Partners.Count > 0)
         {
-            partnersText = Turn.GetPartnersPart(texts, arrangement, players.GetDisplayName);
+            partnersText = Turn.GetPartnersPart(texts, arrangement, players.GetName);
         }
         MessageTemplateText template =
-            texts.TurnFormatShort.Format(players.GetDisplayName(players.Current), partnersText);
+            texts.TurnFormatShort.Format(players.GetName(players.Current), partnersText);
         template.KeyboardProvider = CreateArrangementKeyboard(chat.Id, true);
         MessageTemplateImagePath templateImage = new(template, image);
         return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
@@ -823,7 +823,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
 
         string description = _state.ShouldShowEnFor(userId) ? data.DescriptionEn : data.Description;
-        return new Turn(texts, game.Players.GetDisplayName, texts.QuestionsTag, description, playerIds);
+        return new Turn(texts, game.Players.GetName, texts.QuestionsTag, description, playerIds);
     }
 
     private async Task ShowArrangementAsync(PlayersRepository players, Arrangement arrangement, Chat chat,
@@ -833,10 +833,10 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         MessageTemplateText? partnersText = null;
         if (arrangement.Partners.Count > 0)
         {
-            partnersText = Turn.GetPartnersPart(texts, arrangement, players.GetDisplayName);
+            partnersText = Turn.GetPartnersPart(texts, arrangement, players.GetName);
         }
         MessageTemplate messageTemplate =
-            texts.TurnFormatShort.Format(players.GetDisplayName(players.Current), partnersText);
+            texts.TurnFormatShort.Format(players.GetName(players.Current), partnersText);
         messageTemplate = new MessageTemplateImagePath(messageTemplate, image)
         {
             KeyboardProvider = CreateArrangementKeyboard(chat.Id, true)
@@ -885,7 +885,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         // ReSharper disable once LoopCanBePartlyConvertedToQuery
         foreach (string player in ratios.Keys.OrderByDescending(p => ratios[p]))
         {
-            string name = game.Players.GetDisplayName(player, false);
+            string name = game.Players.GetName(player);
             uint points = game.Stats.GetPoints(player);
             uint propositions = game.Stats.GetPropositions(player);
             uint rate = ratios[player];
