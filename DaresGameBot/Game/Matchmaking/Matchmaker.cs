@@ -28,7 +28,7 @@ internal abstract class Matchmaker
 
     public bool CanBePlayed(Arrangement arrangement)
     {
-        List<string> compatable = EnumerateCompatablePlayers().ToList();
+        List<long> compatable = EnumerateCompatablePlayers().ToList();
 
         return arrangement.Partners.All(compatable.Contains)
                && (!arrangement.CompatablePartners || Players.IsIntercompatable(arrangement.Partners, _compatibility));
@@ -36,7 +36,7 @@ internal abstract class Matchmaker
 
     public Arrangement SelectCompanionsFor(ArrangementType arrangementType)
     {
-        List<string> partners = new();
+        List<long> partners = new();
         if (arrangementType.Partners > 0)
         {
             partners = EnumerateMatches(arrangementType).Denull("No suitable partners found").ToList();
@@ -44,12 +44,12 @@ internal abstract class Matchmaker
         return new Arrangement(partners, arrangementType.CompatablePartners);
     }
 
-    protected IEnumerable<string> EnumerateCompatablePlayers()
+    protected IEnumerable<long> EnumerateCompatablePlayers()
     {
         return Players.GetActiveIds().Where(p => Players.AreCompatable(p, Players.Current, _compatibility));
     }
 
-    protected IEnumerable<IReadOnlyList<string>> EnumerateIntercompatableGroups(IList<string> choices, byte size)
+    protected IEnumerable<IReadOnlyList<long>> EnumerateIntercompatableGroups(IList<long> choices, byte size)
     {
         if (choices.Count < size)
         {
@@ -58,7 +58,7 @@ internal abstract class Matchmaker
 
         if (choices.Count == size)
         {
-            IReadOnlyList<string> choisesAsReadOnly = choices.AsReadOnly();
+            IReadOnlyList<long> choisesAsReadOnly = choices.AsReadOnly();
             if (Players.IsIntercompatable(choisesAsReadOnly, _compatibility))
             {
                 yield return choisesAsReadOnly;
@@ -66,7 +66,7 @@ internal abstract class Matchmaker
             yield break;
         }
 
-        foreach (IList<string> subset in
+        foreach (IList<long> subset in
                  ListHelper.EnumerateStrictSubsets(choices, size,
                      (p, g) => Players.IsCompatableWith(p, g, _compatibility)))
         {
@@ -76,7 +76,7 @@ internal abstract class Matchmaker
 
     private bool AreThereAnyMatches(ArrangementType arrangementType)
     {
-        List<string> choices = EnumerateCompatablePlayers().ToList();
+        List<long> choices = EnumerateCompatablePlayers().ToList();
         if (choices.Count < arrangementType.Partners)
         {
             return false;
@@ -86,7 +86,7 @@ internal abstract class Matchmaker
                || EnumerateIntercompatableGroups(choices, arrangementType.Partners).Any();
     }
 
-    protected abstract IEnumerable<string>? EnumerateMatches(ArrangementType arrangementType);
+    protected abstract IEnumerable<long>? EnumerateMatches(ArrangementType arrangementType);
 
     protected readonly PlayersRepository Players;
 

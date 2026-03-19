@@ -10,13 +10,13 @@ namespace DaresGameBot.Game;
 
 internal sealed class Turn
 {
-    public Turn(Texts texts, Func<string, string> getDisplayName, string tag, string description,
-        string? descriptionEn, string player, Arrangement arrangement)
+    public Turn(Texts texts, Func<long, string> getDisplayName, string tag, string description,
+        string? descriptionEn, long player, Arrangement arrangement)
         : this(texts, getDisplayName, tag, description, descriptionEn, player.Yield(), arrangement)
     {}
 
-    public Turn(Texts texts, Func<string, string> getDisplayName, string tag, string description,
-        string? descriptionEn, IEnumerable<string> players, Arrangement? arrangement = null)
+    public Turn(Texts texts, Func<long, string> getDisplayName, string tag, string description,
+        string? descriptionEn, IEnumerable<long> players, Arrangement? arrangement = null)
     {
         _texts = texts;
         _getDisplayName = getDisplayName;
@@ -49,7 +49,7 @@ internal sealed class Turn
     }
 
     public static MessageTemplateText GetPartnersPart(Texts texts, Arrangement arrangement,
-        Func<string, string> getDisplayName)
+        Func<long, string> getDisplayName)
     {
         string partnersPrefix = arrangement.Partners.Count > 1 ? texts.Partners : texts.Partner;
         string separator = arrangement.CompatablePartners ? texts.CompatablePartnersSeparator : texts.DefaultSeparator;
@@ -65,10 +65,10 @@ internal sealed class Turn
     private readonly MessageTemplateText _tagPart;
     private readonly MessageTemplateText _descriprionRuPart;
     private readonly MessageTemplateText? _descriprionEnPart;
-    private readonly IEnumerable<string> _players;
+    private readonly IEnumerable<long> _players;
     private readonly Arrangement? _arrangement;
     private readonly Texts _texts;
-    private readonly Func<string, string> _getDisplayName;
+    private readonly Func<long, string> _getDisplayName;
 
     private bool IncludeEn => _descriprionEnPart is not null;
 }

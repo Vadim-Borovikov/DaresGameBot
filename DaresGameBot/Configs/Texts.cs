@@ -67,10 +67,6 @@ public class Texts : AbstractBot.Models.Config.Texts
     [UsedImplicitly]
     [Required]
     [MinLength(1)]
-    public string UpdatePlayerSeparator { get; init; } = null!;
-    [UsedImplicitly]
-    [Required]
-    [MinLength(1)]
     public string UpdateGroupsSeparator { get; init; } = null!;
 
     [UsedImplicitly]
@@ -92,26 +88,6 @@ public class Texts : AbstractBot.Models.Config.Texts
 
     [Required]
     [MinLength(1)]
-    public string PlayersMessageStatesFormat { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateActivity { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateSelection { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateMovement { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateFastMovement { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateRearrangement { get; init; } = null!;
-
-    [Required]
-    [MinLength(1)]
     public string CurrentPlayerFormat { get; init; } = null!;
 
     [Required]
@@ -120,9 +96,6 @@ public class Texts : AbstractBot.Models.Config.Texts
     [Required]
     [MinLength(1)]
     public string InactivePlayerFormat { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string UndefinedPlayerFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

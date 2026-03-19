@@ -10,10 +10,10 @@ namespace DaresGameBot.Game.States;
 
 internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
 {
-    public IEnumerable<string> GetActiveIds() => _ids.Where(n => _infos[n].Active);
-    public IEnumerable<string> AllIds => _ids;
+    public IEnumerable<long> GetActiveIds() => _ids.Where(n => _infos[n].Active);
+    public IEnumerable<long> AllIds => _ids;
 
-    public string Current => _ids[_currentIndex];
+    public long Current => _ids[_currentIndex];
 
     public bool MoveNext()
     {
@@ -26,54 +26,47 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return true;
     }
 
-    public IEnumerable<(string Id, bool Active)> GetAllIdsWithStatus()
+    public IEnumerable<(long Id, string Name, bool Active)> GetAllIdsWithNamesAndStatuses()
     {
-        foreach (string id in _ids)
+        foreach (long id in _ids)
         {
-            yield return (id, _infos[id].Active);
+            yield return (id, _infos[id].Name, _infos[id].Active);
         }
     }
 
-    public bool AddOrUpdatePlayerData(AddOrUpdatePlayerData a, string usernameSeparator)
+    public bool AddOrUpdatePlayerData(AddOrUpdatePlayerData a)
     {
         bool changed = false;
-        string id = GetId(a.Name, a.Username, usernameSeparator);
-        if (_infos.ContainsKey(id))
+        if (_infos.ContainsKey(a.Id))
         {
-            if (_infos[id].GroupInfo != a.Info)
+            if (_infos[a.Id].GroupInfo != a.Info)
             {
-                _infos[id].GroupInfo = a.Info;
+                _infos[a.Id].GroupInfo = a.Info;
                 changed = true;
             }
-            if (!_infos[id].Active)
+            if (!_infos[a.Id].Active)
             {
-                _infos[id].Active = true;
+                _infos[a.Id].Active = true;
                 changed = true;
             }
         }
         else
         {
-            _infos[id] = new PlayerInfo(a.Name, a.Info);
+            _infos[a.Id] = new PlayerInfo(a.Name, a.Info);
             changed = true;
         }
 
-        if (!_ids.Contains(id))
+        if (!_ids.Contains(a.Id))
         {
-            _ids.Add(id);
+            _ids.Add(a.Id);
         }
 
         return changed;
     }
 
-    public string GetDisplayName(string id, bool activeOnly)
-    {
-        IEnumerable<string> players = activeOnly ? GetActiveIds() : _ids;
-        return players.Count(i => _infos[i].Name == _infos[id].Name) > 1 ? id : _infos[id].Name;
-    }
+    public string GetDisplayName(long id) => _infos[id].Name;
 
-    public string GetDisplayName(string id) => GetDisplayName(id, true);
-
-    public bool Toggle(string id)
+    public bool Toggle(long id)
     {
         if (!_infos.ContainsKey(id))
         {
@@ -105,7 +98,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         _ids.AddRange(data.Ids);
 
         _infos.Clear();
-        foreach (string id in data.Infos.Keys)
+        foreach (long id in data.Infos.Keys)
         {
             PlayerData d = data.Infos[id];
             GroupsInfo i = new(d.GroupsData.Group, d.GroupsData.CompatableGroups);
@@ -115,29 +108,24 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         _currentIndex = data.CurrentIndex;
     }
 
-    public bool IsActive(string id) => _infos.ContainsKey(id) && _infos[id].Active;
+    public bool IsActive(long id) => _infos.ContainsKey(id) && _infos[id].Active;
 
-    public bool IsIntercompatable(IReadOnlyList<string> group, ICompatibility compatibility)
+    public bool IsIntercompatable(IReadOnlyList<long> group, ICompatibility compatibility)
     {
         return ListHelper.EnumeratePairs(group).All(pair => AreCompatable(pair, compatibility));
     }
 
-    public bool AreCompatable(string p1, string p2, ICompatibility compatibility)
+    public bool AreCompatable(long p1, long p2, ICompatibility compatibility)
     {
         return (p1 != p2) && compatibility.AreCompatable(_infos[p1], _infos[p2]);
     }
 
-    public bool IsCompatableWith(string player, IEnumerable<string> group, ICompatibility compatibility)
+    public bool IsCompatableWith(long player, IEnumerable<long> group, ICompatibility compatibility)
     {
         return group.All(p => AreCompatable(player, p, compatibility));
     }
 
-    private static string GetId(string name, string? username, string separator)
-    {
-        return string.IsNullOrEmpty(username) ? name : $"{name}{separator}{username}";
-    }
-
-    private bool AreCompatable((string, string) pair, ICompatibility compatibility)
+    private bool AreCompatable((long, long) pair, ICompatibility compatibility)
     {
         return AreCompatable(pair.Item1, pair.Item2, compatibility);
     }
@@ -159,7 +147,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return index;
     }
 
-    private readonly List<string> _ids = new();
-    private readonly Dictionary<string, PlayerInfo> _infos = new();
+    private readonly List<long> _ids = new();
+    private readonly Dictionary<long, PlayerInfo> _infos = new();
     private int _currentIndex;
 }

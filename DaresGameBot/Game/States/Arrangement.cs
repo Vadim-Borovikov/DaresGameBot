@@ -8,12 +8,12 @@ namespace DaresGameBot.Game.States;
 
 internal sealed class Arrangement : IStateful<ArrangementData>
 {
-    public readonly List<string> Partners;
+    public readonly List<long> Partners;
     public bool CompatablePartners;
 
-    public Arrangement() => Partners = new List<string>();
+    public Arrangement() => Partners = new List<long>();
 
-    public Arrangement(List<string> partners, bool compatablePartners)
+    public Arrangement(List<long> partners, bool compatablePartners)
     {
         Partners = partners;
         CompatablePartners = compatablePartners;

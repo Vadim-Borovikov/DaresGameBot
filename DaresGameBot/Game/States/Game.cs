@@ -124,10 +124,7 @@ internal sealed class Game : IStateful<GameData>
         return StartNewTurn();
     }
 
-    public bool UpdatePlayers(List<AddOrUpdatePlayerData> updateDatas, string usernameSeparator)
-    {
-        return Stats.UpdateList(updateDatas, usernameSeparator);
-    }
+    public bool UpdatePlayers(List<AddOrUpdatePlayerData> updateDatas) => Stats.UpdateList(updateDatas);
 
     public GameData Save()
     {
@@ -205,7 +202,7 @@ internal sealed class Game : IStateful<GameData>
 
     private void OnQuestionCompleted()
     {
-        List<string> activePlayers = Players.GetActiveIds().ToList();
+        List<long> activePlayers = Players.GetActiveIds().ToList();
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
             subscriber.OnQuestionCompleted(Players.Current, CurrentArrangement, activePlayers);
@@ -223,7 +220,7 @@ internal sealed class Game : IStateful<GameData>
         {
             throw new NullReferenceException("Current tag is null");
         }
-        List<string> activePlayers = Players.GetActiveIds().ToList();
+        List<long> activePlayers = Players.GetActiveIds().ToList();
         foreach (IInteractionSubscriber subscriber in _interactionSubscribers)
         {
             subscriber.OnActionCompleted(Players.Current, CurrentArrangement, activePlayers, _currentCardTag, fully);

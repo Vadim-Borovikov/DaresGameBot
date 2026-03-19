@@ -17,7 +17,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
 
     public GameStats(GameStatsStateCore core) => _core = core;
 
-    public void OnQuestionCompleted(string player, Arrangement? arrangement, List<string> activePlayers)
+    public void OnQuestionCompleted(long player, Arrangement? arrangement, List<long> activePlayers)
     {
         if (arrangement is null)
         {
@@ -35,7 +35,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         }
     }
 
-    public void OnActionCompleted(string player, Arrangement arrangement, List<string> activePlayers, string tag,
+    public void OnActionCompleted(long player, Arrangement arrangement, List<long> activePlayers, string tag,
         bool fully)
     {
         RegisterPropositions(player, arrangement);
@@ -46,19 +46,19 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         RegisterPoints(player, arrangement, points.Value);
     }
 
-    public bool UpdateList(List<AddOrUpdatePlayerData> updateDatas, string usernameSeparator)
+    public bool UpdateList(List<AddOrUpdatePlayerData> updateDatas)
     {
         bool changed = false;
 
         foreach (AddOrUpdatePlayerData data in updateDatas)
         {
-            changed |= _core.Players.AddOrUpdatePlayerData(data, usernameSeparator);
+            changed |= _core.Players.AddOrUpdatePlayerData(data);
         }
 
         return changed;
     }
 
-    public float GetPartnerPropositionsRate(string player)
+    public float GetPartnerPropositionsRate(long player)
     {
         uint propositions =  _partnerPropositions.GetValueOrDefault(player);
         uint turns = GetTurns(player);
@@ -76,22 +76,22 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         return 1.0f * propositions / turns;
     }
 
-    public uint GetPropositions(string player) => _propositions.GetValueOrDefault(player);
+    public uint GetPropositions(long player) => _propositions.GetValueOrDefault(player.ToString());
 
-    public uint GetPropositions(string p1, string p2)
+    public uint GetPropositions(long p1, long p2)
     {
         string key = GetKey(p1, p2);
         return _propositions.GetValueOrDefault(key);
     }
 
-    public uint? GetRatio(string player)
+    public uint? GetRatio(long player)
     {
         uint propositions = GetPropositions(player);
         return propositions == 0 ? null : GetPoints(player) / propositions;
     }
 
-    public uint GetPoints(string player) => _points.GetValueOrDefault(player);
-    public uint GetTurns(string player) => _turns.GetValueOrDefault(player);
+    public uint GetPoints(long player) => _points.GetValueOrDefault(player);
+    public uint GetTurns(long player) => _turns.GetValueOrDefault(player);
 
     public GameStatsData Save()
     {
@@ -138,7 +138,7 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         return completedFully ? _core.ActionOptions[tag].Points : _core.ActionOptions[tag].PartialPoints;
     }
 
-    private void RegisterPoints(string player, Arrangement? arrangement, uint points)
+    private void RegisterPoints(long player, Arrangement? arrangement, uint points)
     {
         _points.CreateOrAdd(player, points);
 
@@ -146,17 +146,17 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         {
             return;
         }
-        foreach (string partner in arrangement.Partners)
+        foreach (long partner in arrangement.Partners)
         {
             _points.CreateOrAdd(partner, points);
         }
     }
 
-    private void RegisterPropositions(string player, Arrangement arrangement)
+    private void RegisterPropositions(long player, Arrangement arrangement)
     {
         RegisterProposition(player);
 
-        foreach (string p in arrangement.Partners)
+        foreach (long p in arrangement.Partners)
         {
             RegisterProposition(p);
             RegisterProposition(player, p);
@@ -167,30 +167,33 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         {
             return;
         }
-        foreach ((string, string) pair in ListHelper.EnumeratePairs(arrangement.Partners))
+        foreach ((long, long) pair in ListHelper.EnumeratePairs(arrangement.Partners))
         {
             RegisterProposition(pair.Item1, pair.Item2);
         }
     }
 
-    private void RegisterPartnerProposition(string key) => _partnerPropositions.CreateOrAdd(key, 1);
+    private void RegisterPartnerProposition(long key) => _partnerPropositions.CreateOrAdd(key, 1);
 
+    private void RegisterProposition(long id) => RegisterProposition(id.ToString());
     private void RegisterProposition(string key) => _propositions.CreateOrAdd(key, 1);
 
-    private void RegisterProposition(string p1, string p2)
+    private void RegisterProposition(long p1, long p2)
     {
         string key = GetKey(p1, p2);
         RegisterProposition(key);
     }
 
-    private static string GetKey(string p1, string p2)
+    private static string GetKey(long p1, long p2)
     {
-        return string.Compare(p1, p2, StringComparison.Ordinal) < 0 ? p1 + p2 : p2 + p1;
+        string s1 = p1.ToString();
+        string s2 = p2.ToString();
+        return p1 < p2 ? s1 + s2 : s2 + s1;
     }
 
-    private void RegisterTurn(string player, List<string> activePlayers)
+    private void RegisterTurn(long player, List<long> activePlayers)
     {
-        foreach (string activePlayer in activePlayers)
+        foreach (long activePlayer in activePlayers)
         {
             _turns.CreateOrAdd(activePlayer, 1);
         }
@@ -215,10 +218,10 @@ internal sealed class GameStats : IInteractionSubscriber, IStateful<GameStatsDat
         _currentRound = 0;
     }
 
-    private readonly Dictionary<string, uint> _points = new();
+    private readonly Dictionary<long, uint> _points = new();
     private readonly Dictionary<string, uint> _propositions = new();
-    private readonly Dictionary<string, uint> _partnerPropositions = new();
-    private readonly Dictionary<string, uint> _turns = new();
+    private readonly Dictionary<long, uint> _partnerPropositions = new();
+    private readonly Dictionary<long, uint> _turns = new();
     private readonly GameStatsStateCore _core;
 
     private uint _currentRound;

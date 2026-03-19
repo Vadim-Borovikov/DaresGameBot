@@ -15,9 +15,9 @@ internal sealed class DistributedMatchmaker : Matchmaker
         _gameStats = gameStats;
     }
 
-    protected override IEnumerable<string>? EnumerateMatches(ArrangementType arrangementType)
+    protected override IEnumerable<long>? EnumerateMatches(ArrangementType arrangementType)
     {
-        List<string> choices =
+        List<long> choices =
             EnumerateCompatablePlayers().OrderBy(p => _gameStats.GetPropositions(Players.Current, p))
                                         .ThenBy(_gameStats.GetPartnerPropositionsRate)
                                         .ThenByShuffled()

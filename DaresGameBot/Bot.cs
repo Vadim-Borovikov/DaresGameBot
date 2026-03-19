@@ -173,7 +173,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
         else
         {
-            bool changed = _state.Game.UpdatePlayers(updates, _textsProvider.GetDefaultTexts().UpdatePlayerSeparator);
+            bool changed = _state.Game.UpdatePlayers(updates);
             if (!changed)
             {
                 await adminTexts.NothingChanges.SendAsync(_core.UpdateSender, _adminChat);
@@ -191,7 +191,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         await ReportAndPinPlayersAsync(_state.Game);
     }
 
-    internal async Task TogglePlayerAsync(string id)
+    internal async Task TogglePlayerAsync(long id)
     {
         if (_state.Game is null)
         {
@@ -580,12 +580,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         Deck<ActionData> actionDeck = new(_state.Core.SheetInfo.Actions);
         Deck<QuestionData> questionDeck = new(_state.Core.SheetInfo.Questions);
 
-        Texts texts = _textsProvider.GetDefaultTexts();
         PlayersRepository repository = new();
         GameStatsStateCore gameStatsStateCore = new(_state.Core.ActionOptions, _state.Core.QuestionPoints, repository);
         GameStats gameStats = new(gameStatsStateCore);
 
-        gameStats.UpdateList(updates, texts.UpdatePlayerSeparator);
+        gameStats.UpdateList(updates);
 
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(repository, gameStats, compatibility);
@@ -636,7 +635,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     {
         Texts texts = _textsProvider.GetTextsFor(userId);
         QuestionData data = game.GetQuestionData();
-        List<string> playerIds = new() { game.Players.Current };
+        List<long> playerIds = new() { game.Players.Current };
         if (game.CurrentArrangement is not null)
         {
             playerIds.AddRange(game.CurrentArrangement.Partners);
@@ -684,8 +683,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     private Task ShowRatesAsync(Game.States.Game game)
     {
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
-        Dictionary<string, uint> ratios = new();
-        foreach (string player in game.Players.AllIds)
+        Dictionary<long, uint> ratios = new();
+        foreach (long player in game.Players.AllIds)
         {
             uint? rate = game.Stats.GetRatio(player);
             if (rate is not null)
@@ -704,9 +703,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         List<MessageTemplateText> lines = new();
 
         // ReSharper disable once LoopCanBePartlyConvertedToQuery
-        foreach (string player in ratios.Keys.OrderByDescending(p => ratios[p]))
+        foreach (long player in ratios.Keys.OrderByDescending(p => ratios[p]))
         {
-            string name = game.Players.GetDisplayName(player, false);
+            string name = game.Players.GetDisplayName(player);
             uint points = game.Stats.GetPoints(player);
             uint propositions = game.Stats.GetPropositions(player);
             uint rate = ratios[player];
@@ -745,8 +744,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
 
         List<MessageTemplateText> playerLines = new();
-        List<(string Id, bool Active, byte Number)> players = new();
-        foreach ((string id, bool active) in game.Players.GetAllIdsWithStatus())
+        List<(long Id, bool Active, byte Number)> players = new();
+        foreach ((long id, string name, bool active) in game.Players.GetAllIdsWithNamesAndStatuses())
         {
             MessageTemplateText format = active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
             if (id == game.Players.Current)
@@ -757,7 +756,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
             byte number = (byte) (playerLines.Count + 1);
             players.Add((id, active, number));
-            MessageTemplateText line = format.Format(number, id);
+            MessageTemplateText line = format.Format(number, name);
             playerLines.Add(line);
         }
         MessageTemplateText allLines = MessageTemplateText.JoinTexts(playerLines);
@@ -880,8 +879,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         return CreateOneButtonRow<CompleteCard>(caption, fully);
     }
 
-    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, IReadOnlyCollection<string> activePlayers,
-        List<(string Id, bool Active, byte Number)> players)
+    private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, IReadOnlyCollection<long> activePlayers,
+        List<(long Id, bool Active, byte Number)> players)
     {
         List<List<InlineKeyboardButton>> keyboard = new();
 
@@ -891,7 +890,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
 
         List<InlineKeyboardButton> playerButtons = new();
-        foreach ((string? id, bool active, byte number) in players)
+        foreach ((long? id, bool active, byte number) in players)
         {
             string format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
             InlineKeyboardButton button = CreateButton<TogglePlayer>(string.Format(format, number), id);

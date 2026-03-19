@@ -5,7 +5,7 @@ namespace DaresGameBot.Game.Matchmaking.Interactions;
 
 internal interface IInteractionSubscriber
 {
-    public void OnQuestionCompleted(string player, Arrangement? arrangement, List<string> activePlayers);
-    public void OnActionCompleted(string player, Arrangement arrangement, List<string> activePlayers, string tag,
+    public void OnQuestionCompleted(long player, Arrangement? arrangement, List<long> activePlayers);
+    public void OnActionCompleted(long player, Arrangement arrangement, List<long> activePlayers, string tag,
         bool fully);
 }

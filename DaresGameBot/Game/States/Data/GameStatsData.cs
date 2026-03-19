@@ -6,13 +6,13 @@ namespace DaresGameBot.Game.States.Data;
 public sealed class GameStatsData
 {
     [UsedImplicitly]
-    public Dictionary<string, uint> Points { get; set; } = null!;
+    public Dictionary<long, uint> Points { get; set; } = null!;
     [UsedImplicitly]
     public Dictionary<string, uint> Propositions { get; set; } = null!;
     [UsedImplicitly]
-    public Dictionary<string, uint> PartnerPropositions { get; set; } = null!;
+    public Dictionary<long, uint> PartnerPropositions { get; set; } = null!;
     [UsedImplicitly]
-    public Dictionary<string, uint> Turns { get; set; } = null!;
+    public Dictionary<long, uint> Turns { get; set; } = null!;
     [UsedImplicitly]
     public uint CurrentRound { get; set; }
     [UsedImplicitly]

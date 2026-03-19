@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DaresGameBot.Configs;
 using DaresGameBot.Game.States;
+using GoogleSheetsManager.Extensions;
 
 namespace DaresGameBot.Operations.Data.PlayerListUpdates;
 
@@ -18,28 +19,24 @@ internal sealed class UpdatesData
         foreach (string[] parts in
                  lines.Select(l => l.Split(texts.UpdatePartsSeparator, StringSplitOptions.TrimEntries)))
         {
-            if (parts.Length != 3)
+            if (parts.Length != 4)
             {
                 return null;
             }
 
-            string player = parts[0];
-            string group = parts[1];
-            string[] groups = parts[2].Split(texts.UpdateGroupsSeparator);
+            long? id = parts[0].ToLong();
+            if (id is null)
+            {
+                return null;
+            }
+
+            string player = parts[1];
+            string group = parts[2];
+            string[] groups = parts[3].Split(texts.UpdateGroupsSeparator);
             HashSet<string> compatableGroups = new(groups);
             GroupsInfo info = new(group, compatableGroups);
 
-            string[] playerParts = player.Split(texts.UpdatePlayerSeparator);
-            string? username = null;
-            switch (playerParts.Length)
-            {
-                case 0 or > 2: return null;
-                case 2 :
-                    username = playerParts[1];
-                    break;
-            }
-            string name = playerParts[0];
-            AddOrUpdatePlayerData data = new(name, username, info);
+            AddOrUpdatePlayerData data = new(id.Value, player, info);
 
             datas.Add(data);
         }

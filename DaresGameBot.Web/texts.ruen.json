@@ -140,17 +140,8 @@
 
   "CurrentPlayerFormat": "{0} 👈",
 
-  "PlayersMessageStatesFormat": "{0} → {1}",
-
-  "PlayersMessageStateActivity": "✔️",
-  "PlayersMessageStateSelection": "👈",
-  "PlayersMessageStateMovement": "🔽",
-  "PlayersMessageStateFastMovement": "⏬",
-  "PlayersMessageStateRearrangement": "🔢",
-
   "ActivePlayerFormat": "✔️ {0}",
   "InactivePlayerFormat": "❌ {0}",
-  "UndefinedPlayerFormat": "🔢 {0}",
 
   "Completed": "✅",
 
@@ -206,7 +197,6 @@
   "CompatablePartnersSeparator": " + ",
 
   "UpdatePartsSeparator": ",",
-  "UpdatePlayerSeparator": " ",
   "UpdateGroupsSeparator": "+",
 
   "ReadingDecks": {
