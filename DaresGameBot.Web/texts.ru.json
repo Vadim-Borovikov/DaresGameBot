@@ -95,8 +95,6 @@
       "{0}"
     ]
   },
-  
-  "PlayerFillNamePrefix": "~",
 
   "EquipmentFormat": "• {0}",
   "EquipmentSeparatorMessage": "\n",

@@ -117,8 +117,6 @@
     ]
   },
 
-  "PlayerFillNamePrefix": "~",
-
   "EquipmentFormat": "• {0}",
   "EquipmentSeparatorMessage": "\n",
   "EquipmentSeparatorSheet": ", ",
