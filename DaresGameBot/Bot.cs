@@ -879,7 +879,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             byte number = (byte) (playerLines.Count + 1);
             players.Add((id, number, info));
 
-            string rounds = string.Join(texts.UpdatePartSeparator, info.Rounds.Order());
+            string? rounds = _state.CurrentPlayersMessageState is PlayersMessageState.Type.Activity
+                ? string.Join(texts.UpdatePartSeparator, info.Rounds.Order())
+                : null;
             string adminInfo = string.Format(texts.AdminInfoFormat, info.Username, rounds)
                                      .Trim();
             MessageTemplateText line = format.Format(number, id, adminInfo);
