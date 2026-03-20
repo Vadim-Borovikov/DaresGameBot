@@ -82,9 +82,10 @@
 
   "PlayersFormat": {
     "Text": [
-      "Игроки:",
-      "{0}"
-    ]
+      "Игроки, {0}:",
+      "{1}"
+    ],
+    "MarkdownV2": true
   },
 
   "NewGameStart": {
