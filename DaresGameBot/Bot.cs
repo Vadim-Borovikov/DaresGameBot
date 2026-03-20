@@ -574,7 +574,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return template.EditMessageWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
         }
 
-        MessageTemplateImage templateImage = new(template, image);
+        MessageTemplateImagePath templateImage = new(template, image);
         return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
@@ -586,7 +586,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         Turn turn = new(texts, tag, data.Descriprions[tag].ru, descriptionEn, players.Current, arrangement);
         MessageTemplateText template = turn.GetMessage();
         template.KeyboardProvider = CreateActionKeyboard(chat.Id, showPartial);
-        MessageTemplateImage templateImage = new(template, image);
+        MessageTemplateImagePath templateImage = new(template, image);
         return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
@@ -601,7 +601,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
         MessageTemplateText template = texts.TurnFormatShort.Format(players.Current, partnersText);
         template.KeyboardProvider = CreateArrangementKeyboard(chat.Id, true);
-        MessageTemplateImage templateImage = new(template, image);
+        MessageTemplateImagePath templateImage = new(template, image);
         return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
     }
 
@@ -765,7 +765,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             partnersText = Turn.GetPartnersPart(texts, arrangement);
         }
         MessageTemplate messageTemplate = texts.TurnFormatShort.Format(players.Current, partnersText);
-        messageTemplate = new MessageTemplateImage(messageTemplate, image)
+        messageTemplate = new MessageTemplateImagePath(messageTemplate, image)
         {
             KeyboardProvider = CreateArrangementKeyboard(chat.Id, true)
         };

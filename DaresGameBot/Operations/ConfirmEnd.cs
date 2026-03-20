@@ -12,13 +12,13 @@ internal sealed class ConfirmEnd : Operation<ConfirmEndData>
 
     public ConfirmEnd(Bot bot) : base(bot.Core.Accesses, bot.Core.UpdateSender) => _bot = bot;
 
-    protected override bool IsInvokingBy(Message message, User sender, out ConfirmEndData? data)
+    protected override bool IsInvokingBy(Message message, User? sender, out ConfirmEndData? data)
     {
         data = null;
         return false;
     }
 
-    protected override bool IsInvokingBy(Message message, User sender, string callbackQueryDataCore,
+    protected override bool IsInvokingBy(Message message, User? sender, string callbackQueryDataCore,
         out ConfirmEndData? data)
     {
         data = ConfirmEndData.From(callbackQueryDataCore);

@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using DaresGameBot.Configs;
 using DaresGameBot.Web.Models;
-using GryphonUtilities;
+using GryphonUtilities.Logging;
 using GryphonUtilities.Time;
 using Microsoft.Extensions.Options;
 
@@ -11,9 +11,9 @@ internal static class Program
 {
     public static async Task Main(string[] args)
     {
-        Logger.DeleteExceptionLog();
         Clock clock = new();
         Logger logger = new(clock);
+        logger.Errors.DeleteLog();
         try
         {
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -26,7 +26,6 @@ internal static class Program
             IServiceCollection services = builder.Services;
             services.AddSingleton<Cpu.Timer>();
             services.AddControllersWithViews();
-            services.ConfigureTelegramBotMvc();
 
             Bot bot = await Bot.TryCreateAsync(config, CancellationToken.None)
                       ?? throw new InvalidOperationException("Failed to initialize bot due to invalid configuration.");
@@ -52,7 +51,7 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            logger.LogException(ex);
+            logger.Errors.Log(ex);
         }
     }
 

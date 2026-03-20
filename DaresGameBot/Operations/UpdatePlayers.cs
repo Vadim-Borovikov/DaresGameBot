@@ -28,10 +28,15 @@ internal sealed class UpdatePlayers : Operation<UpdatesData>
         return texts.UpdatePlayersOperationDescription;
     }
 
-    protected override bool IsInvokingBy(Message message, User sender, out UpdatesData? data)
+    protected override bool IsInvokingBy(Message message, User? sender, out UpdatesData? data)
     {
         data = null;
         if (message.Type != MessageType.Text)
+        {
+            return false;
+        }
+
+        if (sender is null)
         {
             return false;
         }
