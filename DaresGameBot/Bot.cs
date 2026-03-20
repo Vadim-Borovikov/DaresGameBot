@@ -169,7 +169,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             await playerTexts.NewGameStart.SendAsync(_core.UpdateSender, _playerChat);
 
             _state.PlayersMessageId = null;
-            _state.CurrentPlayersMessageState = PlayersMessageState.Type.Rounds;
+            _state.CurrentPlayersMessageState = PlayersMessageState.Type.Activity;
         }
         else if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
         {
@@ -1022,56 +1022,55 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             keyboard.Add(modeToggle);
         }
 
-        if (_state.CurrentPlayersMessageState == PlayersMessageState.Type.Rounds)
+        if (_state.CurrentPlayersMessageState == PlayersMessageState.Type.Activity)
         {
             keyboard.AddRange(players.SelectMany(p => p.Info.Rounds)
                                      .Distinct()
                                      .Order()
                                      .Select(r => CreateOneButtonRow<SetupRound>(r.ToString(), r)));
         }
-        else
+
+        List<InlineKeyboardButton> playerButtons = new();
+        foreach ((string? id, byte number, PlayerInfo info) in players)
         {
-            List<InlineKeyboardButton> playerButtons = new();
-            foreach ((string? id, byte number, PlayerInfo info) in players)
+            InlineKeyboardButton button;
+            switch (_state.CurrentPlayersMessageState)
             {
-                InlineKeyboardButton button;
-                switch (_state.CurrentPlayersMessageState)
-                {
-                    case PlayersMessageState.Type.Activity:
-                        string format = info.Active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
-                        button = CreateButton<TogglePlayer>(string.Format(format, number), id);
-                        break;
+                case PlayersMessageState.Type.Activity:
+                    string format = info.Active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
+                    button = CreateButton<TogglePlayer>(string.Format(format, number), id);
+                    break;
 
-                    case PlayersMessageState.Type.Selection:
-                        if (!info.Active || (id == currentPlayer))
-                        {
-                            continue;
-                        }
-                        button = CreateButton<SelectPlayer>(number.ToString(), id);
-                        break;
+                case PlayersMessageState.Type.Selection:
+                    if (!info.Active || (id == currentPlayer))
+                    {
+                        continue;
+                    }
+                    button = CreateButton<SelectPlayer>(number.ToString(), id);
+                    break;
 
-                    case PlayersMessageState.Type.FastMovement:
-                        if (!info.Active || (id == activePlayers.LastOrDefault()))
-                        {
-                            continue;
-                        }
-                        button = CreateButton<MovePlayerToBottom>(number.ToString(), id);
-                        break;
+                case PlayersMessageState.Type.FastMovement:
+                    if (!info.Active || (id == activePlayers.LastOrDefault()))
+                    {
+                        continue;
+                    }
+                    button = CreateButton<MovePlayerToBottom>(number.ToString(), id);
+                    break;
 
-                    case PlayersMessageState.Type.Movement:
-                        if (!info.Active)
-                        {
-                            continue;
-                        }
-                        button = CreateButton<MovePlayerDown>(number.ToString(), id);
-                        break;
-                    default: throw new ArgumentOutOfRangeException();
-                }
-                playerButtons.Add(button);
+                case PlayersMessageState.Type.Movement:
+                    if (!info.Active)
+                    {
+                        continue;
+                    }
+                    button = CreateButton<MovePlayerDown>(number.ToString(), id);
+                    break;
+                default: throw new ArgumentOutOfRangeException();
             }
-            keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
-                                           .Select(b => b.ToList()));
+            playerButtons.Add(button);
         }
+
+        keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
+                                       .Select(b => b.ToList()));
 
         return keyboard.Count == 0 ? InlineKeyboardMarkup.Empty() : new InlineKeyboardMarkup(keyboard);
     }

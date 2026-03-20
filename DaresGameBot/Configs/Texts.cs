@@ -106,9 +106,6 @@ public class Texts : AbstractBot.Models.Config.Texts
     [Required]
     [MinLength(1)]
     public string PlayersMessageStateFastMovement { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string PlayersMessageStateRounds { get; init; } = null!;
 
     [Required]
     [MinLength(1)]

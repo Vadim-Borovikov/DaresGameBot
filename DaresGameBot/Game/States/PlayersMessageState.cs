@@ -8,7 +8,6 @@ internal sealed class PlayersMessageState
 {
     public enum Type
     {
-        Rounds,
         Activity,
         Selection,
         FastMovement,
@@ -25,7 +24,6 @@ internal sealed class PlayersMessageState
     {
         return state switch
         {
-            Type.Rounds        => texts.PlayersMessageStateRounds,
             Type.Activity      => texts.PlayersMessageStateActivity,
             Type.Selection     => texts.PlayersMessageStateSelection,
             Type.FastMovement  => texts.PlayersMessageStateFastMovement,
@@ -50,11 +48,10 @@ internal sealed class PlayersMessageState
     public static readonly IReadOnlyDictionary<Type, PlayersMessageState> States =
         new Dictionary<Type, PlayersMessageState>
         {
-            { Type.Rounds, new PlayersMessageState(Type.Activity, 0) },
             { Type.Activity, new PlayersMessageState(Type.Selection, 0) },
             { Type.Selection, new PlayersMessageState(Type.FastMovement, 2) },
             { Type.FastMovement, new PlayersMessageState(Type.Movement, 3) },
-            { Type.Movement, new PlayersMessageState(Type.Rounds, 2) }
+            { Type.Movement, new PlayersMessageState(Type.Activity, 2) }
         };
 
     private readonly Type _next;
