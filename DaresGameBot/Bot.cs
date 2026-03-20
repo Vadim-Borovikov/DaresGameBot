@@ -856,6 +856,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     {
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
 
+        int activePlayers = game.Players.GetActiveIds().Count();
+
         List<MessageTemplateText> playerLines = new();
         List<(string Id, bool Active, byte Number)> players = new();
         foreach ((string id, bool active) in game.Players.GetAllIdsWithStatus())
@@ -884,7 +886,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
         MessageTemplateText allLines = MessageTemplateText.JoinTexts(playerLines);
 
-        MessageTemplateText messageText = texts.PlayersFormat.Format(allLines);
+        MessageTemplateText messageText = texts.PlayersFormat.Format(activePlayers, allLines);
 
         messageText.KeyboardProvider = CreatePlayersKeyboard(texts, game.Players.Current,
             game.Players.GetActiveIds().ToList(), players);
