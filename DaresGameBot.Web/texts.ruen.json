@@ -75,7 +75,7 @@
     "Text": [
       "Чтобы начать, введи имена игроков, их группу и те группы, с кем они совместимы\\. Каждое — с новой строки\\. Примеры:",
       "*Миша,м,ж",
-      "Катя П\\.,ж,м\\+ж*"
+      "Катя П\\.,ж,м\\-ж*"
     ],
     "MarkdownV2": true
   },
@@ -207,7 +207,7 @@
 
   "UpdatePartsSeparator": ",",
   "UpdatePlayerSeparator": " ",
-  "UpdateGroupsSeparator": "+",
+  "UpdateGroupsSeparator": "-",
 
   "ReadingDecks": {
     "Text": [
