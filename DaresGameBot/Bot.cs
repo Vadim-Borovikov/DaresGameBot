@@ -133,7 +133,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         _core.UpdateReceiver.Operations.Add(new SelectPlayer(this));
         _core.UpdateReceiver.Operations.Add(new MovePlayerDown(this));
         _core.UpdateReceiver.Operations.Add(new MovePlayerToBottom(this));
-        _core.UpdateReceiver.Operations.Add(new RearrangePlayer(this));
+        _core.UpdateReceiver.Operations.Add(new SetupRound(this));
         _core.UpdateReceiver.Operations.Add(new RevealCard(this));
         _core.UpdateReceiver.Operations.Add(new UnrevealCard(this));
         _core.UpdateReceiver.Operations.Add(new DeleteCard(this));
@@ -169,7 +169,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             await playerTexts.NewGameStart.SendAsync(_core.UpdateSender, _playerChat);
 
             _state.PlayersMessageId = null;
-            _state.CurrentPlayersMessageState = PlayersMessageState.Type.NewRearrangement;
+            _state.CurrentPlayersMessageState = PlayersMessageState.Type.Rounds;
         }
         else if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
         {
@@ -225,7 +225,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         await ReportAndPinPlayersAsync(_state.Game);
     }
 
-    internal async Task RearrangePlayerAsync(string id)
+    internal async Task SetupRoundAsync(byte round)
     {
         if (_state.Game is null)
         {
@@ -233,27 +233,34 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        bool newRearrangement = _state.CurrentPlayersMessageState == PlayersMessageState.Type.NewRearrangement;
-        if (newRearrangement)
+        if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
         {
-            _state.Game.Players.DeactivateAll();
-            _state.CurrentPlayersMessageState = PlayersMessageState.Type.Rearrangement;
+            Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
+            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
+            return;
         }
 
-        bool toggled = _state.Game.Players.Toggle(id);
-        if (!toggled)
+        bool changed = false;
+        foreach ((string id, PlayerInfo info) in _state.Game.Players.GetAllIdsWithInfo())
+        {
+            bool shouldBeActive = info.Rounds.Contains(round);
+            if (info.Active == shouldBeActive)
+            {
+                continue;
+            }
+
+            changed = true;
+            _state.Game.Players.Toggle(id);
+        }
+
+        if (!changed)
         {
             return;
         }
 
-        if (newRearrangement)
+        if (!_state.Game.IsCurrentArrangementValid())
         {
-            _state.Game.Players.Select(id);
-        }
-
-        if (_state.Game.Players.IsActive(id))
-        {
-            _state.Game.Players.MoveDown(id, true, true);
+            await DeleteCardMessagesAsync();
         }
 
         await ReportAndPinPlayersAsync(_state.Game);
@@ -851,14 +858,12 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         Texts texts = _textsProvider.GetTextsFor(_adminChat.Id);
 
         List<MessageTemplateText> playerLines = new();
-        List<(string Id, bool Active, byte Number)> players = new();
+        List<(string Id, byte Number, PlayerInfo Info)> players = new();
         foreach ((string id, PlayerInfo info) in game.Players.GetAllIdsWithInfo())
         {
             if (!info.Active)
             {
-                if (_state.CurrentPlayersMessageState is not PlayersMessageState.Type.NewRearrangement
-                    and not PlayersMessageState.Type.Rearrangement
-                    and not PlayersMessageState.Type.Activity)
+                if (_state.CurrentPlayersMessageState is not PlayersMessageState.Type.Activity)
                 {
                     continue;
                 }
@@ -872,7 +877,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             }
 
             byte number = (byte) (playerLines.Count + 1);
-            players.Add((id, info.Active, number));
+            players.Add((id, number, info));
 
             string rounds = string.Join(texts.UpdatePartSeparator, info.Rounds.Order());
             string adminInfo = string.Format(texts.AdminInfoFormat, info.Username, rounds)
@@ -1002,7 +1007,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     }
 
     private InlineKeyboardMarkup CreatePlayersKeyboard(Texts texts, string currentPlayer,
-        IReadOnlyCollection<string> activePlayers, List<(string Id, bool Active, byte Number)> players)
+        IReadOnlyCollection<string> activePlayers, List<(string Id, byte number, PlayerInfo Info)> players)
     {
         List<List<InlineKeyboardButton>> keyboard = new();
 
@@ -1017,55 +1022,56 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             keyboard.Add(modeToggle);
         }
 
-        List<InlineKeyboardButton> playerButtons = new();
-        foreach ((string? id, bool active, byte number) in players)
+        if (_state.CurrentPlayersMessageState == PlayersMessageState.Type.Rounds)
         {
-            InlineKeyboardButton button;
-            switch (_state.CurrentPlayersMessageState)
-            {
-                case PlayersMessageState.Type.NewRearrangement:
-                    button = CreateButton<RearrangePlayer>(number.ToString(), id);
-                    break;
-
-                case PlayersMessageState.Type.Rearrangement:
-                    string format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
-                    button = CreateButton<RearrangePlayer>(string.Format(format, number), id);
-                    break;
-
-                case PlayersMessageState.Type.Activity:
-                    format = active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
-                    button = CreateButton<TogglePlayer>(string.Format(format, number), id);
-                    break;
-
-                case PlayersMessageState.Type.Selection:
-                    if (!active || (id == currentPlayer))
-                    {
-                        continue;
-                    }
-                    button = CreateButton<SelectPlayer>(number.ToString(), id);
-                    break;
-
-                case PlayersMessageState.Type.FastMovement:
-                    if (!active || (id == activePlayers.LastOrDefault()))
-                    {
-                        continue;
-                    }
-                    button = CreateButton<MovePlayerToBottom>(number.ToString(), id);
-                    break;
-
-                case PlayersMessageState.Type.Movement:
-                    if (!active)
-                    {
-                        continue;
-                    }
-                    button = CreateButton<MovePlayerDown>(number.ToString(), id);
-                    break;
-                default: throw new ArgumentOutOfRangeException();
-            }
-            playerButtons.Add(button);
+            keyboard.AddRange(players.SelectMany(p => p.Info.Rounds)
+                                     .Distinct()
+                                     .Order()
+                                     .Select(r => CreateOneButtonRow<SetupRound>(r.ToString(), r)));
         }
-        keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
-                                       .Select(b => b.ToList()));
+        else
+        {
+            List<InlineKeyboardButton> playerButtons = new();
+            foreach ((string? id, byte number, PlayerInfo info) in players)
+            {
+                InlineKeyboardButton button;
+                switch (_state.CurrentPlayersMessageState)
+                {
+                    case PlayersMessageState.Type.Activity:
+                        string format = info.Active ? texts.ActivePlayerFormat : texts.InactivePlayerFormat;
+                        button = CreateButton<TogglePlayer>(string.Format(format, number), id);
+                        break;
+
+                    case PlayersMessageState.Type.Selection:
+                        if (!info.Active || (id == currentPlayer))
+                        {
+                            continue;
+                        }
+                        button = CreateButton<SelectPlayer>(number.ToString(), id);
+                        break;
+
+                    case PlayersMessageState.Type.FastMovement:
+                        if (!info.Active || (id == activePlayers.LastOrDefault()))
+                        {
+                            continue;
+                        }
+                        button = CreateButton<MovePlayerToBottom>(number.ToString(), id);
+                        break;
+
+                    case PlayersMessageState.Type.Movement:
+                        if (!info.Active)
+                        {
+                            continue;
+                        }
+                        button = CreateButton<MovePlayerDown>(number.ToString(), id);
+                        break;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+                playerButtons.Add(button);
+            }
+            keyboard.AddRange(playerButtons.Batch(_config.ButtonsPerRow)
+                                           .Select(b => b.ToList()));
+        }
 
         return keyboard.Count == 0 ? InlineKeyboardMarkup.Empty() : new InlineKeyboardMarkup(keyboard);
     }

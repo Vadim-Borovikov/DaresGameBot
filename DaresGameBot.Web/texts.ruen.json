@@ -146,7 +146,7 @@
   "PlayersMessageStateSelection": "👈",
   "PlayersMessageStateMovement": "🔽",
   "PlayersMessageStateFastMovement": "⏬",
-  "PlayersMessageStateRearrangement": "🔢",
+  "PlayersMessageStateRounds": "🔢",
 
   "ActivePlayerFormat": "✔️ {0}",
   "InactivePlayerFormat": "❌ {0}",
