@@ -26,52 +26,43 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         return true;
     }
 
-    public IEnumerable<(string Id, bool Active)> GetAllIdsWithStatus()
+    public IEnumerable<(string Id, PlayerInfo Info)> GetAllIdsWithInfo()
     {
         foreach (string id in _ids)
         {
-            yield return (id, _infos[id].Active);
+            yield return (id, _infos[id]);
         }
     }
 
-    public bool AddOrUpdatePlayerData(AddOrUpdatePlayerData a, string handlerSeparator)
+    public bool AddOrUpdatePlayerData(AddOrUpdatePlayerData a)
     {
         bool changed = false;
-        string id = GetId(a.Name, a.Handler, handlerSeparator);
-        if (_infos.ContainsKey(id))
+        if (_infos.ContainsKey(a.Name))
         {
-            if (_infos[id].GroupInfo != a.Info)
+            if (_infos[a.Name].GroupInfo != a.Info)
             {
-                _infos[id].GroupInfo = a.Info;
+                _infos[a.Name].GroupInfo = a.Info;
                 changed = true;
             }
-            if (!_infos[id].Active)
+            if (!_infos[a.Name].Active)
             {
-                _infos[id].Active = true;
+                _infos[a.Name].Active = true;
                 changed = true;
             }
         }
         else
         {
-            _infos[id] = new PlayerInfo(a.Name, a.Info);
+            _infos[a.Name] = new PlayerInfo(a.Username, a.Info);
             changed = true;
         }
 
-        if (!_ids.Contains(id))
+        if (!_ids.Contains(a.Name))
         {
-            _ids.Add(id);
+            _ids.Add(a.Name);
         }
 
         return changed;
     }
-
-    public string GetDisplayName(string id, bool activeOnly)
-    {
-        IEnumerable<string> players = activeOnly ? GetActiveIds() : _ids;
-        return players.Count(i => _infos[i].Name == _infos[id].Name) > 1 ? id : _infos[id].Name;
-    }
-
-    public string GetDisplayName(string id) => GetDisplayName(id, true);
 
     public bool Toggle(string id)
     {
@@ -168,8 +159,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         foreach (string id in data.Infos.Keys)
         {
             PlayerData d = data.Infos[id];
-            GroupsInfo i = new(d.GroupsData.Group, d.GroupsData.CompatableGroups);
-            _infos[id] = new PlayerInfo(d.Name, i, d.Active);
+            _infos[id] = new PlayerInfo(d);
         }
 
         _currentIndex = data.CurrentIndex;
@@ -190,11 +180,6 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
     public bool IsCompatableWith(string player, IEnumerable<string> group, ICompatibility compatibility)
     {
         return group.All(p => AreCompatable(player, p, compatibility));
-    }
-
-    private static string GetId(string name, string? handler, string separator)
-    {
-        return string.IsNullOrEmpty(handler) ? name : $"{name}{separator}{handler}";
     }
 
     private bool AreCompatable((string, string) pair, ICompatibility compatibility)

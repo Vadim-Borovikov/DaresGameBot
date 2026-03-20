@@ -120,13 +120,13 @@
 
   "PlayerFormatActive": {
     "Text": [
-      "{0}\\. `{1}`"
+      "{0}\\. `{1}` {2}"
     ],
     "MarkdownV2": true
   },
   "PlayerFormatInactive": {
     "Text": [
-      "_— {0}\\._ `{1}`"
+      "_— {0}\\._ `{1}` {2}"
     ],
     "MarkdownV2": true
   },
@@ -206,7 +206,6 @@
   "CompatablePartnersSeparator": " + ",
 
   "UpdatePartsSeparator": ",",
-  "UpdatePlayerSeparator": " ",
   "UpdateGroupsSeparator": "-",
 
   "ReadingDecks": {

@@ -5,13 +5,23 @@ namespace DaresGameBot.Game.States;
 
 internal sealed class PlayerInfo : IStateful<PlayerData>
 {
-    public string Name;
+    public string? Username;
     public GroupsInfo GroupInfo;
     public bool Active;
 
-    public PlayerInfo(string name, GroupsInfo groupInfo, bool active = true)
+    public PlayerInfo(PlayerData data)
     {
-        Name = name;
+        Username = data.Username;
+        GroupInfo = new GroupsInfo(data.GroupsData.Group, data.GroupsData.CompatableGroups);
+        Active = data.Active;
+    }
+
+    public PlayerInfo(string? username, GroupsInfo groupInfo, bool active = true)
+    {
+        if (!string.IsNullOrWhiteSpace(username))
+        {
+            Username = username;
+        }
         GroupInfo = groupInfo;
         Active = active;
     }
@@ -20,7 +30,7 @@ internal sealed class PlayerInfo : IStateful<PlayerData>
     {
         return new PlayerData
         {
-            Name = Name,
+            Username = Username,
             GroupsData = GroupInfo.Save(),
             Active = Active
         };
@@ -33,7 +43,7 @@ internal sealed class PlayerInfo : IStateful<PlayerData>
             return;
         }
 
-        Name = data.Name;
+        Username = data.Username;
         GroupInfo = new GroupsInfo(data.GroupsData.Group, data.GroupsData.CompatableGroups);
         Active = data.Active;
     }

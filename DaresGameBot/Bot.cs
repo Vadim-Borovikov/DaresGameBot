@@ -178,7 +178,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
         else
         {
-            bool changed = _state.Game.UpdatePlayers(updates, _textsProvider.GetDefaultTexts().UpdatePlayerSeparator);
+            bool changed = _state.Game.UpdatePlayers(updates);
             if (!changed)
             {
                 await adminTexts.NothingChanges.SendAsync(_core.UpdateSender, _adminChat);
@@ -583,8 +583,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
     {
         Texts texts = _textsProvider.GetTextsFor(chat.Id);
         string? descriptionEn = _state.ShouldIncludeEnFor(chat.Id) ? data.Descriprions[tag].en : null;
-        Turn turn = new(texts, players.GetDisplayName, tag, data.Descriprions[tag].ru, descriptionEn, players.Current,
-            arrangement);
+        Turn turn = new(texts, tag, data.Descriprions[tag].ru, descriptionEn, players.Current, arrangement);
         MessageTemplateText template = turn.GetMessage();
         template.KeyboardProvider = CreateActionKeyboard(chat.Id, showPartial);
         MessageTemplateImage templateImage = new(template, image);
@@ -598,10 +597,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         MessageTemplateText? partnersText = null;
         if (arrangement.Partners.Count > 0)
         {
-            partnersText = Turn.GetPartnersPart(texts, arrangement, players.GetDisplayName);
+            partnersText = Turn.GetPartnersPart(texts, arrangement);
         }
-        MessageTemplateText template =
-            texts.TurnFormatShort.Format(players.GetDisplayName(players.Current), partnersText);
+        MessageTemplateText template = texts.TurnFormatShort.Format(players.Current, partnersText);
         template.KeyboardProvider = CreateArrangementKeyboard(chat.Id, true);
         MessageTemplateImage templateImage = new(template, image);
         return templateImage.EditMessageMediaWithSelfAsync(_core.UpdateSender, chat, cardMessageId);
@@ -696,8 +694,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         GameStatsStateCore gameStatsStateCore = new(_state.Core.ActionOptions, _state.Core.QuestionPoints, repository);
         GameStats gameStats = new(gameStatsStateCore);
 
-        Texts texts = _textsProvider.GetDefaultTexts();
-        gameStats.UpdateList(updates, texts.UpdatePlayerSeparator);
+        gameStats.UpdateList(updates);
 
         GroupCompatibility compatibility = new();
         DistributedMatchmaker matchmaker = new(repository, gameStats, compatibility);
@@ -755,8 +752,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         }
 
         string? descriptionEn = _state.ShouldIncludeEnFor(userId) ? data.DescriptionEn : null;
-        return
-            new Turn(texts, game.Players.GetDisplayName, texts.QuestionsTag, data.Description, descriptionEn, playerIds);
+        return new Turn(texts, texts.QuestionsTag, data.Description, descriptionEn, playerIds);
     }
 
     private async Task ShowArrangementAsync(PlayersRepository players, Arrangement arrangement, Chat chat,
@@ -766,10 +762,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         MessageTemplateText? partnersText = null;
         if (arrangement.Partners.Count > 0)
         {
-            partnersText = Turn.GetPartnersPart(texts, arrangement, players.GetDisplayName);
+            partnersText = Turn.GetPartnersPart(texts, arrangement);
         }
-        MessageTemplate messageTemplate =
-            texts.TurnFormatShort.Format(players.GetDisplayName(players.Current), partnersText);
+        MessageTemplate messageTemplate = texts.TurnFormatShort.Format(players.Current, partnersText);
         messageTemplate = new MessageTemplateImage(messageTemplate, image)
         {
             KeyboardProvider = CreateArrangementKeyboard(chat.Id, true)
@@ -818,7 +813,6 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         // ReSharper disable once LoopCanBePartlyConvertedToQuery
         foreach (string player in ratios.Keys.OrderByDescending(p => ratios[p]))
         {
-            string name = game.Players.GetDisplayName(player, false);
             uint points = game.Stats.GetPoints(player);
             uint propositions = game.Stats.GetPropositions(player);
             uint rate = ratios[player];
@@ -826,7 +820,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
             bool enoughTurns = game.Stats.MinRound is null || (turns >= game.Stats.MinRound);
             MessageTemplateText format = enoughTurns ? texts.RateFormat : texts.RateFormatHidden;
-            MessageTemplateText line = format.Format(name, points, propositions, rate, turns);
+            MessageTemplateText line = format.Format(player, points, propositions, rate, turns);
             if (rate == bestRate)
             {
                 line = texts.BestRateFormat.Format(line);
@@ -858,9 +852,9 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
 
         List<MessageTemplateText> playerLines = new();
         List<(string Id, bool Active, byte Number)> players = new();
-        foreach ((string id, bool active) in game.Players.GetAllIdsWithStatus())
+        foreach ((string id, PlayerInfo info) in game.Players.GetAllIdsWithInfo())
         {
-            if (!active)
+            if (!info.Active)
             {
                 if (_state.CurrentPlayersMessageState is not PlayersMessageState.Type.NewRearrangement
                     and not PlayersMessageState.Type.Rearrangement
@@ -870,7 +864,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
                 }
             }
 
-            MessageTemplateText format = active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
+            MessageTemplateText format = info.Active ? texts.PlayerFormatActive : texts.PlayerFormatInactive;
             if (id == game.Players.Current)
             {
                 MessageTemplateText currentFormat = new(texts.CurrentPlayerFormat);
@@ -878,8 +872,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             }
 
             byte number = (byte) (playerLines.Count + 1);
-            players.Add((id, active, number));
-            MessageTemplateText line = format.Format(number, id);
+            players.Add((id, info.Active, number));
+            MessageTemplateText line = format.Format(number, id, info.Username ?? "");
             playerLines.Add(line);
         }
         MessageTemplateText allLines = MessageTemplateText.JoinTexts(playerLines);
