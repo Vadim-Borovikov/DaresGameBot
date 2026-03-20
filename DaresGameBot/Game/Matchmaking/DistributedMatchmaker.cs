@@ -20,6 +20,7 @@ internal sealed class DistributedMatchmaker : Matchmaker
         List<string> choices =
             EnumerateCompatablePlayers().OrderBy(p => _gameStats.GetPropositions(Players.Current, p))
                                         .ThenBy(_gameStats.GetPartnerPropositionsRate)
+                                        .ThenBy(_gameStats.GetPropositions)
                                         .ThenByShuffled()
                                         .ToList();
 
