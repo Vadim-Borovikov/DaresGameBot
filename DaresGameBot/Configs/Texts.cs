@@ -120,9 +120,6 @@ public class Texts : AbstractBot.Models.Config.Texts
     [Required]
     [MinLength(1)]
     public string InactivePlayerFormat { get; init; } = null!;
-    [Required]
-    [MinLength(1)]
-    public string UndefinedPlayerFormat { get; init; } = null!;
 
     [Required]
     [MinLength(1)]
