@@ -185,7 +185,8 @@
   "CompatablePartnersSeparator": " + ",
 
   "UpdatePartsSeparator": ",",
-  "UpdateGroupsSeparator": "-",
+  "UpdatePartSeparator": "-",
+  "AdminInfoFormat": "{0} {1}",
 
   "ReadingDecks": {
     "Text": [

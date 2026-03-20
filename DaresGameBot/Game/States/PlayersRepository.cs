@@ -39,6 +39,11 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         bool changed = false;
         if (_infos.ContainsKey(a.Name))
         {
+            if (!_infos[a.Name].Rounds.SetEquals(a.Rounds))
+            {
+                _infos[a.Name].Rounds = a.Rounds;
+                changed = true;
+            }
             if (_infos[a.Name].GroupInfo != a.Info)
             {
                 _infos[a.Name].GroupInfo = a.Info;
@@ -52,7 +57,7 @@ internal sealed class PlayersRepository : IStateful<PlayersRepositoryData>
         }
         else
         {
-            _infos[a.Name] = new PlayerInfo(a.Username, a.Info);
+            _infos[a.Name] = new PlayerInfo(a.Username, a.Rounds, a.Info);
             changed = true;
         }
 
