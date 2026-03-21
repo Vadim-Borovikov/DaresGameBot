@@ -233,6 +233,13 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
+        if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
+        {
+            Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
+            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
+            return;
+        }
+
         bool newRearrangement = _state.CurrentPlayersMessageState == PlayersMessageState.Type.NewRearrangement;
         if (newRearrangement)
         {
