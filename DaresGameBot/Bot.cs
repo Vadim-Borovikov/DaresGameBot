@@ -171,13 +171,15 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             _state.PlayersMessageId = null;
             _state.CurrentPlayersMessageState = PlayersMessageState.Type.NewRearrangement;
         }
-        else if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
-        {
-            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
-            return;
-        }
         else
         {
+            bool areSomePlayersOccupied = updates.Any(u => _state.Game.IsPlayerOccupied(u.Name));
+            if (areSomePlayersOccupied && (_state.Game.CurrentState == Game.States.Game.State.CardRevealed))
+            {
+                await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
+                return;
+            }
+
             bool changed = _state.Game.UpdatePlayers(updates, _textsProvider.GetDefaultTexts().UpdatePlayerSeparator);
             if (!changed)
             {
@@ -185,7 +187,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
                 return;
             }
 
-            if (!_state.Game.IsCurrentArrangementValid())
+            if (areSomePlayersOccupied && (_state.Game.CurrentState == Game.States.Game.State.ArrangementPurposed))
             {
                 await DeleteCardMessagesAsync();
             }
@@ -204,7 +206,8 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
+        bool isPlayerOccupied = _state.Game.IsPlayerOccupied(id);
+        if (isPlayerOccupied && (_state.Game.CurrentState == Game.States.Game.State.CardRevealed))
         {
             Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
             await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
@@ -217,7 +220,7 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        if (!_state.Game.IsCurrentArrangementValid())
+        if (isPlayerOccupied && (_state.Game.CurrentState == Game.States.Game.State.ArrangementPurposed))
         {
             await DeleteCardMessagesAsync();
         }
@@ -233,22 +236,32 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
-        {
-            Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
-            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
-            return;
-        }
-
+        Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
         bool newRearrangement = _state.CurrentPlayersMessageState == PlayersMessageState.Type.NewRearrangement;
+        bool cardRevealed = _state.Game.CurrentState == Game.States.Game.State.CardRevealed;
+        bool areSomePlayersOccupied = false;
         if (newRearrangement)
         {
+            areSomePlayersOccupied = _state.Game.CurrentArrangement is not null;
+            if (areSomePlayersOccupied && cardRevealed)
+            {
+                await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
+                return;
+            }
+
             _state.Game.Players.DeactivateAll();
             _state.CurrentPlayersMessageState = PlayersMessageState.Type.Rearrangement;
         }
 
+        areSomePlayersOccupied |= _state.Game.Players.IsActive(id) && _state.Game.IsPlayerOccupied(id);
+        if (areSomePlayersOccupied && cardRevealed)
+        {
+            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
+            return;
+        }
+
         bool toggled = _state.Game.Players.Toggle(id);
-        if (!toggled)
+        if (!toggled && !newRearrangement)
         {
             return;
         }
@@ -261,6 +274,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
         if (_state.Game.Players.IsActive(id))
         {
             _state.Game.Players.MoveDown(id, true, true);
+        }
+
+        if (areSomePlayersOccupied && (_state.Game.CurrentState == Game.States.Game.State.ArrangementPurposed))
+        {
+            await DeleteCardMessagesAsync();
         }
 
         await ReportAndPinPlayersAsync(_state.Game);
@@ -300,23 +318,11 @@ public sealed class Bot : AbstractBot.Bot, IDisposable
             return;
         }
 
-        if (_state.Game.CurrentState == Game.States.Game.State.CardRevealed)
-        {
-            Texts adminTexts = _textsProvider.GetTextsFor(_adminChat.Id);
-            await adminTexts.Refuse.SendAsync(Core.UpdateSender, _adminChat);
-            return;
-        }
-
         bool moved =
             _state.Game.Players.MoveDown(name, toBottom, _state.Game.CurrentState != Game.States.Game.State.Fresh);
         if (!moved)
         {
             return;
-        }
-
-        if (!_state.Game.IsCurrentArrangementValid())
-        {
-            await DeleteCardMessagesAsync();
         }
 
         await ReportAndPinPlayersAsync(_state.Game);
