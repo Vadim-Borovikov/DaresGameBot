@@ -84,6 +84,13 @@ internal sealed class Game : IStateful<GameData>
         return CurrentArrangement is not null && _matchmaker.CanBePlayed(CurrentArrangement);
     }
 
+    public bool IsPlayerOccupied(string id)
+    {
+        return (CurrentState != State.Fresh)
+               && ((id == Players.Current)
+                   || (CurrentArrangement is not null && CurrentArrangement.Partners.Contains(id)));
+    }
+
     public void DrawQuestion()
     {
         if (_currentQuestionId is null || !_questionDeck.CheckCard(_currentQuestionId.Value))
